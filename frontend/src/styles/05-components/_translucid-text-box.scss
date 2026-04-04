@@ -1,0 +1,30 @@
+// ============================================================================
+// Components / TranslucidTextBox
+// ----------------------------------------------------------------------------
+// Recuadro translúcido. En hover el fondo se vuelve opaco pero el texto
+// siempre se mantiene al 100% de opacidad (accesibilidad / contraste).
+// ============================================================================
+
+.translucid-text-box {
+  display: block;
+  padding: var(--space-md) var(--space-xl);
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background-color: var(--color-translucid-base);
+  color: var(--color-text-inverse);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-base);
+  line-height: var(--line-height-base);
+  box-shadow: 0 4px 10px var(--color-shadow);
+  transition: background-color var(--transition-base);
+
+  // El texto siempre al 100% de opacidad — solo cambia el fondo.
+  &__content {
+    opacity: 1;
+  }
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-translucid-opaque);
+  }
+}

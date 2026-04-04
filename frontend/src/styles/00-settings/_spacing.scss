@@ -1,0 +1,19 @@
+// ============================================================================
+// Settings / Spacing & Radii
+// ============================================================================
+
+:root {
+  --space-xs: 0.25rem;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 1.5rem;
+  --space-xl: 2rem;
+
+  --radius-sm: 6px;
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --radius-pill: 9999px;
+
+  --transition-fast: 150ms ease-out;
+  --transition-base: 250ms ease-out;
+}

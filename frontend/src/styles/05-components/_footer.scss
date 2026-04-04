@@ -1,0 +1,58 @@
+// ============================================================================
+// Components / Footer
+// ============================================================================
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  padding: var(--space-md) var(--space-xl);
+  background-color: var(--color-chrome);
+  color: var(--color-text-on-chrome);
+  border-radius: var(--radius-md);
+  box-shadow: 0 -2px 8px var(--color-shadow);
+
+  &__nav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-lg);
+  }
+
+  &__link {
+    color: var(--color-text-on-chrome);
+    text-decoration: none;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__socials {
+    display: flex;
+    gap: var(--space-md);
+  }
+
+  &__social {
+    color: var(--color-text-on-chrome);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+      fill: currentColor;
+    }
+  }
+}

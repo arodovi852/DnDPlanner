@@ -1,0 +1,28 @@
+// ============================================================================
+// ITCSS — Entry point
+// ----------------------------------------------------------------------------
+// Orden obligatorio (de menor a mayor especificidad):
+//   00 settings → 01 tools → 02 generic → 03 elements →
+//   04 objects  → 05 components → 06 utilities
+// ============================================================================
+
+// 00 — Settings (variables, tokens)
+@use '00-settings/colors';
+@use '00-settings/typography';
+@use '00-settings/spacing';
+
+// 02 — Generic (reset)
+@use '02-generic/reset';
+
+// 03 — Elements (estilos base de etiquetas HTML)
+@use '03-elements/base';
+
+// 05 — Components (BEM)
+@use '05-components/campaign-card';
+@use '05-components/profile';
+@use '05-components/text-box';
+@use '05-components/translucid-text-box';
+@use '05-components/button';
+@use '05-components/header';
+@use '05-components/footer';
+@use '05-components/auth-modal';

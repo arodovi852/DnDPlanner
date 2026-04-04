@@ -1,0 +1,55 @@
+// ============================================================================
+// Components / Profile
+// ----------------------------------------------------------------------------
+// Avatar de usuario redondeado-cuadrado con zoom ligero en hover/focus.
+// ============================================================================
+
+.profile {
+  --profile-size: 4.5rem;
+
+  position: relative;
+  display: inline-block;
+  width: var(--profile-size);
+  height: var(--profile-size);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary-dark);
+  border: 3px solid var(--color-border);
+  overflow: hidden;
+  cursor: pointer;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background-color var(--transition-fast);
+
+  &__image,
+  &__placeholder {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  &__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xl);
+  }
+
+  // Variante "activa" (color rosa claro, como en la tercera imagen)
+  &--active {
+    background-color: var(--color-primary);
+
+    .profile__placeholder {
+      color: var(--color-surface);
+    }
+  }
+
+  &:hover,
+  &:focus-visible {
+    transform: scale(1.1);
+    box-shadow: 0 6px 14px var(--color-shadow);
+  }
+}

@@ -1,0 +1,45 @@
+// ============================================================================
+// Components / Header
+// ============================================================================
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-xl);
+  background-color: var(--color-chrome);
+  color: var(--color-text-on-chrome);
+  border-radius: var(--radius-md);
+  box-shadow: 0 2px 8px var(--color-shadow);
+
+  &__logo {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    color: var(--color-text-on-chrome);
+    text-decoration: none;
+    letter-spacing: 0.05em;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__nav {
+    display: flex;
+    align-items: center;
+    gap: var(--space-lg);
+  }
+
+  &__link {
+    color: var(--color-text-on-chrome);
+    text-decoration: none;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+}

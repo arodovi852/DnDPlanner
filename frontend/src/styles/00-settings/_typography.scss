@@ -1,0 +1,23 @@
+// ============================================================================
+// Settings / Typography
+// ----------------------------------------------------------------------------
+// Fuente principal: Mochiy Pop One (cargada desde Google Fonts en index.html).
+// Nunca declarar familias tipográficas fuera de este archivo.
+// ============================================================================
+
+:root {
+  --font-family-base: 'Mochiy Pop One', 'Trebuchet MS', system-ui, sans-serif;
+  --font-family-heading: 'Mochiy Pop One', 'Trebuchet MS', system-ui, sans-serif;
+
+  --font-size-sm: 0.875rem;
+  --font-size-base: 1rem;
+  --font-size-md: 1.125rem;
+  --font-size-lg: 1.5rem;
+  --font-size-xl: 2rem;
+
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
+
+  --line-height-base: 1.4;
+  --line-height-tight: 1.15;
+}

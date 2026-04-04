@@ -1,0 +1,105 @@
+// ============================================================================
+// Components / Auth Modal (Login / Register)
+// ============================================================================
+
+.auth-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background-color: var(--color-overlay);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: var(--space-md);
+}
+
+.auth-modal {
+  position: relative;
+  width: 100%;
+  max-width: 20rem;
+  padding: var(--space-xl) var(--space-lg) var(--space-lg);
+  background-color: var(--color-chrome);
+  color: var(--color-text-on-chrome);
+  border: 3px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 10px 30px var(--color-shadow-strong);
+  text-align: center;
+  font-family: var(--font-family-base);
+
+  &__title {
+    margin-bottom: var(--space-lg);
+    font-size: var(--font-size-lg);
+  }
+
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  &__field {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    text-align: center;
+
+    &::placeholder {
+      color: var(--color-text-muted);
+    }
+
+    &:focus-visible {
+      outline: 3px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  &__actions {
+    margin-top: var(--space-sm);
+    display: flex;
+    justify-content: center;
+  }
+
+  &__switch {
+    margin-top: var(--space-md);
+    background: none;
+    border: none;
+    color: var(--color-text-on-chrome);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    text-decoration: underline;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__close {
+    position: absolute;
+    top: -0.75rem;
+    right: -0.75rem;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    border: 3px solid var(--color-border);
+    background-color: var(--color-primary);
+    color: var(--color-border);
+    font-size: var(--font-size-base);
+    font-weight: var(--font-weight-bold);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+  }
+}
