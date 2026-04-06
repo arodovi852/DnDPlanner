@@ -1,0 +1,125 @@
+// ============================================================================
+// Components / Main Page (landing + dashboard)
+// ----------------------------------------------------------------------------
+// La página /main tiene dos estados:
+//   - Logged OUT: hero con logo grande + CTA; templates peek abajo.
+//   - Logged IN:  grid "Your campaigns" + search "Or search a template…".
+// ============================================================================
+
+.main-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: 0 clamp(3rem, 10vw, 8rem);
+
+  // --------------------------------------------------------------------------
+  // Hero (logged out)
+  // --------------------------------------------------------------------------
+  &__hero {
+    // Ocupa casi todo el viewport para forzar el "peek" de los templates
+    // en la parte inferior y animar al usuario a hacer scroll.
+    min-height: calc(100vh - 14rem);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: var(--space-xl);
+    padding-left: clamp(1rem, 4vw, 3rem);
+  }
+
+  &__logo {
+    font-family: var(--font-family-heading);
+    font-size: clamp(3rem, 8vw, 6rem);
+    letter-spacing: 0.04em;
+    font-style: italic;
+    color: var(--color-text-on-chrome);
+    line-height: 1;
+    margin: 0;
+  }
+
+  &__taglines {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-lg);
+    color: var(--color-text-on-chrome);
+  }
+
+  &__cta {
+    align-self: flex-start;
+  }
+
+  // --------------------------------------------------------------------------
+  // Sección de templates (compartida)
+  // --------------------------------------------------------------------------
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  &__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-sm);
+  }
+
+  &__section-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-on-chrome);
+    margin: 0;
+  }
+
+  &__see-more {
+    color: var(--color-text-on-chrome);
+    text-decoration: none;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+    justify-content: center;
+  }
+
+  // --------------------------------------------------------------------------
+  // Search (logged in)
+  // --------------------------------------------------------------------------
+  &__search {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  &__search-input {
+    width: 100%;
+    max-width: 28rem;
+    padding: var(--space-sm) var(--space-lg);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23555'%3E%3Cpath d='M21 20l-5.6-5.6A7.5 7.5 0 1 0 14 16l5.6 5.6L21 20zm-11.5-3a5.5 5.5 0 1 1 0-11 5.5 5.5 0 0 1 0 11z'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right var(--space-md) center;
+    background-size: 1.25rem 1.25rem;
+    padding-right: 2.75rem;
+
+    &:focus-visible {
+      outline: 3px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+  }
+}

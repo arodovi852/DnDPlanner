@@ -6,8 +6,9 @@
 // ============================================================================
 
 :root {
-  // Paleta base
-  --color-background: #e9e9e9;
+  // Paleta base — el fondo global coincide con el color del chrome
+  // para que header y footer se fundan con la página.
+  --color-background: #3d2b2b;
   --color-surface: #ffffff;
   --color-surface-alt: #f4f4f4;
   --color-surface-cream: #fdf6ec;

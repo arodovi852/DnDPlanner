@@ -5,28 +5,39 @@ import { Profile } from '../../shared/Profile';
 import { AuthModal } from '../../shared/AuthModal';
 import { useAuth } from '../../../context/AuthContext';
 
+export interface HeaderProps {
+  /** Oculta el logo (por ejemplo en la landing page cuando se muestra
+   *  el logo como hero principal). */
+  hideLogo?: boolean;
+  /** Modo transparente: sin fondo propio — se funde con el fondo de
+   *  la página. Usado en la landing page deslogueada. */
+  transparent?: boolean;
+}
+
 /**
  * Cabecera principal.
  *
- * Estructura:
- *   - Logo a la izquierda, enlaza con /main.
- *   - Nav a la derecha: "Templates" + (Log In | Profile).
- *
- * Cuando el usuario no está autenticado muestra el botón Log In que
- * abre el `AuthModal`. Cuando ya lo está, el botón se reemplaza por
- * el componente `Profile`, que navega a /profile.
+ * Muestra el logo a la izquierda (salvo que `hideLogo` sea true) y a
+ * la derecha el botón Log In (o el componente Profile si el usuario
+ * ya está autenticado) más el enlace a Templates.
  */
-export function Header() {
+export function Header({ hideLogo = false, transparent = false }: HeaderProps) {
   const { isAuthenticated, user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
 
+  const className = transparent ? 'header header--transparent' : 'header';
+
   return (
     <>
-      <header className="header">
-        <Link to="/main" className="header__logo">
-          DNDPLANNER
-        </Link>
+      <header className={className}>
+        {hideLogo ? (
+          <span className="header__spacer" aria-hidden="true" />
+        ) : (
+          <Link to="/main" className="header__logo">
+            DNDPLANNER
+          </Link>
+        )}
 
         <nav className="header__nav" aria-label="Navegación principal">
           {isAuthenticated ? (

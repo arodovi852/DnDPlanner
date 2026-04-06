@@ -6,13 +6,13 @@
 // ============================================================================
 
 .campaign-card {
-  --campaign-card-size: 11rem;
+  --campaign-card-size: 14rem;
 
   position: relative;
   display: inline-block;
   width: var(--campaign-card-size);
   height: var(--campaign-card-size);
-  border: 3px solid var(--color-border);
+  border: 5px solid var(--color-border);
   border-radius: var(--radius-lg);
   background-color: var(--color-surface);
   box-shadow: 0 4px 10px var(--color-shadow);
@@ -54,5 +54,29 @@
     .campaign-card__image--hover {
       opacity: 1;
     }
+  }
+
+  // Variante "crear nueva campaña": tarjeta crema con un gran "+".
+  &--plus {
+    background-color: var(--color-surface-cream);
+    border-color: var(--color-primary);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-surface);
+    }
+  }
+
+  &__plus-icon {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
+    font-size: 5rem;
+    font-family: var(--font-family-base);
+    line-height: 1;
+    user-select: none;
   }
 }

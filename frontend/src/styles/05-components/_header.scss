@@ -10,7 +10,18 @@
   background-color: var(--color-chrome);
   color: var(--color-text-on-chrome);
   border-radius: var(--radius-md);
-  box-shadow: 0 2px 8px var(--color-shadow);
+
+  // Variante transparente: sin fondo propio, se funde con la página.
+  &--transparent {
+    background-color: transparent;
+    box-shadow: none;
+    border-radius: 0;
+  }
+
+  &__spacer {
+    display: block;
+    width: 1px;
+  }
 
   &__logo {
     font-family: var(--font-family-heading);

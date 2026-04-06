@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
@@ -6,8 +6,18 @@ import { MainPage } from './pages/MainPage';
 import { ProfilePage } from './pages/ProfilePage';
 
 /**
- * Componente raíz. Define el layout global (Header + contenido + Footer)
- * y las rutas principales de la aplicación.
+ * En /main la propia página renderiza su Header (porque la variante
+ * visual cambia según el estado de sesión). En el resto de rutas el
+ * Header se renderiza globalmente aquí.
+ */
+function GlobalHeader() {
+  const location = useLocation();
+  if (location.pathname === '/main') return null;
+  return <Header />;
+}
+
+/**
+ * Componente raíz. Define el layout global y las rutas principales.
  */
 function App() {
   return (
@@ -18,11 +28,9 @@ function App() {
             display: 'flex',
             flexDirection: 'column',
             minHeight: '100vh',
-            padding: 'var(--space-md)',
-            gap: 'var(--space-md)',
           }}
         >
-          <Header />
+          <GlobalHeader />
 
           <main style={{ flex: 1 }}>
             <Routes>
