@@ -1,0 +1,136 @@
+// ============================================================================
+// Components / Profile Page
+// ----------------------------------------------------------------------------
+// Layout de /profile:
+//   - Fila superior con dos columnas:
+//       · Izquierda: Profile (avatar) + nombre + botón de edición.
+//       · Derecha:  TranslucidTextBox con la descripción.
+//   - Debajo: título "Campaigns" + grid de CampaignCards.
+// ============================================================================
+
+.profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: var(--space-xl) clamp(3rem, 10vw, 8rem);
+
+  // --------------------------------------------------------------------------
+  // Fila superior: identidad + descripción
+  // --------------------------------------------------------------------------
+  &__top {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+  }
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+
+    // Hacemos el Profile un poco más grande que en el header.
+    .profile {
+      --profile-size: 9rem;
+    }
+  }
+
+  &__name-row {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+  }
+
+  &__name {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    color: var(--color-text-on-chrome);
+  }
+
+  &__edit {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-on-chrome);
+    cursor: pointer;
+    border-radius: var(--radius-sm);
+    transition: color var(--transition-fast), transform var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+      transform: scale(1.1);
+    }
+  }
+
+  &__description {
+    display: flex;
+    align-items: stretch;
+
+    // Que el TranslucidTextBox ocupe todo el ancho disponible.
+    > .translucid-text-box {
+      width: 100%;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Sección de campañas
+  // --------------------------------------------------------------------------
+  &__campaigns {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  &__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 var(--space-sm);
+  }
+
+  &__section-title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-on-chrome);
+    margin: 0;
+  }
+
+  &__see-more {
+    color: var(--color-text-on-chrome);
+    text-decoration: none;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+    justify-content: flex-start;
+  }
+}
+
+// Utility: texto visualmente oculto pero accesible para lectores de pantalla.
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
