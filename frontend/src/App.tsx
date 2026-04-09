@@ -4,6 +4,9 @@ import { Header } from './components/layout/Header';
 import { Footer } from './components/layout/Footer';
 import { MainPage } from './pages/MainPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { CreatorSelectorPage } from './pages/CreatorSelectorPage';
+import { ChapterSelectorPage } from './pages/ChapterSelectorPage';
+import { CharacterSelectorPage } from './pages/CharacterSelectorPage';
 
 /**
  * En /main la propia página renderiza su Header (porque la variante
@@ -37,6 +40,9 @@ function App() {
               <Route path="/" element={<Navigate to="/main" replace />} />
               <Route path="/main" element={<MainPage />} />
               <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/creatorSelector" element={<CreatorSelectorPage />} />
+              <Route path="/chapterSelector" element={<ChapterSelectorPage />} />
+              <Route path="/characterSelector" element={<CharacterSelectorPage />} />
               <Route path="*" element={<Navigate to="/main" replace />} />
             </Routes>
           </main>

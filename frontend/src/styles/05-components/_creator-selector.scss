@@ -1,0 +1,55 @@
+// ============================================================================
+// Components / Creator Selector
+// ----------------------------------------------------------------------------
+// Página intermedia con los dos botones "Chapters" / "Characters".
+// ============================================================================
+
+.creator-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xl);
+  min-height: calc(100vh - 14rem);
+  padding: var(--space-xl) clamp(3rem, 10vw, 8rem);
+
+  &__title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-on-chrome);
+    margin: 0;
+    text-align: center;
+  }
+
+  &__buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+    justify-content: center;
+  }
+}
+
+// ============================================================================
+// Components / Character Selector (placeholder provisional)
+// ============================================================================
+
+.character-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-lg);
+  padding: var(--space-xl) clamp(3rem, 10vw, 8rem);
+  color: var(--color-text-on-chrome);
+
+  &__title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    margin: 0;
+  }
+
+  &__placeholder {
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    opacity: 0.8;
+  }
+}

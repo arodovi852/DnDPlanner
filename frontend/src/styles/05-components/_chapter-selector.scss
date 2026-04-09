@@ -1,0 +1,64 @@
+// ============================================================================
+// Components / Chapter Selector
+// ----------------------------------------------------------------------------
+// Layout:
+//   1. Botón "+" grande centrado en la parte superior.
+//   2. TextBox que contiene una lista scrolleable de TranslucidTextBox.
+// ============================================================================
+
+.chapter-selector {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-xl);
+  padding: var(--space-xl) clamp(3rem, 10vw, 8rem);
+
+  // --------------------------------------------------------------------------
+  // Botón "+" superior
+  // --------------------------------------------------------------------------
+  &__add {
+    display: flex;
+    justify-content: center;
+  }
+
+  &__add-button {
+    // Ensancha el botón para que el "+" destaque visualmente.
+    min-width: 14rem;
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  // --------------------------------------------------------------------------
+  // Contenedor scrolleable con la lista de capítulos
+  // --------------------------------------------------------------------------
+  &__list-wrapper {
+    width: 100%;
+    max-width: 42rem;
+
+    // El TextBox padre hace de "marco" con scroll interno.
+    > .text-box {
+      max-height: 24rem;
+      overflow-y: auto;
+      padding: var(--space-md);
+    }
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  &__item {
+    // El TranslucidTextBox hijo ocupa todo el ancho disponible para
+    // que cada capítulo parezca una fila de la lista.
+    > .translucid-text-box {
+      width: 100%;
+      font-family: var(--font-family-heading);
+      font-size: var(--font-size-lg);
+    }
+  }
+}
