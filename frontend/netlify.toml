@@ -1,0 +1,10 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+# SPA fallback: cualquier ruta no estática se sirve con index.html para
+# que react-router gestione el routing en el cliente.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
