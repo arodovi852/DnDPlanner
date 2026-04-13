@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../../shared/Button';
 import { Profile } from '../../shared/Profile';
 import { AuthModal } from '../../shared/AuthModal';
@@ -22,6 +23,7 @@ export interface HeaderProps {
  * ya está autenticado) más el enlace a Templates.
  */
 export function Header({ hideLogo = false, transparent = false }: HeaderProps) {
+  const { t } = useTranslation();
   const { isAuthenticated, user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
   const navigate = useNavigate();
@@ -39,21 +41,27 @@ export function Header({ hideLogo = false, transparent = false }: HeaderProps) {
           </Link>
         )}
 
-        <nav className="header__nav" aria-label="Navegación principal">
+        <nav className="header__nav" aria-label={t('header.profile')}>
           {isAuthenticated ? (
             <Profile
-              name={user?.username ?? 'Perfil'}
+              name={user?.username ?? t('header.profile')}
               active
               onSelect={() => navigate('/profile')}
             />
           ) : (
             <Button size="small" onClick={() => setModalOpen(true)}>
-              Log In
+              {t('header.logIn')}
             </Button>
           )}
 
+          {isAuthenticated && (
+            <Link to="/users" className="header__link">
+              {t('header.people')}
+            </Link>
+          )}
+
           <Link to="/templates" className="header__link">
-            Templates
+            {t('header.templates')}
           </Link>
         </nav>
       </header>

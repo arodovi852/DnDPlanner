@@ -1,29 +1,48 @@
 import { Link } from 'react-router-dom';
-
-const NAV_LINKS = [
-  { label: 'About', to: '/about' },
-  { label: 'Contact', to: '/contact' },
-  { label: 'News', to: '/news' },
-  { label: 'Terms', to: '/terms' },
-  { label: 'Privacy', to: '/privacy' },
-  { label: 'API', to: '/api' },
-  { label: 'Roadmap', to: '/roadmap' },
-];
+import { useTranslation } from 'react-i18next';
 
 /**
- * Pie de página con enlaces legales/navegación y redes sociales.
- * Los iconos SVG son inline para no depender de librerías externas.
+ * Pie de página con enlaces legales/navegación, switch de idioma y
+ * redes sociales. Los iconos SVG son inline para no depender de
+ * librerías externas.
  */
 export function Footer() {
+  const { t, i18n } = useTranslation();
+
+  const navLinks = [
+    { key: 'about', to: '/about' },
+    { key: 'contact', to: '/contact' },
+    { key: 'news', to: '/news' },
+    { key: 'terms', to: '/terms' },
+    { key: 'privacy', to: '/privacy' },
+    { key: 'api', to: '/api' },
+    { key: 'roadmap', to: '/roadmap' },
+  ] as const;
+
+  const toggleLang = () => {
+    const next = i18n.language.startsWith('es') ? 'en' : 'es';
+    i18n.changeLanguage(next);
+  };
+
   return (
     <footer className="footer" aria-label="Pie de página">
       <nav className="footer__nav" aria-label="Enlaces del pie">
-        {NAV_LINKS.map((link) => (
+        {navLinks.map((link) => (
           <Link key={link.to} to={link.to} className="footer__link">
-            {link.label}
+            {t(`footer.${link.key}`)}
           </Link>
         ))}
       </nav>
+
+      <button
+        type="button"
+        className="footer__lang"
+        onClick={toggleLang}
+        aria-label={t('common.language')}
+        title={t('common.language')}
+      >
+        {i18n.language.startsWith('es') ? 'ES · EN' : 'EN · ES'}
+      </button>
 
       <div className="footer__socials">
         <a

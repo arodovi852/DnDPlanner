@@ -1,0 +1,229 @@
+{
+  "common": {
+    "save": "Save",
+    "saveChanges": "Save changes",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "edit": "Edit",
+    "create": "Create",
+    "add": "Add",
+    "close": "Close",
+    "search": "Search…",
+    "seeMore": "See more",
+    "confirm": "Confirm",
+    "untitled": "Untitled",
+    "language": "Language",
+    "english": "English",
+    "spanish": "Spanish"
+  },
+  "header": {
+    "logIn": "Log In",
+    "templates": "Templates",
+    "profile": "Profile",
+    "people": "People"
+  },
+  "footer": {
+    "about": "About",
+    "contact": "Contact",
+    "news": "News",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "api": "API",
+    "roadmap": "Roadmap"
+  },
+  "main": {
+    "prepare": "Prepare your campaigns.",
+    "createCharacters": "Create characters.",
+    "connectPlayers": "Connect with players.",
+    "createCampaign": "Create campaign",
+    "yourCampaigns": "Your campaigns",
+    "orSearchTemplate": "Or search a template…",
+    "templates": "Templates"
+  },
+  "auth": {
+    "welcomeBack": "Welcome back!",
+    "createAccount": "Create an account",
+    "usernameEmail": "Username / Email",
+    "username": "Username",
+    "email": "Email",
+    "password": "Password",
+    "confirmPassword": "Confirm password",
+    "logIn": "Log In",
+    "createAccountAction": "Create account",
+    "newHere": "New here? Create an account!",
+    "alreadyHave": "Already have an account? Log in",
+    "passwordsDontMatch": "Passwords don't match"
+  },
+  "newCampaign": {
+    "title": "New campaign",
+    "name": "Campaign name",
+    "namePlaceholder": "My campaign",
+    "createFromTemplate": "Create from template",
+    "useTemplate": "Use template"
+  },
+  "profile": {
+    "campaigns": "Campaigns",
+    "editProfile": "Edit profile",
+    "finishEdit": "Finish editing"
+  },
+  "chapterOrCharacter": {
+    "heading": "What do you want to open?",
+    "chapters": "Chapters",
+    "characters": "Characters",
+    "goToChapters": "Go to chapter selector",
+    "goToCharacters": "Go to character selector"
+  },
+  "chapterSelector": {
+    "addChapter": "Add new chapter",
+    "emptyTitle": "No chapters yet",
+    "emptyHint": "Press the \"+\" button to create the first one.",
+    "confirmDeleteTitle": "Delete chapter?",
+    "confirmDeleteDescription": "This action cannot be undone. \"{{title}}\" will be deleted.",
+    "editName": "Edit name",
+    "untitledChapter": "Untitled Chapter {{number}}"
+  },
+  "characterSelector": {
+    "playable": "Playable",
+    "enemies": "Enemies",
+    "searchCharacter": "Or search for a character…"
+  },
+  "characterSheet": {
+    "character": "Character",
+    "changeImage": "Change image",
+    "class": "Class",
+    "level": "Level",
+    "race": "Race",
+    "alignment": "Alignment",
+    "background": "Background",
+    "armor": "ARM",
+    "hp": "HP",
+    "movement": "Movement",
+    "damageDice": "Damage dice",
+    "initiative": "Initiative",
+    "str": "STR",
+    "dex": "DEX",
+    "con": "CON",
+    "int": "INT",
+    "wis": "WIS",
+    "cha": "CHA",
+    "savingThrows": "Saving throws",
+    "proficiency": "Proficiency",
+    "skills": "Skills",
+    "inventory": "Inventory",
+    "inventorySlots": "Inventory slots",
+    "spells": "Spells",
+    "features": "Features & Traits",
+    "description": "Description / Backstory",
+    "saveChanges": "Save changes",
+    "proficiencyBonus": "Proficiency bonus"
+  },
+  "chapter": {
+    "events": "Events",
+    "map": "Map",
+    "fullscreen": "Fullscreen",
+    "exitFullscreen": "Exit fullscreen",
+    "nextChapter": "Go to next chapter",
+    "finalChapter": "End of campaign",
+    "tools": {
+      "select": "Select / Move",
+      "pan": "Pan all",
+      "text": "Edit text",
+      "create": "Create block",
+      "connect": "Connect blocks (click or drag)",
+      "zoom": "Zoom (hold and drag)",
+      "notes": "Notes mode",
+      "character": "Add character",
+      "terrain": "Add terrain / object",
+      "enemy": "Add enemy",
+      "simplify": "Simplify view"
+    },
+    "eventTypes": {
+      "combate": "Combat",
+      "historia": "Story",
+      "mision": "Quest",
+      "exploracion": "Exploration",
+      "dialogo": "Dialogue"
+    },
+    "emptyNotes": "No events to show. Switch back to canvas mode to create some.",
+    "mapCols": "Cols",
+    "mapRows": "Rows",
+    "removeSelection": "Remove selection",
+    "mapCategories": {
+      "character": "Character",
+      "enemy": "Creature",
+      "boss": "Boss",
+      "terrain": "Terrain",
+      "object": "Object",
+      "trap": "Trap"
+    }
+  },
+  "undoRedo": {
+    "undone": "Undone",
+    "redone": "Redone"
+  },
+  "social": {
+    "follow": "Follow",
+    "unfollow": "Unfollow"
+  },
+  "users": {
+    "title": "People",
+    "empty": "No users to show.",
+    "searchPlaceholder": "Search people…",
+    "tab": {
+      "all": "All",
+      "following": "Following",
+      "followers": "Followers"
+    }
+  },
+  "members": {
+    "title": "Members",
+    "currentMembers": "Current members",
+    "addMember": "Add a member",
+    "searchPlaceholder": "Username to add…",
+    "you": "you",
+    "role": "Role",
+    "roleDm": "DM",
+    "roleCoDm": "Co-DM",
+    "rolePlayer": "Player",
+    "remove": "Remove",
+    "assignCharacter": "Assign character",
+    "noCharacter": "No character",
+    "notFound": "No user with that name.",
+    "alreadyMember": "Already a member of this campaign.",
+    "inviteLink": "Invite link",
+    "generateLink": "Generate link",
+    "copy": "Copy",
+    "copied": "Copied!",
+    "revoke": "Revoke",
+    "inviteHint": "Anyone with the link joins as a Player. Revoke to disable it.",
+    "shareOn": "Share on:",
+    "shareText": "Join my D&D campaign \"{{name}}\" on DNDPlanner"
+  },
+  "invite": {
+    "title": "You've been invited to \"{{name}}\"",
+    "body": "Join this campaign to see its chapters, characters and events as a Player.",
+    "members": "Members",
+    "chapters": "Chapters",
+    "join": "Join as Player",
+    "loginToJoin": "Log in to join",
+    "joinedTitle": "You joined \"{{name}}\"",
+    "joinedBody": "Welcome! You can now see the campaign from your Profile.",
+    "openCampaign": "Open campaign",
+    "invalidTitle": "Invalid invite",
+    "invalidBody": "This invite link is no longer valid or has been revoked by the DM.",
+    "goHome": "Go to home"
+  },
+  "annotations": {
+    "heading": "Annotations",
+    "characterHeading": "Player annotations",
+    "chapterHeading": "Chapter notes",
+    "empty": "No annotations yet.",
+    "placeholder": "Leave a note… (use ||spoiler|| if you want to hide part)",
+    "send": "Send"
+  },
+  "spoiler": {
+    "mark": "Mark as spoiler",
+    "revealAll": "Reveal all spoilers",
+    "hideAll": "Hide all spoilers"
+  }
+}

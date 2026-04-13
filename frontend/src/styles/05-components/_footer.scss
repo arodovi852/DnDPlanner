@@ -30,6 +30,24 @@
     }
   }
 
+  &__lang {
+    padding: var(--space-xs) var(--space-sm);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary);
+    }
+  }
+
   &__socials {
     display: flex;
     gap: var(--space-md);

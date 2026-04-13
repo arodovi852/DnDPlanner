@@ -1,0 +1,229 @@
+{
+  "common": {
+    "save": "Guardar",
+    "saveChanges": "Guardar cambios",
+    "cancel": "Cancelar",
+    "delete": "Eliminar",
+    "edit": "Editar",
+    "create": "Crear",
+    "add": "Añadir",
+    "close": "Cerrar",
+    "search": "Buscar…",
+    "seeMore": "Ver más",
+    "confirm": "Confirmar",
+    "untitled": "Sin título",
+    "language": "Idioma",
+    "english": "Inglés",
+    "spanish": "Español"
+  },
+  "header": {
+    "logIn": "Iniciar sesión",
+    "templates": "Plantillas",
+    "profile": "Perfil",
+    "people": "Personas"
+  },
+  "footer": {
+    "about": "Sobre nosotros",
+    "contact": "Contacto",
+    "news": "Noticias",
+    "terms": "Términos",
+    "privacy": "Privacidad",
+    "api": "API",
+    "roadmap": "Hoja de ruta"
+  },
+  "main": {
+    "prepare": "Prepara tus campañas.",
+    "createCharacters": "Crea personajes.",
+    "connectPlayers": "Conecta con jugadores.",
+    "createCampaign": "Crear campaña",
+    "yourCampaigns": "Tus campañas",
+    "orSearchTemplate": "O busca una plantilla…",
+    "templates": "Plantillas"
+  },
+  "auth": {
+    "welcomeBack": "¡Bienvenido de nuevo!",
+    "createAccount": "Crea una cuenta",
+    "usernameEmail": "Usuario / Email",
+    "username": "Usuario",
+    "email": "Email",
+    "password": "Contraseña",
+    "confirmPassword": "Confirma la contraseña",
+    "logIn": "Iniciar sesión",
+    "createAccountAction": "Crear cuenta",
+    "newHere": "¿Eres nuevo? ¡Crea una cuenta!",
+    "alreadyHave": "¿Ya tienes cuenta? Inicia sesión",
+    "passwordsDontMatch": "Las contraseñas no coinciden"
+  },
+  "newCampaign": {
+    "title": "Nueva campaña",
+    "name": "Nombre de la campaña",
+    "namePlaceholder": "Mi campaña",
+    "createFromTemplate": "Crear desde plantilla",
+    "useTemplate": "Usar plantilla"
+  },
+  "profile": {
+    "campaigns": "Campañas",
+    "editProfile": "Editar perfil",
+    "finishEdit": "Terminar edición"
+  },
+  "chapterOrCharacter": {
+    "heading": "¿Qué quieres abrir?",
+    "chapters": "Capítulos",
+    "characters": "Personajes",
+    "goToChapters": "Ir al selector de capítulos",
+    "goToCharacters": "Ir al selector de personajes"
+  },
+  "chapterSelector": {
+    "addChapter": "Añadir nuevo capítulo",
+    "emptyTitle": "Todavía no hay capítulos",
+    "emptyHint": "Pulsa el botón \"+\" para crear el primero.",
+    "confirmDeleteTitle": "¿Eliminar capítulo?",
+    "confirmDeleteDescription": "Esta acción no se puede deshacer. Se eliminará \"{{title}}\".",
+    "editName": "Editar nombre",
+    "untitledChapter": "Capítulo sin título {{number}}"
+  },
+  "characterSelector": {
+    "playable": "Jugables",
+    "enemies": "Enemigos",
+    "searchCharacter": "O busca un personaje…"
+  },
+  "characterSheet": {
+    "character": "Personaje",
+    "changeImage": "Cambiar imagen",
+    "class": "Clase",
+    "level": "Nivel",
+    "race": "Raza",
+    "alignment": "Alineamiento",
+    "background": "Trasfondo",
+    "armor": "ARM",
+    "hp": "HP",
+    "movement": "Movimiento",
+    "damageDice": "Dado de daño",
+    "initiative": "Iniciativa",
+    "str": "FUE",
+    "dex": "DES",
+    "con": "CON",
+    "int": "INT",
+    "wis": "SAB",
+    "cha": "CAR",
+    "savingThrows": "Tiros de salvación",
+    "proficiency": "Competencia",
+    "skills": "Habilidades",
+    "inventory": "Inventario",
+    "inventorySlots": "Espacios de inventario",
+    "spells": "Conjuros",
+    "features": "Rasgos y dotes",
+    "description": "Descripción / Trasfondo",
+    "saveChanges": "Guardar cambios",
+    "proficiencyBonus": "Bonificador de competencia"
+  },
+  "chapter": {
+    "events": "Eventos",
+    "map": "Mapa",
+    "fullscreen": "Pantalla completa",
+    "exitFullscreen": "Salir de pantalla completa",
+    "nextChapter": "Ir al siguiente capítulo",
+    "finalChapter": "Fin de la campaña",
+    "tools": {
+      "select": "Seleccionar / Mover",
+      "pan": "Mover todo",
+      "text": "Editar texto",
+      "create": "Crear bloque",
+      "connect": "Conectar bloques (clic o arrastrar)",
+      "zoom": "Zoom (mantén y arrastra)",
+      "notes": "Modo notas",
+      "character": "Añadir personaje",
+      "terrain": "Añadir relieve / objeto",
+      "enemy": "Añadir enemigo",
+      "simplify": "Simplificar vista"
+    },
+    "eventTypes": {
+      "combate": "Combate",
+      "historia": "Historia",
+      "mision": "Misión",
+      "exploracion": "Exploración",
+      "dialogo": "Diálogo"
+    },
+    "emptyNotes": "No hay eventos que mostrar. Vuelve al modo canvas para crear alguno.",
+    "mapCols": "Columnas",
+    "mapRows": "Filas",
+    "removeSelection": "Eliminar selección",
+    "mapCategories": {
+      "character": "Personaje",
+      "enemy": "Criatura",
+      "boss": "Jefe",
+      "terrain": "Relieve",
+      "object": "Objeto",
+      "trap": "Trampa"
+    }
+  },
+  "undoRedo": {
+    "undone": "Deshecho",
+    "redone": "Rehecho"
+  },
+  "social": {
+    "follow": "Seguir",
+    "unfollow": "Dejar de seguir"
+  },
+  "users": {
+    "title": "Personas",
+    "empty": "No hay usuarios que mostrar.",
+    "searchPlaceholder": "Buscar personas…",
+    "tab": {
+      "all": "Todos",
+      "following": "Siguiendo",
+      "followers": "Seguidores"
+    }
+  },
+  "members": {
+    "title": "Miembros",
+    "currentMembers": "Miembros actuales",
+    "addMember": "Añadir miembro",
+    "searchPlaceholder": "Usuario a añadir…",
+    "you": "tú",
+    "role": "Rol",
+    "roleDm": "DM",
+    "roleCoDm": "Co-DM",
+    "rolePlayer": "Jugador",
+    "remove": "Eliminar",
+    "assignCharacter": "Asignar personaje",
+    "noCharacter": "Sin personaje",
+    "notFound": "No hay ningún usuario con ese nombre.",
+    "alreadyMember": "Ya es miembro de esta campaña.",
+    "inviteLink": "Enlace de invitación",
+    "generateLink": "Generar enlace",
+    "copy": "Copiar",
+    "copied": "¡Copiado!",
+    "revoke": "Revocar",
+    "inviteHint": "Quien tenga el enlace se unirá como Jugador. Revócalo para desactivarlo.",
+    "shareOn": "Compartir en:",
+    "shareText": "Únete a mi campaña de D&D \"{{name}}\" en DNDPlanner"
+  },
+  "invite": {
+    "title": "Te han invitado a \"{{name}}\"",
+    "body": "Únete a esta campaña para ver sus capítulos, personajes y eventos como Jugador.",
+    "members": "Miembros",
+    "chapters": "Capítulos",
+    "join": "Unirse como Jugador",
+    "loginToJoin": "Inicia sesión para unirte",
+    "joinedTitle": "Te has unido a \"{{name}}\"",
+    "joinedBody": "¡Bienvenido! Ya puedes ver la campaña en tu perfil.",
+    "openCampaign": "Abrir campaña",
+    "invalidTitle": "Invitación inválida",
+    "invalidBody": "Este enlace de invitación ya no es válido o el DM lo ha revocado.",
+    "goHome": "Ir al inicio"
+  },
+  "annotations": {
+    "heading": "Anotaciones",
+    "characterHeading": "Anotaciones de jugadores",
+    "chapterHeading": "Notas del capítulo",
+    "empty": "Todavía no hay anotaciones.",
+    "placeholder": "Deja una nota… (usa ||spoiler|| si quieres ocultar una parte)",
+    "send": "Enviar"
+  },
+  "spoiler": {
+    "mark": "Marcar como spoiler",
+    "revealAll": "Revelar todos los spoilers",
+    "hideAll": "Ocultar todos los spoilers"
+  }
+}
