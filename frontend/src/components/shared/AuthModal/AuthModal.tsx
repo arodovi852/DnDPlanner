@@ -1,4 +1,5 @@
 import { useEffect, useState, type FormEvent } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Button } from '../Button';
 import { useAuth } from '../../../context/AuthContext';
 
@@ -20,11 +21,9 @@ export interface AuthModalProps {
  * Modal de autenticación. Gestiona dos modos:
  * - login: campos Username/Email + Password.
  * - register: Username, Email, Password, Confirm password.
- *
- * Al enviar correctamente llama a `login()` del AuthContext y cierra
- * el modal. La integración con el backend se añadirá en el futuro.
  */
 export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalProps) {
+  const { t } = useTranslation();
   const { login } = useAuth();
   const [mode, setMode] = useState<AuthMode>(initialMode);
   const [username, setUsername] = useState('');
@@ -33,7 +32,6 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  // Resetea el formulario cada vez que se abre.
   useEffect(() => {
     if (open) {
       setMode(initialMode);
@@ -45,7 +43,6 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
     }
   }, [open, initialMode]);
 
-  // Cierra con Escape (accesibilidad)
   useEffect(() => {
     if (!open) return;
     const handleKey = (event: KeyboardEvent) => {
@@ -63,12 +60,11 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
 
     if (mode === 'register') {
       if (password !== confirmPassword) {
-        setError('Las contraseñas no coinciden');
+        setError(t('auth.passwordsDontMatch'));
         return;
       }
       login({ username, email });
     } else {
-      // En login `username` puede ser username o email.
       login({ username });
     }
 
@@ -76,7 +72,7 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
   };
 
   const isLogin = mode === 'login';
-  const title = isLogin ? 'Welcome back!' : 'Create an account';
+  const title = isLogin ? t('auth.welcomeBack') : t('auth.createAccount');
 
   return (
     <div
@@ -95,7 +91,7 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
         <button
           type="button"
           className="auth-modal__close"
-          aria-label="Cerrar"
+          aria-label={t('common.close')}
           onClick={onClose}
         >
           ×
@@ -109,20 +105,20 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
           <input
             className="auth-modal__field"
             type="text"
-            placeholder={isLogin ? 'Username / Email' : 'Username'}
-            aria-label={isLogin ? 'Nombre de usuario o email' : 'Nombre de usuario'}
+            placeholder={isLogin ? t('auth.usernameEmail') : t('auth.username')}
+            aria-label={isLogin ? t('auth.usernameEmail') : t('auth.username')}
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            autoComplete={isLogin ? 'username' : 'username'}
+            autoComplete="username"
           />
 
           {!isLogin && (
             <input
               className="auth-modal__field"
               type="email"
-              placeholder="Email"
-              aria-label="Email"
+              placeholder={t('auth.email')}
+              aria-label={t('auth.email')}
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
@@ -133,8 +129,8 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
           <input
             className="auth-modal__field"
             type="password"
-            placeholder="Password"
-            aria-label="Contraseña"
+            placeholder={t('auth.password')}
+            aria-label={t('auth.password')}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
@@ -145,8 +141,8 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
             <input
               className="auth-modal__field"
               type="password"
-              placeholder="Confirm password"
-              aria-label="Confirmar contraseña"
+              placeholder={t('auth.confirmPassword')}
+              aria-label={t('auth.confirmPassword')}
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
@@ -162,7 +158,7 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
 
           <div className="auth-modal__actions">
             <Button type="submit" size="small">
-              {isLogin ? 'Log In' : 'Create account'}
+              {isLogin ? t('auth.logIn') : t('auth.createAccountAction')}
             </Button>
           </div>
         </form>
@@ -172,9 +168,7 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
           className="auth-modal__switch"
           onClick={() => setMode(isLogin ? 'register' : 'login')}
         >
-          {isLogin
-            ? 'New here? Create an account!'
-            : 'Already have an account? Log in'}
+          {isLogin ? t('auth.newHere') : t('auth.alreadyHave')}
         </button>
       </div>
     </div>

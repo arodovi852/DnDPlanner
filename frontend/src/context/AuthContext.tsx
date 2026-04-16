@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useState,
   type ReactNode,
@@ -9,10 +10,13 @@ import {
 
 /**
  * Representación mínima de un usuario autenticado.
- * Se mantiene a propósito muy ligera: el contrato real con el backend
- * se integrará cuando exista endpoint /auth.
+ *
+ * El `id` es estable (persiste a través de logouts/logins del mismo usuario).
+ * Mientras no haya backend, usamos una derivación determinista del username
+ * para que dos usuarios con el mismo username (en este dispositivo) compartan id.
  */
 export interface AuthUser {
+  id: string;
   username: string;
   email?: string;
 }
@@ -20,22 +24,56 @@ export interface AuthUser {
 interface AuthContextValue {
   user: AuthUser | null;
   isAuthenticated: boolean;
-  login: (user: AuthUser) => void;
+  login: (input: { username: string; email?: string }) => void;
   logout: () => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-/**
- * Proveedor de autenticación. Guarda el usuario en memoria.
- * Al integrar el backend, reemplazar los métodos `login`/`logout`
- * por llamadas al API + almacenamiento de token JWT.
- */
-export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(null);
+const STORAGE_KEY = 'dndplanner:user';
 
-  const login = useCallback((nextUser: AuthUser) => {
-    setUser(nextUser);
+function slugifyId(name: string): string {
+  return `user-${name
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'anon'}`;
+}
+
+function readStoredUser(): AuthUser | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw = window.localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as Partial<AuthUser>;
+    if (!parsed.username) return null;
+    return {
+      id: parsed.id ?? slugifyId(parsed.username),
+      username: parsed.username,
+      email: parsed.email,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export function AuthProvider({ children }: { children: ReactNode }) {
+  const [user, setUser] = useState<AuthUser | null>(() => readStoredUser());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (user) {
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
+    } else {
+      window.localStorage.removeItem(STORAGE_KEY);
+    }
+  }, [user]);
+
+  const login = useCallback((input: { username: string; email?: string }) => {
+    setUser({
+      id: slugifyId(input.username),
+      username: input.username,
+      email: input.email,
+    });
   }, []);
 
   const logout = useCallback(() => {
@@ -55,9 +93,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-/**
- * Hook para consumir el contexto de autenticación.
- */
 export function useAuth(): AuthContextValue {
   const ctx = useContext(AuthContext);
   if (!ctx) {
