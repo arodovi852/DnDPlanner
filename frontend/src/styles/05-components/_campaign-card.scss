@@ -2,7 +2,8 @@
 // Components / Campaign Card
 // ----------------------------------------------------------------------------
 // Tarjeta cuadrada de campaña con swap de imagen en hover/focus.
-// Metodología BEM.
+// En hover se resalta además con un halo rosa claro para que el borde
+// sea claramente visible sobre el fondo oscuro.
 // ============================================================================
 
 .campaign-card {
@@ -20,7 +21,10 @@
   cursor: pointer;
   transition:
     transform var(--transition-base),
-    box-shadow var(--transition-base);
+    box-shadow var(--transition-base),
+    outline-color var(--transition-base);
+  outline: 4px solid transparent;
+  outline-offset: 2px;
 
   &__image-wrapper {
     position: relative;
@@ -41,11 +45,13 @@
     opacity: 0;
   }
 
-  // Hover + focus (accesibilidad teclado)
+  // Hover / focus: agrandar + halo claro alrededor de la tarjeta
+  // (outline en rosa claro) para que el borde quede muy visible.
   &:hover,
   &:focus-visible {
     transform: scale(1.06);
     box-shadow: 0 8px 18px var(--color-shadow-strong);
+    outline-color: var(--color-textbox-light-hover);
 
     .campaign-card__image--base {
       opacity: 0;
@@ -56,27 +62,31 @@
     }
   }
 
-  // Variante "crear nueva campaña": tarjeta crema con un gran "+".
+  // --------------------------------------------------------------------------
+  // Variante "crear nueva campaña"
+  // --------------------------------------------------------------------------
+  // Fondo crema con borde oscuro MARCADO (mismo grosor que el resto
+  // de tarjetas), y un "+" SVG con cuerpo rosa + borde interior más
+  // oscuro para que destaque sobre el crema.
   &--plus {
     background-color: var(--color-surface-cream);
-    border-color: var(--color-primary);
+    border-color: var(--color-border);
+    // Al no tener imagen de hover, "desactivamos" el swap.
 
     &:hover,
     &:focus-visible {
       background-color: var(--color-surface);
+      outline-color: var(--color-primary);
     }
   }
 
   &__plus-icon {
     position: absolute;
     inset: 0;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-primary);
-    font-size: 5rem;
-    font-family: var(--font-family-base);
-    line-height: 1;
+    width: 100%;
+    height: 100%;
+    padding: 20%;
     user-select: none;
+    pointer-events: none;
   }
 }

@@ -1,0 +1,27 @@
+// ============================================================================
+// Components / New Campaign Modal
+// ----------------------------------------------------------------------------
+// Hereda el shell visual de AuthModal y añade un selector de plantillas.
+// ============================================================================
+
+.new-campaign-modal {
+  &__template-label {
+    display: block;
+    margin: var(--space-sm) 0 0;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-on-chrome);
+    text-align: left;
+  }
+
+  &__select {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+  }
+}

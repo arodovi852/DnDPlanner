@@ -27,9 +27,28 @@ export function CreateCampaignCard({ onCreate }: CreateCampaignCardProps) {
       onClick={onCreate}
       onKeyDown={handleKeyDown}
     >
-      <span className="campaign-card__plus-icon" aria-hidden="true">
-        +
-      </span>
+      {/* Uso SVG en lugar de "+" como texto para garantizar un trazo
+          grueso con borde oscuro visible independiente de la fuente. */}
+      <svg
+        className="campaign-card__plus-icon"
+        viewBox="0 0 64 64"
+        aria-hidden="true"
+      >
+        <path
+          d="M32 12 L32 52 M12 32 L52 32"
+          stroke="var(--color-primary)"
+          strokeWidth="14"
+          strokeLinecap="round"
+          fill="none"
+        />
+        <path
+          d="M32 12 L32 52 M12 32 L52 32"
+          stroke="var(--color-primary-dark)"
+          strokeWidth="4"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </svg>
     </div>
   );
 }

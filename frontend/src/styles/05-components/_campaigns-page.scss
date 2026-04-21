@@ -1,0 +1,33 @@
+// ============================================================================
+// Components / Campaigns Page
+// ----------------------------------------------------------------------------
+// Listado completo de campañas guardadas del usuario (/campaigns).
+// ============================================================================
+
+.campaigns-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: var(--space-xl) clamp(3rem, 10vw, 8rem);
+
+  &__title {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-on-chrome);
+    margin: 0;
+  }
+
+  &__grid {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+    justify-content: flex-start;
+  }
+}
+
+// Estado vacío para cuando el usuario todavía no tiene campañas.
+.profile-page__empty {
+  font-family: var(--font-family-base);
+  color: var(--color-text-on-chrome);
+  opacity: 0.6;
+}
