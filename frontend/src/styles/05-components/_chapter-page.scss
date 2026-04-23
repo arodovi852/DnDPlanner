@@ -1,0 +1,738 @@
+// ============================================================================
+// Components / Chapter Page
+// ----------------------------------------------------------------------------
+// Layout "carpeta":
+//   · Pestañas Events/Map a la izquierda, apoyadas sobre el marco.
+//   · Marco rosa grueso (`__folder`) que ocupa TODA la altura hasta el
+//     footer y tiene forma aproximadamente cuadrada en desktop.
+//   · Interior crema (`__canvas`) con borde propio donde vive el
+//     contenido (events canvas o map canvas).
+// ============================================================================
+
+.chapter-page {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  padding: var(--space-md) clamp(1rem, 3vw, 3rem) var(--space-md);
+}
+
+.chapter-page__tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-left: var(--space-lg);
+  // Las pestañas apoyan su base sobre el borde superior del folder.
+  margin-bottom: -6px;
+  position: relative;
+  z-index: 2;
+}
+
+.chapter-page__tab {
+  padding: var(--space-sm) var(--space-xl);
+  border: 6px solid var(--color-border);
+  border-bottom: none;
+  border-top-left-radius: var(--radius-lg);
+  border-top-right-radius: var(--radius-lg);
+  background-color: var(--color-textbox-dark);
+  color: var(--color-text-inverse);
+  font-family: var(--font-family-heading);
+  font-size: var(--font-size-lg);
+  letter-spacing: 0.03em;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+
+  &:hover:not(&--active),
+  &:focus-visible:not(&--active) {
+    background-color: var(--color-textbox-dark-hover);
+  }
+
+  &--active {
+    // La pestaña activa usa el mismo rosa claro del folder y "absorbe"
+    // el borde inferior para fundirse visualmente con el marco.
+    background-color: var(--color-textbox-light);
+    color: var(--color-text);
+    // Un poco más abajo para tapar la línea del folder.
+    padding-bottom: calc(var(--space-sm) + 6px);
+  }
+}
+
+.chapter-page__folder {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: clamp(var(--space-md), 2vw, var(--space-xl));
+  background-color: var(--color-textbox-light);
+  border: 6px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: 0 6px 16px var(--color-shadow);
+  width: 100%;
+
+  // En fullscreen la carpeta ocupa toda la pantalla.
+  &:fullscreen {
+    border-radius: 0;
+    padding: var(--space-lg);
+    background-color: var(--color-textbox-light);
+  }
+}
+
+.chapter-page__fullscreen {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  z-index: 5;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: 3px solid var(--color-border);
+  border-radius: 50%;
+  background-color: var(--color-surface-cream);
+  color: var(--color-text);
+  cursor: pointer;
+  transition: transform var(--transition-fast), background-color var(--transition-fast);
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    transform: scale(1.05);
+  }
+}
+
+.chapter-page__canvas {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  background-color: var(--color-surface-cream);
+  border: 5px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+}
+
+// ============================================================================
+// Events Canvas
+// ============================================================================
+
+.events-canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  &__viewport {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    background-color: var(--color-surface-cream);
+    touch-action: none;
+    user-select: none;
+
+    &--tool-select { cursor: default; }
+    &--tool-pan    { cursor: grab; }
+    &--tool-text   { cursor: text; }
+    &--tool-create { cursor: crosshair; }
+    &--tool-connect { cursor: cell; }
+    &--tool-zoom   { cursor: ns-resize; }
+  }
+
+  &__world {
+    position: absolute;
+    inset: 0;
+    transform-origin: 0 0;
+  }
+
+  &__edges {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 4000px;
+    height: 4000px;
+    pointer-events: none;
+    overflow: visible;
+    color: var(--color-border);
+  }
+
+  &__block {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    padding: 0;
+    border: 4px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-textbox-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    line-height: 1.3;
+    box-shadow: 0 4px 8px var(--color-shadow);
+    cursor: inherit;
+    overflow: hidden;
+
+    &--selected {
+      box-shadow: 0 0 0 4px var(--color-primary), 0 4px 8px var(--color-shadow);
+    }
+
+    &--editing {
+      box-shadow: 0 0 0 3px var(--color-focus-ring), 0 4px 8px var(--color-shadow);
+    }
+  }
+
+  // Cabecera (tipo + caret) — clicable: el <select> invisible cubre todo
+  // el área y abre el menú nativo para cambiar el tipo.
+  &__block-header {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: 0.45rem 0.6rem;
+    background-color: var(--color-textbox-light);
+    color: var(--color-text-inverse);
+    border-bottom: 3px solid var(--color-border);
+  }
+
+  &__block-type-label {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    font-weight: bold;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+
+  &__block-caret {
+    font-size: var(--font-size-sm);
+    opacity: 0.9;
+  }
+
+  &__block-type-select {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    opacity: 0;
+    cursor: pointer;
+    border: none;
+    background: transparent;
+
+    // Placeholder para el tamaño en navegadores que no soportan inset 100%
+    // con <select>. Da hit-area completo.
+    appearance: none;
+  }
+
+  &__block-body {
+    flex: 1;
+    min-height: 0;
+    padding: var(--space-sm) var(--space-md);
+    overflow: hidden;
+  }
+
+  &__block-text {
+    margin: 0;
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 4;
+  }
+
+  &__block-edit {
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    line-height: 1.3;
+    resize: none;
+
+    &:focus-visible {
+      outline: none;
+    }
+  }
+
+  // Terminal "Ir al siguiente capítulo"
+  &__terminal {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.4rem;
+    padding: var(--space-sm);
+    border: 5px dashed var(--color-primary);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    box-shadow: 0 4px 12px var(--color-shadow);
+    transition:
+      transform var(--transition-fast),
+      background-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary);
+      transform: scale(1.04);
+      outline: none;
+    }
+  }
+
+  &__terminal-arrow {
+    font-size: 2rem;
+    line-height: 1;
+  }
+
+  &__terminal-label {
+    text-align: center;
+    letter-spacing: 0.03em;
+  }
+
+  // --------------------------------------------------------------------------
+  // Toolbar inferior (compartida con Map canvas)
+  // --------------------------------------------------------------------------
+  &__toolbar {
+    position: absolute;
+    left: 50%;
+    bottom: var(--space-lg);
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-sm) var(--space-md);
+    border: 4px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-textbox-dark);
+    box-shadow: 0 4px 12px var(--color-shadow);
+    z-index: 5;
+  }
+
+  &__tool {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.25rem;
+    height: 2.25rem;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    transition:
+      background-color var(--transition-fast),
+      transform var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-textbox-dark-hover);
+      transform: scale(1.08);
+    }
+
+    &--active {
+      background-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+  }
+
+  &__create-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__create-select {
+    padding: var(--space-xs) var(--space-sm);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+  }
+
+  // --------------------------------------------------------------------------
+  // Modo notas
+  // --------------------------------------------------------------------------
+  &__notes {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-lg);
+    background-color: var(--color-surface);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  &__notes-empty {
+    margin: auto;
+    color: var(--color-text-muted);
+  }
+
+  &__note {
+    display: grid;
+    grid-template-columns: auto auto 1fr;
+    gap: var(--space-sm) var(--space-md);
+    align-items: baseline;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid var(--color-border-soft);
+
+    &--alt {
+      opacity: 0.75;
+      font-style: italic;
+    }
+  }
+
+  &__note-index {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    color: var(--color-primary-dark);
+  }
+
+  &__note-type {
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--color-text-muted);
+  }
+
+  &__note-text {
+    grid-column: 1 / -1;
+    margin: 0;
+    line-height: var(--line-height-base);
+  }
+}
+
+// ============================================================================
+// Map Canvas
+// ============================================================================
+
+.map-canvas {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+
+  &__controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    flex-wrap: wrap;
+    padding: var(--space-sm) var(--space-md);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    background-color: var(--color-surface-cream);
+    border-bottom: 2px solid var(--color-border-soft);
+  }
+
+  &__dim {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-size: var(--font-size-sm);
+
+    input {
+      width: 3.5rem;
+      padding: var(--space-xs);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background-color: var(--color-surface);
+      font-family: var(--font-family-base);
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  &__remove {
+    margin-left: auto;
+    padding: var(--space-xs) var(--space-md);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    font-family: var(--font-family-base);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+  }
+
+  &__viewport {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    // Fondo neutro que contrasta con las líneas del grid.
+    background-color: var(--color-primary-dark);
+    touch-action: none;
+
+    &--tool-pan  { cursor: grab; }
+    &--tool-zoom { cursor: ns-resize; }
+  }
+
+  // Grid posicionado en (0,0); el centrado inicial lo calcula el
+  // componente en useLayoutEffect según el tamaño del viewport.
+  // transform-origin: 0 0 → el zoom-at-cursor funciona correctamente.
+  &__grid {
+    position: absolute;
+    left: 0;
+    top: 0;
+    display: grid;
+    gap: 0;
+    transform-origin: 0 0;
+    background-color: var(--color-surface);
+    border: 3px solid var(--color-border);
+    box-shadow: 0 4px 14px var(--color-shadow-strong);
+  }
+
+  &__cell {
+    width: 2rem;
+    height: 2rem;
+    padding: 0;
+    // Líneas más marcadas para que contrasten con el fondo.
+    border: 1px solid rgba(61, 43, 43, 0.45);
+    background: transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    &:hover {
+      background-color: rgba(255, 127, 168, 0.25);
+    }
+
+    &--selected {
+      outline: 3px solid var(--color-focus-ring);
+      outline-offset: -3px;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Glifos
+  // --------------------------------------------------------------------------
+  &__glyph {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 80%;
+    height: 80%;
+
+    &--character {
+      border-radius: 50%;
+      background-color: #2ecc71;
+      border: 2px solid #145a32;
+    }
+
+    &--enemy {
+      width: 0;
+      height: 0;
+      border-left: 0.6rem solid transparent;
+      border-right: 0.6rem solid transparent;
+      border-bottom: 1rem solid #e74c3c;
+      filter: drop-shadow(0 0 1px #641e16);
+    }
+
+    &--boss {
+      filter: drop-shadow(0 0 6px #ffffff) drop-shadow(0 0 2px #ffffff);
+    }
+
+    &--boundary {
+      background-color: #000000;
+      width: 100%;
+      height: 100%;
+    }
+
+    &--wall {
+      background-color: #7f7f7f;
+      width: 100%;
+      height: 100%;
+    }
+
+    &--object {
+      color: #f1c40f;
+      font-size: 1.25rem;
+      text-shadow: 0 0 2px #7d6608;
+    }
+
+    &--trap {
+      color: #c0392b;
+      font-size: 1.25rem;
+      font-weight: bold;
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Picker de entidad
+  // --------------------------------------------------------------------------
+  &__picker {
+    position: absolute;
+    top: 4.5rem;
+    right: var(--space-md);
+    width: 14rem;
+    padding: var(--space-sm);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-chrome);
+    color: var(--color-text-inverse);
+    box-shadow: 0 6px 16px var(--color-shadow);
+    z-index: 6;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  &__picker-search {
+    width: 100%;
+    padding: var(--space-xs) var(--space-sm);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+  }
+
+  &__picker-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    max-height: 10rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__picker-empty {
+    padding: var(--space-xs);
+    font-size: var(--font-size-sm);
+    opacity: 0.7;
+    text-align: center;
+  }
+
+  &__picker-item {
+    width: 100%;
+    text-align: left;
+    padding: var(--space-xs) var(--space-sm);
+    border: none;
+    border-radius: var(--radius-sm);
+    background: transparent;
+    color: inherit;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-textbox-dark-hover);
+    }
+
+    &--active {
+      background-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Tooltip (hover sobre casilla ocupada)
+  // --------------------------------------------------------------------------
+  &__tooltip {
+    position: absolute;
+    pointer-events: none;
+    padding: var(--space-xs) var(--space-sm);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-chrome);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    box-shadow: 0 4px 10px var(--color-shadow-strong);
+    z-index: 10;
+    white-space: nowrap;
+  }
+
+  // --------------------------------------------------------------------------
+  // Popup de stats (doble click derecho sobre personaje/enemigo)
+  // --------------------------------------------------------------------------
+  &__stats-popup {
+    position: absolute;
+    top: var(--space-lg);
+    left: var(--space-lg);
+    width: 16rem;
+    padding: var(--space-md);
+    border: 4px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-chrome);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    box-shadow: 0 8px 20px var(--color-shadow-strong);
+    z-index: 11;
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+
+    label {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: var(--space-sm);
+      font-size: var(--font-size-sm);
+
+      input {
+        width: 5rem;
+        padding: var(--space-xs);
+        border: 2px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background-color: var(--color-surface-cream);
+        color: var(--color-text);
+        font-family: var(--font-family-base);
+        text-align: right;
+      }
+    }
+  }
+
+  &__stats-popup-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: var(--space-xs);
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+  }
+
+  &__stats-popup-close {
+    background: transparent;
+    border: none;
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-lg);
+    cursor: pointer;
+    line-height: 1;
+
+    &:hover,
+    &:focus-visible {
+      color: var(--color-primary);
+    }
+  }
+
+  &__stats-popup-note {
+    margin: var(--space-xs) 0 0;
+    font-size: var(--font-size-xs);
+    opacity: 0.7;
+    font-style: italic;
+  }
+}
