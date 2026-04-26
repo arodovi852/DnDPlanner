@@ -1,0 +1,252 @@
+// ============================================================================
+// Components / Members Panel (modal de gestión de miembros)
+// ----------------------------------------------------------------------------
+// Reutiliza el shell .auth-modal y añade secciones: lista de miembros,
+// añadir miembro, enlace de invitación y share-to-socials.
+// ============================================================================
+
+.members-panel {
+  // Ancho mayor que AuthModal: necesitamos espacio para la fila de miembro.
+  max-width: 42rem;
+  width: calc(100% - 2rem);
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding-top: var(--space-md);
+    border-top: 1px solid rgba(255, 255, 255, 0.15);
+
+    &:first-of-type {
+      border-top: none;
+      padding-top: 0;
+    }
+  }
+
+  &__section-title {
+    margin: 0;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-sm);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    color: var(--color-text-inverse);
+    opacity: 0.9;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__row {
+    display: grid;
+    grid-template-columns: minmax(9rem, 1fr) auto auto auto;
+    gap: 0.5rem;
+    align-items: center;
+    padding: 0.4rem 0.6rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-chrome-strong);
+
+    @media (max-width: 36rem) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__info {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    min-width: 0;
+  }
+
+  &__name {
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__role,
+  &__character {
+    padding: 0.2rem 0.45rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    max-width: 9rem;
+
+    &:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
+  }
+
+  &__remove {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-size: 1rem;
+    line-height: 1;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+  }
+
+  &__add {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  &__suggestions {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.35rem;
+  }
+
+  &__suggestion {
+    padding: 0.2rem 0.55rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary);
+    }
+  }
+
+  &__error {
+    margin: 0;
+    color: var(--color-primary-hover);
+    font-size: var(--font-size-xs);
+  }
+
+  &__link-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 0.5rem;
+    align-items: center;
+
+    @media (max-width: 34rem) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__revoke {
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    padding: 0.25rem 0.6rem;
+    background-color: transparent;
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: rgba(255, 255, 255, 0.1);
+    }
+  }
+
+  &__share-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-top: 0.35rem;
+  }
+
+  &__share-label {
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-xs);
+    opacity: 0.85;
+    margin-right: 0.25rem;
+  }
+
+  &__share {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.25rem 0.7rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    font-weight: 600;
+    text-decoration: none;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary);
+    }
+  }
+
+  &__hint {
+    margin: 0;
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-xs);
+    opacity: 0.8;
+    font-style: italic;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Botón "Follow / Unfollow"
+// ----------------------------------------------------------------------------
+.follow-button {
+  padding: 0.2rem 0.6rem;
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-family: var(--font-family-base);
+  font-size: var(--font-size-xs);
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--color-primary-hover);
+  }
+
+  &--following {
+    background-color: transparent;
+    color: var(--color-text-inverse);
+
+    &:hover,
+    &:focus-visible {
+      background-color: rgba(255, 255, 255, 0.12);
+    }
+  }
+}

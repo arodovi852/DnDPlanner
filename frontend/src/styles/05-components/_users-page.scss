@@ -1,0 +1,86 @@
+// ============================================================================
+// Components / Users Page (/users)
+// ============================================================================
+
+.users-page {
+  max-width: 48rem;
+  margin: 0 auto;
+  padding: var(--space-xl) clamp(1rem, 4vw, 3rem);
+  color: var(--color-text-on-chrome);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-inverse);
+  }
+
+  &__tabs {
+    display: flex;
+    gap: 0.4rem;
+    border-bottom: 3px solid var(--color-border);
+  }
+
+  &__tab {
+    padding: 0.35rem 0.9rem;
+    border: 3px solid var(--color-border);
+    border-bottom: none;
+    border-radius: var(--radius-md) var(--radius-md) 0 0;
+    background-color: var(--color-chrome-strong);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transform: translateY(3px);
+
+    &--active {
+      background-color: var(--color-primary);
+    }
+  }
+
+  &__search {
+    padding: var(--space-sm) var(--space-md);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+  }
+
+  &__empty {
+    margin: 0;
+    font-style: italic;
+    opacity: 0.75;
+  }
+
+  &__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  &__item {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 0.75rem;
+    align-items: center;
+    padding: 0.5rem 0.75rem;
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-chrome-strong);
+  }
+
+  &__name {
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    font-weight: 600;
+    color: var(--color-text-inverse);
+  }
+}
