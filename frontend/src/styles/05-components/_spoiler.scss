@@ -1,0 +1,113 @@
+// ============================================================================
+// Components / Spoiler (bloques REDACTED)
+// ----------------------------------------------------------------------------
+// La sintaxis `||texto||` se renderiza con tres variantes visuales según
+// el rol del usuario y si el DM lo ha revelado:
+//   · DM siempre ve el texto con un chip oscuro (clicable para toggle).
+//   · Jugador + oculto → barra negra censurada.
+//   · Jugador + revelado → texto normal con fondo amarillento suave.
+// ============================================================================
+
+.spoiler-text {
+  display: inline;
+}
+
+.spoiler-chunk {
+  display: inline-block;
+  padding: 0.05em 0.35em;
+  border-radius: 0.25em;
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  border: none;
+  cursor: default;
+
+  &--dm {
+    background-color: rgba(0, 0, 0, 0.65);
+    color: var(--color-primary-hover);
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-primary);
+    }
+
+    &.spoiler-chunk--revealed {
+      background-color: rgba(255, 211, 77, 0.25);
+      color: var(--color-focus-ring);
+    }
+  }
+
+  &--redacted {
+    background-color: #000;
+    color: #000;
+    user-select: none;
+    letter-spacing: 0.1em;
+  }
+
+  &--revealed-player {
+    background-color: rgba(255, 211, 77, 0.25);
+    color: inherit;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Textarea con "Marcar como spoiler"
+// ----------------------------------------------------------------------------
+.spoiler-textarea {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+
+  &__input {
+    width: 100%;
+    padding: var(--space-sm) var(--space-md);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    line-height: var(--line-height-base);
+    resize: vertical;
+
+    &:focus-visible {
+      outline: 3px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  &__toolbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-inverse);
+    opacity: 0.85;
+  }
+
+  &__mark {
+    padding: 0.25rem 0.65rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    cursor: pointer;
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+    }
+  }
+
+  &__hint code {
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 0 0.3rem;
+    border-radius: 0.2rem;
+  }
+}

@@ -1,0 +1,62 @@
+// ============================================================================
+// Components / Invite Page (/invite/:token)
+// ============================================================================
+
+.invite-page {
+  max-width: 36rem;
+  margin: 0 auto;
+  padding: var(--space-xl) clamp(1rem, 4vw, 3rem);
+  color: var(--color-text-on-chrome);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  align-items: center;
+  text-align: center;
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-inverse);
+  }
+
+  &__body {
+    margin: 0;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    color: var(--color-text-inverse);
+    opacity: 0.9;
+    line-height: var(--line-height-base);
+  }
+
+  &__meta {
+    display: grid;
+    grid-template-columns: auto auto;
+    gap: 0.4rem 1.2rem;
+    padding: var(--space-sm) var(--space-lg);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-chrome-strong);
+    margin: 0;
+
+    dt {
+      font-family: var(--font-family-heading);
+      font-size: var(--font-size-xs);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      opacity: 0.75;
+    }
+
+    dd {
+      margin: 0;
+      font-family: var(--font-family-base);
+      font-size: var(--font-size-base);
+      font-weight: bold;
+    }
+  }
+
+  &__actions {
+    display: flex;
+    gap: var(--space-sm);
+  }
+}
