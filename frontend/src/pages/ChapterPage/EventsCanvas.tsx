@@ -42,7 +42,6 @@ type Tool =
 const BLOCK_WIDTH = 220;
 const BLOCK_HEIGHT = 150;
 const DRAG_THRESHOLD = 5;
-const STORY_TYPE: EventType = 'historia';
 
 // ---------------------------------------------------------------------------
 // Componente principal
@@ -470,52 +469,6 @@ export function EventsCanvas() {
     [blocks, connections]
   );
 
-  // Cadena cronológica ganadora siguiendo las reglas de prioridad.
-  const winningChain = useMemo(
-    () => pickChronologicalChain(blocks, connections),
-    [blocks, connections]
-  );
-
-  // Bloque tras el cual se ancla el botón "Ir al siguiente capítulo":
-  // último Story de la cadena ganadora si lo hay, sino el último bloque.
-  const anchor = useMemo(() => {
-    if (!winningChain || winningChain.length === 0) return null;
-    for (let i = winningChain.length - 1; i >= 0; i--) {
-      if (winningChain[i].type === STORY_TYPE) return winningChain[i];
-    }
-    return winningChain[winningChain.length - 1];
-  }, [winningChain]);
-
-  const { nextChapter, isFinal } = useMemo(() => {
-    if (!activeCampaign || !chapterId) {
-      return { nextChapter: null, isFinal: true };
-    }
-    const idx = activeCampaign.chapters.findIndex((c) => c.id === chapterId);
-    if (idx === -1) return { nextChapter: null, isFinal: true };
-    const next = activeCampaign.chapters[idx + 1] ?? null;
-    return { nextChapter: next, isFinal: next === null };
-  }, [activeCampaign, chapterId]);
-
-  const terminal = anchor
-    ? {
-        x: anchor.x + BLOCK_WIDTH + 60,
-        y: anchor.y,
-        sourceId: anchor.id,
-      }
-    : { x: 360, y: 80, sourceId: null as string | null };
-
-  const handleGoToNext = () => {
-    if (nextChapter) {
-      navigate(`/chapter/${nextChapter.id}`);
-      return;
-    }
-    if (activeCampaign) {
-      navigate('/chapterSelector');
-      return;
-    }
-    navigate('/main');
-  };
-
   const handleChapterSelect = (event: ChangeEvent<HTMLSelectElement>) => {
     const id = event.target.value;
     if (id && id !== chapterId) {
@@ -632,19 +585,6 @@ export function EventsCanvas() {
                 );
               })}
 
-              {anchor && (
-                <line
-                  x1={anchor.x + BLOCK_WIDTH / 2}
-                  y1={anchor.y + BLOCK_HEIGHT / 2}
-                  x2={terminal.x + BLOCK_WIDTH / 2 - 20}
-                  y2={terminal.y + BLOCK_HEIGHT / 2}
-                  stroke="var(--color-primary)"
-                  strokeWidth={3}
-                  strokeDasharray="6 6"
-                  markerEnd="url(#events-arrow)"
-                />
-              )}
-
               {dragCursor && connectFrom && blockById.has(connectFrom) && (
                 <line
                   x1={blockById.get(connectFrom)!.x + BLOCK_WIDTH / 2}
@@ -725,31 +665,6 @@ export function EventsCanvas() {
               );
             })}
 
-            <button
-              type="button"
-              className="events-canvas__terminal"
-              style={{
-                left: terminal.x,
-                top: terminal.y,
-                width: BLOCK_WIDTH,
-                height: BLOCK_HEIGHT,
-              }}
-              onPointerDown={(event) => event.stopPropagation()}
-              onPointerUp={(event) => event.stopPropagation()}
-              onMouseDown={(event) => event.stopPropagation()}
-              onClick={(event) => {
-                event.stopPropagation();
-                event.preventDefault();
-                handleGoToNext();
-              }}
-            >
-              <span className="events-canvas__terminal-arrow" aria-hidden="true">
-                →
-              </span>
-              <span className="events-canvas__terminal-label">
-                {isFinal ? t('chapter.finalChapter') : t('chapter.nextChapter')}
-              </span>
-            </button>
           </div>
         </div>
       )}
@@ -879,133 +794,6 @@ function buildNotesOrder(blocks: Block[], connections: Connection[]): NoteEntry[
     .map((block) => ({ block, isAlt: true }));
 
   return [...mainPath.map((block) => ({ block, isAlt: false })), ...altEntries];
-}
-
-// ---------------------------------------------------------------------------
-// Selección de cadena cronológica para anclar el "siguiente capítulo"
-// ---------------------------------------------------------------------------
-//
-// Reglas de prioridad (de más alta a más baja):
-//   1. Cadena con Story al primer Y al último elemento.
-//   2. Cadena con Story al primero (no al último).
-//   3. Cadena con Story al último (no al primero).
-//   4. Cadena con Story en algún elemento intermedio (ni primero ni último).
-//   5. Cadena más larga sin ningún Story.
-//
-// En caso de empate (misma prioridad y misma longitud) se elige la que
-// contenga más Story en su interior.
-
-function pickChronologicalChain(
-  blocks: Block[],
-  connections: Connection[]
-): Block[] | null {
-  if (blocks.length === 0) return null;
-
-  const adj = new Map<string, string[]>();
-  for (const c of connections) {
-    const list = adj.get(c.from) ?? [];
-    list.push(c.to);
-    adj.set(c.from, list);
-  }
-
-  const incoming = new Map<string, number>();
-  for (const b of blocks) incoming.set(b.id, 0);
-  for (const c of connections) {
-    incoming.set(c.to, (incoming.get(c.to) ?? 0) + 1);
-  }
-
-  // Las cadenas son los caminos simples desde "raíces" (sin entrantes) o,
-  // si no hay raíces (grafo cíclico), desde cualquier nodo.
-  const roots = blocks.filter((b) => (incoming.get(b.id) ?? 0) === 0);
-  const seeds = roots.length > 0 ? roots : blocks;
-
-  // Enumeramos todos los caminos simples maximales que no se puedan extender.
-  const allChains: Block[][] = [];
-  for (const seed of seeds) {
-    enumerateMaximalPaths(seed.id, blocks, adj, allChains);
-  }
-
-  if (allChains.length === 0) {
-    // Sin conexiones cada bloque es su propia cadena (longitud 1).
-    return blocks.length > 0 ? [blocks[0]] : null;
-  }
-
-  let best: Block[] | null = null;
-  let bestKey: ChainKey | null = null;
-
-  for (const chain of allChains) {
-    const key = scoreChain(chain);
-    if (!bestKey || compareChainKey(key, bestKey) > 0) {
-      bestKey = key;
-      best = chain;
-    }
-  }
-
-  return best;
-}
-
-interface ChainKey {
-  priority: number; // 4 mejor → 0 peor
-  length: number;
-  storyCount: number;
-}
-
-function scoreChain(chain: Block[]): ChainKey {
-  const length = chain.length;
-  const firstIsStory = length > 0 && chain[0].type === STORY_TYPE;
-  const lastIsStory = length > 0 && chain[length - 1].type === STORY_TYPE;
-  const hasMiddleStory = chain
-    .slice(1, Math.max(1, length - 1))
-    .some((b) => b.type === STORY_TYPE);
-  const storyCount = chain.filter((b) => b.type === STORY_TYPE).length;
-
-  let priority: number;
-  if (firstIsStory && lastIsStory) priority = 4;
-  else if (firstIsStory) priority = 3;
-  else if (lastIsStory) priority = 2;
-  else if (hasMiddleStory) priority = 1;
-  else priority = 0;
-
-  return { priority, length, storyCount };
-}
-
-function compareChainKey(a: ChainKey, b: ChainKey): number {
-  if (a.priority !== b.priority) return a.priority - b.priority;
-  if (a.length !== b.length) return a.length - b.length;
-  return a.storyCount - b.storyCount;
-}
-
-function enumerateMaximalPaths(
-  startId: string,
-  blocks: Block[],
-  adj: Map<string, string[]>,
-  out: Block[][]
-) {
-  const blockMap = new Map<string, Block>();
-  for (const b of blocks) blockMap.set(b.id, b);
-
-  const stack: Array<{ path: string[]; visited: Set<string> }> = [
-    { path: [startId], visited: new Set([startId]) },
-  ];
-
-  while (stack.length > 0) {
-    const current = stack.pop();
-    if (!current) continue;
-    const lastId = current.path[current.path.length - 1];
-    const next = (adj.get(lastId) ?? []).filter((n) => !current.visited.has(n));
-    if (next.length === 0) {
-      const chain = current.path
-        .map((id) => blockMap.get(id))
-        .filter((b): b is Block => Boolean(b));
-      if (chain.length > 0) out.push(chain);
-      continue;
-    }
-    for (const n of next) {
-      const visited = new Set(current.visited);
-      visited.add(n);
-      stack.push({ path: [...current.path, n], visited });
-    }
-  }
 }
 
 // ---------------------------------------------------------------------------
