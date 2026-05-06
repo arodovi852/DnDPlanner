@@ -1,13 +1,22 @@
 import {
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
+  type ChangeEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
   type WheelEvent as ReactWheelEvent,
 } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUndoableState } from '../../hooks/useUndoableState';
+import {
+  useCampaigns,
+  type Character,
+  type CharacterAttack,
+  type CharacterStats,
+} from '../../context/CampaignContext';
 
 // ---------------------------------------------------------------------------
 // Tipos
@@ -24,19 +33,32 @@ type MapTool =
 
 type EntityCategory = 'character' | 'terrain' | 'enemy';
 
+interface FullEntityStats {
+  hp: number;
+  armor: number;
+  initiative: number;
+  movement?: number;
+  level?: number;
+  damageDice?: string;
+  abilities?: CharacterStats;
+  attacks?: CharacterAttack[];
+}
+
 interface Entity {
   subtype: string;
   category: EntityCategory;
   label: string;
   boss?: boolean;
-  stats?: { hp: number; armor: number; initiative: number };
+  image?: string;
+  stats?: FullEntityStats;
 }
 
 interface EntityOption {
   value: string;
   label: string;
   boss?: boolean;
-  stats?: { hp: number; armor: number; initiative: number };
+  image?: string;
+  stats?: FullEntityStats;
 }
 
 interface MapState {
@@ -45,15 +67,7 @@ interface MapState {
   rows: number;
 }
 
-const CELL_SIZE_PX = 32; // = 2rem
-
-const CHARACTER_OPTIONS: EntityOption[] = [
-  { value: 'player-1', label: 'Player 1', stats: { hp: 20, armor: 14, initiative: 2 } },
-  { value: 'player-2', label: 'Player 2', stats: { hp: 22, armor: 13, initiative: 1 } },
-  { value: 'player-3', label: 'Player 3', stats: { hp: 18, armor: 15, initiative: 3 } },
-  { value: 'npc-mercader', label: 'NPC · Merchant', stats: { hp: 8, armor: 10, initiative: 0 } },
-  { value: 'npc-guardia', label: 'NPC · Guard', stats: { hp: 14, armor: 16, initiative: 1 } },
-];
+const CELL_SIZE_PX = 32;
 
 const TERRAIN_OPTIONS: EntityOption[] = [
   { value: 'boundary', label: 'Boundary' },
@@ -62,39 +76,36 @@ const TERRAIN_OPTIONS: EntityOption[] = [
   { value: 'trap', label: 'Trap' },
 ];
 
-const ENEMY_OPTIONS: EntityOption[] = [
-  { value: 'goblin', label: 'Goblin', stats: { hp: 7, armor: 13, initiative: 2 } },
-  { value: 'orco', label: 'Orc', stats: { hp: 15, armor: 13, initiative: 1 } },
-  { value: 'esqueleto', label: 'Skeleton', stats: { hp: 10, armor: 13, initiative: 2 } },
-  { value: 'dragon', label: 'Boss · Dragon', boss: true, stats: { hp: 120, armor: 19, initiative: 4 } },
-];
-
 const cellKey = (x: number, y: number) => `${x}-${y}`;
+
+function characterToOption(character: Character): EntityOption {
+  return {
+    value: character.id,
+    label: character.name || '—',
+    boss: character.kind === 'enemy' && (character.level ?? 0) >= 10,
+    image: character.image,
+    stats: {
+      hp: character.hp,
+      armor: character.armor,
+      initiative: character.initiative,
+      movement: character.movement,
+      level: character.level,
+      damageDice: character.damageDice,
+      abilities: character.stats,
+      attacks: character.attacks,
+    },
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
 
-/**
- * Editor de mapa.
- *
- * Reglas:
- *   · Tamaño por defecto 15×15, configurable (1–40).
- *   · El mapa se centra al montar el componente calculando el pan
- *     inicial según el tamaño real del viewport. A partir de ese
- *     momento la fórmula de zoom funciona "al punto donde apunta el
- *     cursor" (porque el transform-origin es 0 0 y el pan contiene
- *     la compensación de centrado).
- *   · Click izquierdo con tool de colocación → coloca; mantener +
- *     arrastrar = paint mode.
- *   · Click derecho → elimina; mantener + arrastrar = paint-erase.
- *   · Doble click izquierdo sobre personaje / enemigo → popup stats.
- *   · Hover sobre celda ocupada → tooltip con el nombre + categoría.
- *   · Dos entidades NO comparten celda.
- *   · Undo/redo (Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z) vía useUndoableState.
- */
 export function MapCanvas() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
+  const { chapterId } = useParams<{ chapterId: string }>();
+  const { activeCampaign } = useCampaigns();
 
   const [state, setState] = useUndoableState<MapState>({
     cells: {},
@@ -103,15 +114,26 @@ export function MapCanvas() {
   });
   const { cells, cols, rows } = state;
 
+  const characterOptions = useMemo<EntityOption[]>(() => {
+    return (activeCampaign?.characters ?? [])
+      .filter((c) => c.kind === 'playable')
+      .map(characterToOption);
+  }, [activeCampaign]);
+
+  const enemyOptions = useMemo<EntityOption[]>(() => {
+    return (activeCampaign?.characters ?? [])
+      .filter((c) => c.kind === 'enemy')
+      .map(characterToOption);
+  }, [activeCampaign]);
+
   const [tool, setTool] = useState<MapTool>('select');
-  const [selectedOption, setSelectedOption] = useState<string>(CHARACTER_OPTIONS[0].value);
+  const [selectedOption, setSelectedOption] = useState<string>('');
   const [query, setQuery] = useState('');
 
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
 
-  // Refs y centrado inicial.
   const viewportRef = useRef<HTMLDivElement>(null);
   const didInitialCenterRef = useRef(false);
 
@@ -130,29 +152,27 @@ export function MapCanvas() {
     didInitialCenterRef.current = true;
   });
 
-  // Viewport drag state (pan / zoom-drag).
   const viewportDragRef = useRef<
     | { kind: 'pan'; startPointerX: number; startPointerY: number; startPanX: number; startPanY: number }
     | { kind: 'zoom'; startPointerY: number; startZoom: number; originX: number; originY: number }
     | null
   >(null);
 
-  // Paint / erase state.
   const paintingRef = useRef(false);
   const erasingRef = useRef(false);
+  // Marca si la pulsación actual nació mientras se pintaba — así una
+  // pulsación que termina su gesto de pintura no abre el popup.
+  const justPaintedRef = useRef(false);
 
-  // Tooltip + stats popup.
   const [tooltip, setTooltip] = useState<
     | { x: number; y: number; text: string }
     | null
   >(null);
   const [statsPopup, setStatsPopup] = useState<
-    | { key: string; entity: Entity; stats: NonNullable<Entity['stats']> }
+    | { key: string; entity: Entity; stats: FullEntityStats }
     | null
   >(null);
 
-  // ------------------------------------------------------------------
-  // Helpers
   // ------------------------------------------------------------------
 
   const mutate = (updater: (prev: MapState) => MapState) => setState(updater);
@@ -165,8 +185,11 @@ export function MapCanvas() {
     if (!isPlacementTool(tool)) return;
     const key = cellKey(x, y);
     if (cells[key]) return;
-    const options = pickOptions(tool as EntityCategory);
-    const option = options.find((o) => o.value === selectedOption);
+    const options = pickOptions(tool as EntityCategory, {
+      character: characterOptions,
+      enemy: enemyOptions,
+    });
+    const option = options.find((o) => o.value === selectedOption) ?? options[0];
     if (!option) return;
     setCells({
       ...cells,
@@ -175,6 +198,7 @@ export function MapCanvas() {
         subtype: option.value,
         label: option.label,
         boss: option.boss,
+        image: option.image,
         stats: option.stats,
       },
     });
@@ -189,11 +213,6 @@ export function MapCanvas() {
     if (selectedCellKey === key) setSelectedCellKey(null);
   };
 
-  const selectAt = (x: number, y: number) => {
-    const key = cellKey(x, y);
-    setSelectedCellKey(cells[key] ? key : null);
-  };
-
   const removeSelected = () => {
     if (!selectedCellKey || !cells[selectedCellKey]) return;
     const next = { ...cells };
@@ -205,14 +224,17 @@ export function MapCanvas() {
   const handleToolChange = (nextTool: MapTool) => {
     setTool(nextTool);
     setQuery('');
-    if (nextTool === 'character') setSelectedOption(CHARACTER_OPTIONS[0].value);
-    else if (nextTool === 'terrain') setSelectedOption(TERRAIN_OPTIONS[0].value);
-    else if (nextTool === 'enemy') setSelectedOption(ENEMY_OPTIONS[0].value);
+    setStatsPopup(null);
+    setSelectedCellKey(null);
+    if (nextTool === 'character') {
+      setSelectedOption(characterOptions[0]?.value ?? '');
+    } else if (nextTool === 'terrain') {
+      setSelectedOption(TERRAIN_OPTIONS[0].value);
+    } else if (nextTool === 'enemy') {
+      setSelectedOption(enemyOptions[0]?.value ?? '');
+    }
   };
 
-  // Aplica un zoom nuevo conservando el punto (localX, localY) bajo el
-  // cursor. Funciona porque `__grid` está en `left:0;top:0` con
-  // transform-origin en 0 0: el pan contiene la compensación.
   const applyZoomAtPoint = (nextZoom: number, localX: number, localY: number) => {
     const clampedZoom = clamp(nextZoom, 0.3, 3);
     setPan((prev) => ({
@@ -222,12 +244,19 @@ export function MapCanvas() {
     setZoom(clampedZoom);
   };
 
+  const handleChapterSelect = (event: ChangeEvent<HTMLSelectElement>) => {
+    const id = event.target.value;
+    if (id && id !== chapterId) {
+      navigate(`/chapter/${id}`);
+    }
+  };
+
   // ------------------------------------------------------------------
-  // Handlers del viewport (pan / zoom / wheel)
+  // Handlers del viewport
   // ------------------------------------------------------------------
 
   const handleViewportPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
-    if (event.button !== 0) return; // zoom/pan solo con izquierdo
+    if (event.button !== 0) return;
     if (tool === 'pan') {
       viewportDragRef.current = {
         kind: 'pan',
@@ -293,18 +322,18 @@ export function MapCanvas() {
     x: number,
     y: number
   ) => {
-    // Botón derecho → erase (simple + mantén para borrar varias).
     if (event.button === 2) {
       event.preventDefault();
       erasingRef.current = true;
       removeAt(x, y);
       return;
     }
-
-    // Botón izquierdo con tool de colocación → paint.
     if (event.button === 0 && isPlacementTool(tool)) {
       paintingRef.current = true;
+      justPaintedRef.current = true;
       placeAt(x, y);
+    } else {
+      justPaintedRef.current = false;
     }
   };
 
@@ -318,31 +347,42 @@ export function MapCanvas() {
     }
   };
 
+  // Solo en herramienta "select" tratamos los clics como selección /
+  // apertura de stats. En las demás herramientas el click es parte del
+  // gesto de pintura/borrado/pan/zoom y nunca debe abrir el popup.
   const handleCellClick = (
     event: ReactMouseEvent<HTMLButtonElement>,
     x: number,
     y: number
   ) => {
     event.stopPropagation();
-    if (tool === 'select') selectAt(x, y);
-  };
-
-  const handleCellDoubleClick = (
-    event: ReactMouseEvent<HTMLButtonElement>,
-    x: number,
-    y: number
-  ) => {
+    if (tool !== 'select') return;
+    if (justPaintedRef.current) {
+      // Suelta tras pintar — descartamos.
+      justPaintedRef.current = false;
+      return;
+    }
     const key = cellKey(x, y);
     const entity = cells[key];
-    if (!entity) return;
-    const supportsStats =
-      (entity.category === 'character' || entity.category === 'enemy') &&
-      entity.stats;
-    if (supportsStats && entity.stats) {
-      event.preventDefault();
-      event.stopPropagation();
-      setStatsPopup({ key, entity, stats: { ...entity.stats } });
+    if (!entity) {
+      setSelectedCellKey(null);
+      setStatsPopup(null);
+      return;
     }
+
+    // Si ya estaba seleccionado y la entidad tiene stats → abrir popup.
+    if (selectedCellKey === key) {
+      const supportsStats =
+        (entity.category === 'character' || entity.category === 'enemy') &&
+        entity.stats;
+      if (supportsStats && entity.stats) {
+        setStatsPopup({ key, entity, stats: { ...entity.stats } });
+      }
+      return;
+    }
+
+    setSelectedCellKey(key);
+    setStatsPopup(null);
   };
 
   const handleCellPointerMove = (
@@ -380,7 +420,12 @@ export function MapCanvas() {
 
   const showPicker =
     tool === 'character' || tool === 'terrain' || tool === 'enemy';
-  const pickerList = showPicker ? pickOptions(tool as EntityCategory) : [];
+  const pickerList = showPicker
+    ? pickOptions(tool as EntityCategory, {
+        character: characterOptions,
+        enemy: enemyOptions,
+      })
+    : [];
   const filteredPicker = showPicker
     ? pickerList.filter((o) =>
         o.label.toLowerCase().includes(query.toLowerCase())
@@ -390,6 +435,24 @@ export function MapCanvas() {
   return (
     <div className="map-canvas">
       <div className="map-canvas__controls">
+        {activeCampaign && activeCampaign.chapters.length > 0 && (
+          <label className="map-canvas__chapter-select">
+            <span className="map-canvas__chapter-select-label">
+              {t('chapter.currentChapter')}
+            </span>
+            <select
+              value={chapterId ?? ''}
+              onChange={handleChapterSelect}
+              aria-label={t('chapter.currentChapter')}
+            >
+              {activeCampaign.chapters.map((c, i) => (
+                <option key={c.id} value={c.id}>
+                  {c.title || t('chapterSelector.untitledChapter', { number: i + 1 })}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="map-canvas__dim">
           {t('chapter.mapCols')}
           <input
@@ -473,10 +536,17 @@ export function MapCanvas() {
                   onPointerMove={(e) => handleCellPointerMove(e, x, y)}
                   onPointerLeave={handleCellPointerLeave}
                   onClick={(e) => handleCellClick(e, x, y)}
-                  onDoubleClick={(e) => handleCellDoubleClick(e, x, y)}
                   onContextMenu={(e) => e.preventDefault()}
                 >
                   {entity && <EntityGlyph entity={entity} />}
+                  {entity && entity.stats && (
+                    <span className="map-canvas__stats" aria-hidden="true">
+                      <span className="map-canvas__stats-row">
+                        <span title="HP">♥{entity.stats.hp}</span>
+                        <span title="AC">⛨{entity.stats.armor}</span>
+                      </span>
+                    </span>
+                  )}
                 </button>
               );
             })
@@ -496,6 +566,7 @@ export function MapCanvas() {
         {statsPopup && (
           <StatsPopup
             label={statsPopup.entity.label}
+            image={statsPopup.entity.image}
             stats={statsPopup.stats}
             onChange={(patch) =>
               setStatsPopup((prev) =>
@@ -533,7 +604,17 @@ export function MapCanvas() {
                     }
                     onClick={() => setSelectedOption(option.value)}
                   >
-                    {option.label}
+                    <span className="map-canvas__picker-label">{option.label}</span>
+                    {option.image ? (
+                      <img
+                        className="map-canvas__picker-thumb"
+                        src={option.image}
+                        alt=""
+                        loading="lazy"
+                      />
+                    ) : (
+                      <span className="map-canvas__picker-thumb map-canvas__picker-thumb--placeholder" aria-hidden="true" />
+                    )}
                   </button>
                 </li>
               ))
@@ -602,10 +683,24 @@ function MapToolButton({ current, value, label, onSelect, children }: MapToolBut
 }
 
 function EntityGlyph({ entity }: { entity: Entity }) {
-  if (entity.category === 'character') {
-    return <span className="map-canvas__glyph map-canvas__glyph--character" aria-hidden="true" />;
-  }
-  if (entity.category === 'enemy') {
+  if (entity.category === 'character' || entity.category === 'enemy') {
+    if (entity.image) {
+      return (
+        <img
+          src={entity.image}
+          alt=""
+          className={
+            entity.boss
+              ? 'map-canvas__glyph map-canvas__glyph--portrait map-canvas__glyph--boss'
+              : 'map-canvas__glyph map-canvas__glyph--portrait'
+          }
+          aria-hidden="true"
+        />
+      );
+    }
+    if (entity.category === 'character') {
+      return <span className="map-canvas__glyph map-canvas__glyph--character" aria-hidden="true" />;
+    }
     return (
       <span
         className={
@@ -634,16 +729,29 @@ function EntityGlyph({ entity }: { entity: Entity }) {
 
 interface StatsPopupProps {
   label: string;
-  stats: { hp: number; armor: number; initiative: number };
-  onChange: (patch: Partial<{ hp: number; armor: number; initiative: number }>) => void;
+  image?: string;
+  stats: FullEntityStats;
+  onChange: (patch: Partial<FullEntityStats>) => void;
   onClose: () => void;
 }
 
-function StatsPopup({ label, stats, onChange, onClose }: StatsPopupProps) {
+function StatsPopup({ label, image, stats, onChange, onClose }: StatsPopupProps) {
   const { t } = useTranslation();
+  const ABILITY_KEYS: Array<keyof CharacterStats> = [
+    'str', 'dex', 'con', 'int', 'wis', 'cha',
+  ];
+  const abilities = stats.abilities;
+
   return (
     <div className="map-canvas__stats-popup" role="dialog" aria-label={label}>
       <div className="map-canvas__stats-popup-header">
+        {image && (
+          <img
+            className="map-canvas__stats-popup-image"
+            src={image}
+            alt=""
+          />
+        )}
         <strong>{label}</strong>
         <button
           type="button"
@@ -654,32 +762,111 @@ function StatsPopup({ label, stats, onChange, onClose }: StatsPopupProps) {
           ×
         </button>
       </div>
-      <label>
-        {t('characterSheet.hp')}
-        <input
-          type="number"
-          value={stats.hp}
-          onChange={(e) => onChange({ hp: parseInt(e.target.value) || 0 })}
-        />
-      </label>
-      <label>
-        {t('characterSheet.armor')}
-        <input
-          type="number"
-          value={stats.armor}
-          onChange={(e) => onChange({ armor: parseInt(e.target.value) || 0 })}
-        />
-      </label>
-      <label>
-        {t('characterSheet.initiative')}
-        <input
-          type="number"
-          value={stats.initiative}
-          onChange={(e) => onChange({ initiative: parseInt(e.target.value) || 0 })}
-        />
-      </label>
+
+      <div className="map-canvas__stats-popup-grid">
+        <label>
+          {t('characterSheet.hp')}
+          <input
+            type="number"
+            value={stats.hp}
+            onChange={(e) => onChange({ hp: parseInt(e.target.value) || 0 })}
+          />
+        </label>
+        <label>
+          {t('characterSheet.armor')}
+          <input
+            type="number"
+            value={stats.armor}
+            onChange={(e) => onChange({ armor: parseInt(e.target.value) || 0 })}
+          />
+        </label>
+        <label>
+          {t('characterSheet.initiative')}
+          <input
+            type="number"
+            value={stats.initiative}
+            onChange={(e) => onChange({ initiative: parseInt(e.target.value) || 0 })}
+          />
+        </label>
+        {stats.movement !== undefined && (
+          <label>
+            {t('characterSheet.movement')}
+            <input
+              type="number"
+              value={stats.movement}
+              onChange={(e) =>
+                onChange({ movement: parseInt(e.target.value) || 0 })
+              }
+            />
+          </label>
+        )}
+        {stats.level !== undefined && (
+          <label>
+            {t('characterSheet.level')}
+            <input
+              type="number"
+              value={stats.level}
+              onChange={(e) =>
+                onChange({ level: parseInt(e.target.value) || 0 })
+              }
+            />
+          </label>
+        )}
+        {stats.damageDice !== undefined && (
+          <label>
+            {t('characterSheet.damageDice')}
+            <input
+              type="text"
+              value={stats.damageDice}
+              onChange={(e) => onChange({ damageDice: e.target.value })}
+            />
+          </label>
+        )}
+      </div>
+
+      {abilities && (
+        <div className="map-canvas__stats-popup-abilities">
+          {ABILITY_KEYS.map((key) => (
+            <label key={key}>
+              {t(`characterSheet.${key}`)}
+              <input
+                type="number"
+                value={abilities[key]}
+                onChange={(e) =>
+                  onChange({
+                    abilities: {
+                      ...abilities,
+                      [key]: parseInt(e.target.value) || 0,
+                    },
+                  })
+                }
+              />
+            </label>
+          ))}
+        </div>
+      )}
+
+      {stats.attacks && stats.attacks.length > 0 && (
+        <div className="map-canvas__stats-popup-attacks">
+          <span className="map-canvas__stats-popup-section-label">
+            {t('characterSheet.attacks')}
+          </span>
+          <ul>
+            {stats.attacks.map((a, i) => (
+              <li key={`${a.name}-${i}`}>
+                <strong>{a.name}</strong>
+                {a.attackBonus !== undefined && (
+                  <span> {a.attackBonus >= 0 ? `+${a.attackBonus}` : a.attackBonus}</span>
+                )}
+                {a.damage && <span> · {a.damage}</span>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <p className="map-canvas__stats-popup-note">
-        Solo afecta a esta instancia del mapa.
+        {t('chapter.statsPopupNote')}
       </p>
     </div>
   );
@@ -693,10 +880,18 @@ function isPlacementTool(tool: MapTool): boolean {
   return tool === 'character' || tool === 'terrain' || tool === 'enemy';
 }
 
-function pickOptions(tool: EntityCategory): EntityOption[] {
-  if (tool === 'character') return CHARACTER_OPTIONS;
+interface OptionsByCategory {
+  character: EntityOption[];
+  enemy: EntityOption[];
+}
+
+function pickOptions(
+  tool: EntityCategory,
+  fromCampaign: OptionsByCategory
+): EntityOption[] {
+  if (tool === 'character') return fromCampaign.character;
   if (tool === 'terrain') return TERRAIN_OPTIONS;
-  return ENEMY_OPTIONS;
+  return fromCampaign.enemy;
 }
 
 function entityCategoryLabelKey(entity: Entity): string {

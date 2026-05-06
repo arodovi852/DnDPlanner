@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCampaigns, type Character } from '../context/CampaignContext';
 import { CampaignCard, CreateCampaignCard } from '../components/shared/CampaignCard';
+import { useDndMonsters } from '../hooks/useDndMonsters';
 
 type TabKey = 'playable' | 'enemy';
 
-// Placeholder genéricos para personajes sin imagen propia.
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
 import destinosCruzadosHover from '../assets/campaigns/destinos-cruzados-hover.png';
 import campollano from '../assets/campaigns/campollano.png';
@@ -20,20 +20,21 @@ const FALLBACK_IMAGES = [
   { image: guerra, hoverImage: guerraHover },
 ];
 
+const ASSET_BASE = 'https://www.dnd5eapi.co';
+
 /**
  * Página /characterSelector.
  *
- * Usa el mismo "cuadro/carpeta" que /chapter# con dos pestañas que
- * alternan entre personajes jugables y enemigos. Cada pestaña tiene
- * su propio buscador.
- *
- * El botón "+" crea un personaje vacío en la categoría activa y
- * navega a su ficha /character/:id.
+ * Las dos pestañas alternan entre personajes jugables y enemigos. La
+ * pestaña de enemigos sugiere también monstruos del API D&D 5e (con
+ * imagen) cuando el usuario escribe en el buscador. Al pinchar una
+ * sugerencia se crea un personaje pre-rellenado con sus datos.
  */
 export function CharacterSelectorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeCampaign, addCharacter } = useCampaigns();
+  const { activeCampaign, addCharacter, updateCharacter } = useCampaigns();
+  const { monsters, fetchMonsterDetail } = useDndMonsters();
 
   const [tab, setTab] = useState<TabKey>('playable');
   const [search, setSearch] = useState('');
@@ -49,6 +50,15 @@ export function CharacterSelectorPage() {
     });
   }, [allCharacters, tab, search]);
 
+  const apiSuggestions = useMemo(() => {
+    if (tab !== 'enemy') return [];
+    const query = search.trim().toLowerCase();
+    if (!query) return [];
+    return monsters
+      .filter((m) => m.name.toLowerCase().includes(query))
+      .slice(0, 8);
+  }, [tab, search, monsters]);
+
   const handleCreate = () => {
     if (!activeCampaign) return;
     const character = addCharacter(activeCampaign.id, { kind: tab });
@@ -56,6 +66,28 @@ export function CharacterSelectorPage() {
   };
 
   const handleOpen = (character: Character) => {
+    navigate(`/character/${character.id}`);
+  };
+
+  const handleCreateFromMonster = async (index: string, name: string) => {
+    if (!activeCampaign) return;
+    const character = addCharacter(activeCampaign.id, { kind: 'enemy', name });
+    const detail = await fetchMonsterDetail(index);
+    if (detail) {
+      updateCharacter(activeCampaign.id, character.id, {
+        apiIndex: detail.index,
+        name: detail.name,
+        image: detail.image,
+        armor: detail.armorClass,
+        hp: detail.hitPoints,
+        maxHp: detail.hitPoints,
+        damageDice: detail.hitPointsRoll ?? '1d6',
+        movement: detail.speed,
+        stats: detail.stats,
+        attacks: detail.attacks,
+        level: Math.max(1, Math.round(detail.challengeRating || 1)),
+      });
+    }
     navigate(`/character/${character.id}`);
   };
 
@@ -134,6 +166,57 @@ export function CharacterSelectorPage() {
               onChange={(e) => setSearch(e.target.value)}
               aria-label={t('common.search')}
             />
+
+            {(filtered.length > 0 || apiSuggestions.length > 0) && search.trim() && (
+              <ul className="character-selector__suggestions">
+                {filtered.map((character) => (
+                  <li key={`local-${character.id}`}>
+                    <button
+                      type="button"
+                      className="character-selector__suggestion"
+                      onClick={() => handleOpen(character)}
+                    >
+                      <span className="character-selector__suggestion-name">
+                        {character.name || t('common.untitled')}
+                      </span>
+                      {character.image ? (
+                        <img
+                          className="character-selector__suggestion-image"
+                          src={character.image}
+                          alt=""
+                          loading="lazy"
+                        />
+                      ) : (
+                        <span className="character-selector__suggestion-placeholder" aria-hidden="true" />
+                      )}
+                    </button>
+                  </li>
+                ))}
+                {apiSuggestions.map((monster) => (
+                  <li key={`api-${monster.index}`}>
+                    <button
+                      type="button"
+                      className="character-selector__suggestion character-selector__suggestion--api"
+                      onClick={() => handleCreateFromMonster(monster.index, monster.name)}
+                    >
+                      <span className="character-selector__suggestion-name">
+                        {monster.name}
+                        <span className="character-selector__suggestion-tag">SRD</span>
+                      </span>
+                      <img
+                        className="character-selector__suggestion-image"
+                        src={`${ASSET_BASE}/api/images/monsters/${monster.index}.png`}
+                        alt=""
+                        loading="lazy"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).style.visibility = 'hidden';
+                        }}
+                      />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </div>
       </div>

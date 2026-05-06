@@ -90,6 +90,9 @@
   "characterSheet": {
     "character": "Character",
     "changeImage": "Change image",
+    "cropTitle": "Crop image",
+    "cropHint": "Drag to reposition and use the wheel or the slider to zoom.",
+    "cropZoom": "Zoom",
     "class": "Class",
     "level": "Level",
     "race": "Race",
@@ -113,6 +116,8 @@
     "inventorySlots": "Inventory slots",
     "spells": "Spells",
     "features": "Features & Traits",
+    "attacks": "Actions / Attacks",
+    "monster": "Monster (SRD)",
     "description": "Description / Backstory",
     "saveChanges": "Save changes",
     "proficiencyBonus": "Proficiency bonus"
@@ -124,6 +129,8 @@
     "exitFullscreen": "Exit fullscreen",
     "nextChapter": "Go to next chapter",
     "finalChapter": "End of campaign",
+    "currentChapter": "Chapter",
+    "statsPopupNote": "Only affects this map instance.",
     "tools": {
       "select": "Select / Move",
       "pan": "Pan all",

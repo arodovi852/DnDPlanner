@@ -12,9 +12,42 @@ import {
 // Tipos del dominio
 // ---------------------------------------------------------------------------
 
+export type EventType =
+  | 'combate'
+  | 'historia'
+  | 'mision'
+  | 'exploracion'
+  | 'dialogo';
+
+export const EVENT_TYPES: EventType[] = [
+  'combate',
+  'historia',
+  'mision',
+  'exploracion',
+  'dialogo',
+];
+
+export interface ChapterEventBlock {
+  id: string;
+  x: number;
+  y: number;
+  text: string;
+  type: EventType;
+}
+
+export interface ChapterEventConnection {
+  id: string;
+  from: string;
+  to: string;
+}
+
 export interface Chapter {
   id: string;
   title: string;
+  events: {
+    blocks: ChapterEventBlock[];
+    connections: ChapterEventConnection[];
+  };
 }
 
 export interface CharacterStats {
@@ -31,11 +64,20 @@ export interface CharacterSlot {
   quantity?: number;
 }
 
+export interface CharacterAttack {
+  name: string;
+  description: string;
+  attackBonus?: number;
+  damage?: string;
+}
+
 export interface Character {
   id: string;
   name: string;
   kind: 'playable' | 'enemy';
   image?: string;
+  /** Slug del monstruo en dnd5eapi (sólo enemigos vinculados al API). */
+  apiIndex?: string;
   className?: string;
   level: number;
   race?: string;
@@ -54,6 +96,8 @@ export interface Character {
   inventorySlots: number;
   spells: string[];
   features: string[];
+  /** Ataques (de jugador o monstruo). Para enemigos suelen venir del API. */
+  attacks: CharacterAttack[];
   description: string;
 }
 
@@ -126,9 +170,9 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     description: 'Intrigue on a train crossing the continent.',
     build: () => ({
       chapters: [
-        { id: generateId('ch'), title: 'Chapter 1: Departure' },
-        { id: generateId('ch'), title: 'Chapter 2: The Passengers' },
-        { id: generateId('ch'), title: 'Chapter 3: The Stormy Night' },
+        emptyChapter('Chapter 1: Departure'),
+        emptyChapter('Chapter 2: The Passengers'),
+        emptyChapter('Chapter 3: The Stormy Night'),
       ],
       characters: [],
     }),
@@ -139,8 +183,8 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     description: 'Classic open-world adventure.',
     build: () => ({
       chapters: [
-        { id: generateId('ch'), title: 'Chapter 1: The Tavern' },
-        { id: generateId('ch'), title: 'Chapter 2: The Forest Trail' },
+        emptyChapter('Chapter 1: The Tavern'),
+        emptyChapter('Chapter 2: The Forest Trail'),
       ],
       characters: [],
     }),
@@ -151,10 +195,10 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     description: 'High stakes military campaign.',
     build: () => ({
       chapters: [
-        { id: generateId('ch'), title: 'Chapter 1: Call to Arms' },
-        { id: generateId('ch'), title: 'Chapter 2: First Battle' },
-        { id: generateId('ch'), title: 'Chapter 3: The Siege' },
-        { id: generateId('ch'), title: 'Chapter 4: The Aftermath' },
+        emptyChapter('Chapter 1: Call to Arms'),
+        emptyChapter('Chapter 2: First Battle'),
+        emptyChapter('Chapter 3: The Siege'),
+        emptyChapter('Chapter 4: The Aftermath'),
       ],
       characters: [],
     }),
@@ -181,6 +225,11 @@ interface CampaignContextValue {
   addChapter: (campaignId: string, title?: string) => Chapter;
   updateChapter: (campaignId: string, chapterId: string, patch: Partial<Chapter>) => void;
   deleteChapter: (campaignId: string, chapterId: string) => void;
+  updateChapterEvents: (
+    campaignId: string,
+    chapterId: string,
+    events: Chapter['events']
+  ) => void;
 
   addCharacter: (
     campaignId: string,
@@ -256,13 +305,40 @@ function normalizeCampaign(raw: Partial<Campaign>): Campaign {
     createdAt: raw.createdAt ?? new Date().toISOString(),
     updatedAt: raw.updatedAt ?? new Date().toISOString(),
     ownerId: raw.ownerId ?? '',
-    chapters: raw.chapters ?? [],
-    characters: raw.characters ?? [],
+    chapters: (raw.chapters ?? []).map(normalizeChapter),
+    characters: (raw.characters ?? []).map(normalizeCharacter),
     members: raw.members ?? [],
     annotations: raw.annotations ?? [],
     revealedSpoilers: raw.revealedSpoilers ?? [],
     shareToken: raw.shareToken,
   };
+}
+
+/** Garantiza que capítulos antiguos tengan los campos nuevos (events). */
+function normalizeChapter(raw: Partial<Chapter>): Chapter {
+  return {
+    id: raw.id ?? generateId('ch'),
+    title: raw.title ?? '',
+    events: {
+      blocks: raw.events?.blocks ?? [],
+      connections: raw.events?.connections ?? [],
+    },
+  };
+}
+
+/** Garantiza que personajes antiguos tengan los campos nuevos (attacks, etc.). */
+function normalizeCharacter(raw: Partial<Character>): Character {
+  return {
+    ...createEmptyCharacter(raw.kind ?? 'playable', raw.name),
+    ...raw,
+    attacks: raw.attacks ?? [],
+    stats: raw.stats ?? { str: 10, dex: 10, con: 10, int: 10, wis: 10, cha: 10 },
+    savingThrows: raw.savingThrows ?? [],
+    skills: raw.skills ?? [],
+    inventory: raw.inventory ?? [],
+    spells: raw.spells ?? [],
+    features: raw.features ?? [],
+  } as Character;
 }
 
 function readStoredCampaigns(): Campaign[] {
@@ -396,10 +472,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
 
   const addChapter = useCallback(
     (campaignId: string, title?: string): Chapter => {
-      const chapter: Chapter = {
-        id: generateId('ch'),
-        title: title ?? '',
-      };
+      const chapter = emptyChapter(title ?? '');
       patchCampaign(campaignId, (c) => ({
         ...c,
         chapters: [...c.chapters, chapter],
@@ -426,6 +499,18 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       patchCampaign(campaignId, (c) => ({
         ...c,
         chapters: c.chapters.filter((ch) => ch.id !== chapterId),
+      }));
+    },
+    [patchCampaign]
+  );
+
+  const updateChapterEvents = useCallback(
+    (campaignId: string, chapterId: string, events: Chapter['events']) => {
+      patchCampaign(campaignId, (c) => ({
+        ...c,
+        chapters: c.chapters.map((ch) =>
+          ch.id === chapterId ? { ...ch, events } : ch
+        ),
       }));
     },
     [patchCampaign]
@@ -699,6 +784,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       addChapter,
       updateChapter,
       deleteChapter,
+      updateChapterEvents,
       addCharacter,
       updateCharacter,
       deleteCharacter,
@@ -728,6 +814,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       addChapter,
       updateChapter,
       deleteChapter,
+      updateChapterEvents,
       addCharacter,
       updateCharacter,
       deleteCharacter,
@@ -816,6 +903,14 @@ function generateId(prefix: string): string {
   return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
 }
 
+function emptyChapter(title: string): Chapter {
+  return {
+    id: generateId('ch'),
+    title,
+    events: { blocks: [], connections: [] },
+  };
+}
+
 export function createEmptyCharacter(
   kind: 'playable' | 'enemy',
   name?: string
@@ -838,6 +933,7 @@ export function createEmptyCharacter(
     inventorySlots: 12,
     spells: [],
     features: [],
+    attacks: [],
     description: '',
   };
 }

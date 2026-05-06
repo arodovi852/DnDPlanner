@@ -126,6 +126,43 @@
   flex: 1;
   min-height: 0;
 
+  // Barra superior con selector de capítulo (sólo Events).
+  &__chapter-bar {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding: var(--space-xs) var(--space-md);
+    background-color: var(--color-surface-cream);
+    border-bottom: 2px solid var(--color-border-soft);
+  }
+
+  &__chapter-select {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    color: var(--color-text);
+
+    select {
+      padding: var(--space-xs) var(--space-sm);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background-color: var(--color-surface);
+      color: var(--color-text);
+      font-family: var(--font-family-base);
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  &__chapter-select-label {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+  }
+
   &__viewport {
     position: relative;
     flex: 1;
@@ -472,6 +509,32 @@
     }
   }
 
+  &__chapter-select {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+
+    select {
+      padding: var(--space-xs) var(--space-sm);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      background-color: var(--color-surface);
+      color: var(--color-text);
+      font-family: var(--font-family-base);
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  &__chapter-select-label {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--color-text-muted);
+  }
+
   &__viewport {
     position: relative;
     flex: 1;
@@ -501,6 +564,7 @@
   }
 
   &__cell {
+    position: relative;
     width: 2rem;
     height: 2rem;
     padding: 0;
@@ -520,6 +584,34 @@
       outline: 3px solid var(--color-focus-ring);
       outline-offset: -3px;
     }
+  }
+
+  // Stats sobre la celda (HP / AC) — pequeño badge bajo la entidad.
+  &__stats {
+    position: absolute;
+    left: 50%;
+    bottom: -0.55rem;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.15rem;
+    padding: 0 0.2rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-chrome);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: 0.55rem;
+    line-height: 1;
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 2;
+  }
+
+  &__stats-row {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
   }
 
   // --------------------------------------------------------------------------
@@ -573,6 +665,14 @@
       color: #c0392b;
       font-size: 1.25rem;
       font-weight: bold;
+    }
+
+    &--portrait {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      border-radius: 50%;
+      border: 2px solid var(--color-border);
     }
   }
 
@@ -636,6 +736,10 @@
     font-family: var(--font-family-base);
     font-size: var(--font-size-sm);
     cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
 
     &:hover,
     &:focus-visible {
@@ -645,6 +749,27 @@
     &--active {
       background-color: var(--color-primary);
       color: var(--color-text-inverse);
+    }
+  }
+
+  &__picker-label {
+    flex: 1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__picker-thumb {
+    flex-shrink: 0;
+    width: 1.75rem;
+    height: 1.75rem;
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-cream);
+
+    &--placeholder {
+      background-color: var(--color-textbox-dark-hover);
     }
   }
 
@@ -710,9 +835,19 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
+    gap: var(--space-sm);
     margin-bottom: var(--space-xs);
     font-family: var(--font-family-heading);
     font-size: var(--font-size-base);
+  }
+
+  &__stats-popup-image {
+    width: 2.5rem;
+    height: 2.5rem;
+    object-fit: cover;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-cream);
   }
 
   &__stats-popup-close {
@@ -734,5 +869,72 @@
     font-size: var(--font-size-xs);
     opacity: 0.7;
     font-style: italic;
+  }
+
+  &__stats-popup-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-xs);
+
+    label input[type='text'] {
+      width: 6rem;
+      text-align: left;
+    }
+  }
+
+  &__stats-popup-abilities {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.25rem 0.5rem;
+    padding: var(--space-xs) 0;
+    border-top: 1px dashed var(--color-border);
+    border-bottom: 1px dashed var(--color-border);
+
+    label {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.1rem;
+      font-size: var(--font-size-xs);
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+
+      input {
+        width: 100%;
+        text-align: center;
+      }
+    }
+  }
+
+  &__stats-popup-attacks {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+
+    ul {
+      list-style: none;
+      margin: 0;
+      padding: 0;
+      max-height: 8rem;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 0.2rem;
+      font-size: var(--font-size-xs);
+    }
+
+    li {
+      padding: 0.2rem 0.4rem;
+      border: 1px solid var(--color-border);
+      border-radius: var(--radius-sm);
+      background-color: var(--color-textbox-dark-hover);
+    }
+  }
+
+  &__stats-popup-section-label {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xs);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    opacity: 0.85;
   }
 }

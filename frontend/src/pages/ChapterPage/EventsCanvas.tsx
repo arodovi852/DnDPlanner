@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useRef,
@@ -12,27 +13,17 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUndoableState } from '../../hooks/useUndoableState';
-import { useCampaigns } from '../../context/CampaignContext';
+import {
+  useCampaigns,
+  EVENT_TYPES,
+  type ChapterEventBlock as Block,
+  type ChapterEventConnection as Connection,
+  type EventType,
+} from '../../context/CampaignContext';
 
 // ---------------------------------------------------------------------------
-// Tipos
+// Tipos locales
 // ---------------------------------------------------------------------------
-
-type EventType = 'combate' | 'historia' | 'mision' | 'exploracion' | 'dialogo';
-
-interface Block {
-  id: string;
-  x: number;
-  y: number;
-  text: string;
-  type: EventType;
-}
-
-interface Connection {
-  id: string;
-  from: string;
-  to: string;
-}
 
 interface CanvasState {
   blocks: Block[];
@@ -48,46 +39,56 @@ type Tool =
   | 'zoom'
   | 'notes';
 
-const EVENT_TYPE_KEYS: EventType[] = [
-  'combate',
-  'historia',
-  'mision',
-  'exploracion',
-  'dialogo',
-];
-
 const BLOCK_WIDTH = 220;
 const BLOCK_HEIGHT = 150;
 const DRAG_THRESHOLD = 5;
+const STORY_TYPE: EventType = 'historia';
 
 // ---------------------------------------------------------------------------
 // Componente principal
 // ---------------------------------------------------------------------------
 
-/**
- * Canvas de eventos.
- *
- * Características:
- *   · 7 herramientas (select, pan, text, create, connect, zoom, notes).
- *   · Zoom con rueda y con arrastre vertical (centrado en el cursor).
- *   · Bloques con cabecera tipo (dropdown) + cuerpo de texto editable.
- *   · Crear bloque → entra en modo edición inmediatamente.
- *   · Click derecho sobre un bloque → lo elimina (y sus conexiones).
- *   · Conexiones: click-A + click-B  *o*  arrastrar desde A hasta B.
- *   · Terminal "Ir al siguiente capítulo" al final del camino más largo.
- *   · Ctrl+Z / Ctrl+Y / Ctrl+Shift+Z para deshacer/rehacer.
- */
 export function EventsCanvas() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { chapterId } = useParams<{ chapterId: string }>();
-  const { activeCampaign } = useCampaigns();
+  const { activeCampaign, updateChapterEvents } = useCampaigns();
 
-  const [state, setState] = useUndoableState<CanvasState>({
-    blocks: initialBlocks,
-    connections: [],
+  const currentChapter = useMemo(() => {
+    if (!activeCampaign || !chapterId) return null;
+    return activeCampaign.chapters.find((c) => c.id === chapterId) ?? null;
+  }, [activeCampaign, chapterId]);
+
+  const [state, setState, history] = useUndoableState<CanvasState>({
+    blocks: currentChapter?.events.blocks ?? [],
+    connections: currentChapter?.events.connections ?? [],
   });
   const { blocks, connections } = state;
+
+  // Reset cuando cambia el capítulo, cargando los eventos persistidos.
+  useEffect(() => {
+    history.reset({
+      blocks: currentChapter?.events.blocks ?? [],
+      connections: currentChapter?.events.connections ?? [],
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterId, activeCampaign?.id]);
+
+  // Persistir eventos en la campaña conforme cambian.
+  useEffect(() => {
+    if (!activeCampaign || !chapterId) return;
+    // Evita escrituras redundantes si el estado coincide con el persistido.
+    const persisted = currentChapter?.events;
+    if (
+      persisted &&
+      persisted.blocks === blocks &&
+      persisted.connections === connections
+    ) {
+      return;
+    }
+    updateChapterEvents(activeCampaign.id, chapterId, { blocks, connections });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [blocks, connections]);
 
   const [tool, setTool] = useState<Tool>('select');
   const [zoom, setZoom] = useState(1);
@@ -95,16 +96,13 @@ export function EventsCanvas() {
   const [eventType, setEventType] = useState<EventType>('historia');
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
 
-  // Bloque actualmente en modo "editar texto inline".
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState('');
 
-  // Posición del cursor en coords del mundo mientras arrastras una conexión.
   const [dragCursor, setDragCursor] = useState<{ x: number; y: number } | null>(
     null
   );
 
-  // Refs de arrastre — combinan block drag, canvas pan, zoom drag y connect drag.
   const dragRef = useRef<
     | {
         kind: 'block';
@@ -145,9 +143,12 @@ export function EventsCanvas() {
   // Helpers de mutación
   // ------------------------------------------------------------------
 
-  const mutate = (updater: (prev: CanvasState) => CanvasState) => {
-    setState(updater);
-  };
+  const mutate = useCallback(
+    (updater: (prev: CanvasState) => CanvasState) => {
+      setState(updater);
+    },
+    [setState]
+  );
 
   const bringToFront = (blockId: string) => {
     mutate((prev) => {
@@ -197,7 +198,6 @@ export function EventsCanvas() {
         },
       ],
     }));
-    // Entrar en edición inmediatamente.
     setEditingBlockId(id);
     setEditingText(text);
   };
@@ -292,7 +292,6 @@ export function EventsCanvas() {
     }
 
     if (tool === 'connect') {
-      // Click en canvas vacío cancela la selección origen.
       setConnectFrom(null);
     }
   };
@@ -318,7 +317,6 @@ export function EventsCanvas() {
       const factor = Math.exp(deltaY / 150);
       applyZoomAtPoint(drag.startZoom * factor, drag.originX, drag.originY);
     } else if (drag.kind === 'connect') {
-      // Umbral para empezar a mostrar la línea preview.
       const dx = event.clientX - drag.startClientX;
       const dy = event.clientY - drag.startClientY;
       if (!drag.moved && Math.hypot(dx, dy) > DRAG_THRESHOLD) {
@@ -341,7 +339,6 @@ export function EventsCanvas() {
 
     if (drag.kind === 'connect') {
       if (drag.moved) {
-        // Buscar el bloque bajo el cursor.
         const el = document.elementFromPoint(event.clientX, event.clientY);
         const blockEl = el?.closest('[data-block-id]') as HTMLElement | null;
         const targetId = blockEl?.dataset.blockId;
@@ -370,8 +367,6 @@ export function EventsCanvas() {
     event: ReactPointerEvent<HTMLDivElement>,
     block: Block
   ) => {
-    // Si está en edición, no arrastrar ni reorganizar — deja que el
-    // textarea reciba el evento normal (foco, selección).
     if (editingBlockId === block.id) return;
 
     event.stopPropagation();
@@ -391,8 +386,6 @@ export function EventsCanvas() {
     }
 
     if (tool === 'connect') {
-      // Inicia drag (sin pointer capture, para que pointerup fire sobre
-      // el destino real). Si el usuario suelta sin moverse, será un click.
       dragRef.current = {
         kind: 'connect',
         fromId: block.id,
@@ -438,7 +431,6 @@ export function EventsCanvas() {
     event: ReactMouseEvent<HTMLDivElement>,
     block: Block
   ) => {
-    // Click derecho → eliminar bloque (+ sus conexiones).
     event.preventDefault();
     event.stopPropagation();
     deleteBlock(block.id);
@@ -478,14 +470,22 @@ export function EventsCanvas() {
     [blocks, connections]
   );
 
-  // Bloque al final del camino más largo (para colocar el terminal
-  // "Ir al siguiente capítulo" justo a su derecha).
-  const longestEnd = useMemo(
-    () => findLongestPathEnd(blocks, connections),
+  // Cadena cronológica ganadora siguiendo las reglas de prioridad.
+  const winningChain = useMemo(
+    () => pickChronologicalChain(blocks, connections),
     [blocks, connections]
   );
 
-  // Información del próximo capítulo en la campaña activa.
+  // Bloque tras el cual se ancla el botón "Ir al siguiente capítulo":
+  // último Story de la cadena ganadora si lo hay, sino el último bloque.
+  const anchor = useMemo(() => {
+    if (!winningChain || winningChain.length === 0) return null;
+    for (let i = winningChain.length - 1; i >= 0; i--) {
+      if (winningChain[i].type === STORY_TYPE) return winningChain[i];
+    }
+    return winningChain[winningChain.length - 1];
+  }, [winningChain]);
+
   const { nextChapter, isFinal } = useMemo(() => {
     if (!activeCampaign || !chapterId) {
       return { nextChapter: null, isFinal: true };
@@ -496,19 +496,30 @@ export function EventsCanvas() {
     return { nextChapter: next, isFinal: next === null };
   }, [activeCampaign, chapterId]);
 
-  const terminal = longestEnd
+  const terminal = anchor
     ? {
-        x: longestEnd.x + BLOCK_WIDTH + 60,
-        y: longestEnd.y,
-        sourceId: longestEnd.id,
+        x: anchor.x + BLOCK_WIDTH + 60,
+        y: anchor.y,
+        sourceId: anchor.id,
       }
-    : null;
+    : { x: 360, y: 80, sourceId: null as string | null };
 
   const handleGoToNext = () => {
     if (nextChapter) {
       navigate(`/chapter/${nextChapter.id}`);
-    } else {
+      return;
+    }
+    if (activeCampaign) {
       navigate('/chapterSelector');
+      return;
+    }
+    navigate('/main');
+  };
+
+  const handleChapterSelect = (event: ChangeEvent<HTMLSelectElement>) => {
+    const id = event.target.value;
+    if (id && id !== chapterId) {
+      navigate(`/chapter/${id}`);
     }
   };
 
@@ -518,6 +529,27 @@ export function EventsCanvas() {
 
   return (
     <div className="events-canvas">
+      {activeCampaign && activeCampaign.chapters.length > 0 && (
+        <div className="events-canvas__chapter-bar">
+          <label className="events-canvas__chapter-select">
+            <span className="events-canvas__chapter-select-label">
+              {t('chapter.currentChapter')}
+            </span>
+            <select
+              value={chapterId ?? ''}
+              onChange={handleChapterSelect}
+              aria-label={t('chapter.currentChapter')}
+            >
+              {activeCampaign.chapters.map((c, i) => (
+                <option key={c.id} value={c.id}>
+                  {c.title || t('chapterSelector.untitledChapter', { number: i + 1 })}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      )}
+
       {tool === 'notes' ? (
         <div className="events-canvas__notes">
           {notesOrder.length === 0 ? (
@@ -600,11 +632,10 @@ export function EventsCanvas() {
                 );
               })}
 
-              {/* Conexión virtual al terminal (si hay siguiente capítulo). */}
-              {terminal && longestEnd && (
+              {anchor && (
                 <line
-                  x1={longestEnd.x + BLOCK_WIDTH / 2}
-                  y1={longestEnd.y + BLOCK_HEIGHT / 2}
+                  x1={anchor.x + BLOCK_WIDTH / 2}
+                  y1={anchor.y + BLOCK_HEIGHT / 2}
                   x2={terminal.x + BLOCK_WIDTH / 2 - 20}
                   y2={terminal.y + BLOCK_HEIGHT / 2}
                   stroke="var(--color-primary)"
@@ -614,7 +645,6 @@ export function EventsCanvas() {
                 />
               )}
 
-              {/* Preview de conexión mientras arrastras. */}
               {dragCursor && connectFrom && blockById.has(connectFrom) && (
                 <line
                   x1={blockById.get(connectFrom)!.x + BLOCK_WIDTH / 2}
@@ -668,7 +698,7 @@ export function EventsCanvas() {
                       onContextMenu={(event) => event.stopPropagation()}
                       aria-label={t('chapter.tools.create')}
                     >
-                      {EVENT_TYPE_KEYS.map((key) => (
+                      {EVENT_TYPES.map((key) => (
                         <option key={key} value={key}>
                           {t(`chapter.eventTypes.${key}`)}
                         </option>
@@ -695,37 +725,31 @@ export function EventsCanvas() {
               );
             })}
 
-            {terminal && (
-              <div
-                className="events-canvas__terminal"
-                style={{
-                  left: terminal.x,
-                  top: terminal.y,
-                  width: BLOCK_WIDTH,
-                  height: BLOCK_HEIGHT,
-                }}
-                role="button"
-                tabIndex={0}
-                onPointerDown={(event) => event.stopPropagation()}
-                onClick={(event) => {
-                  event.stopPropagation();
-                  handleGoToNext();
-                }}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' || event.key === ' ') {
-                    event.preventDefault();
-                    handleGoToNext();
-                  }
-                }}
-              >
-                <span className="events-canvas__terminal-arrow" aria-hidden="true">
-                  →
-                </span>
-                <span className="events-canvas__terminal-label">
-                  {isFinal ? t('chapter.finalChapter') : t('chapter.nextChapter')}
-                </span>
-              </div>
-            )}
+            <button
+              type="button"
+              className="events-canvas__terminal"
+              style={{
+                left: terminal.x,
+                top: terminal.y,
+                width: BLOCK_WIDTH,
+                height: BLOCK_HEIGHT,
+              }}
+              onPointerDown={(event) => event.stopPropagation()}
+              onPointerUp={(event) => event.stopPropagation()}
+              onMouseDown={(event) => event.stopPropagation()}
+              onClick={(event) => {
+                event.stopPropagation();
+                event.preventDefault();
+                handleGoToNext();
+              }}
+            >
+              <span className="events-canvas__terminal-arrow" aria-hidden="true">
+                →
+              </span>
+              <span className="events-canvas__terminal-label">
+                {isFinal ? t('chapter.finalChapter') : t('chapter.nextChapter')}
+              </span>
+            </button>
           </div>
         </div>
       )}
@@ -756,7 +780,7 @@ export function EventsCanvas() {
               value={eventType}
               onChange={(e) => setEventType(e.target.value as EventType)}
             >
-              {EVENT_TYPE_KEYS.map((key) => (
+              {EVENT_TYPES.map((key) => (
                 <option key={key} value={key}>
                   {t(`chapter.eventTypes.${key}`)}
                 </option>
@@ -811,7 +835,7 @@ function ToolButton({ current, value, label, onSelect, children }: ToolButtonPro
 }
 
 // ---------------------------------------------------------------------------
-// Notas: orden jerárquico (camino principal desde raíces + alternativos)
+// Notas: orden jerárquico
 // ---------------------------------------------------------------------------
 
 interface NoteEntry {
@@ -858,15 +882,23 @@ function buildNotesOrder(blocks: Block[], connections: Connection[]): NoteEntry[
 }
 
 // ---------------------------------------------------------------------------
-// Camino más largo: el bloque final desde cualquier raíz con más
-// conexiones encadenadas. Se usa para anclar el bloque terminal
-// "Ir al siguiente capítulo".
+// Selección de cadena cronológica para anclar el "siguiente capítulo"
 // ---------------------------------------------------------------------------
+//
+// Reglas de prioridad (de más alta a más baja):
+//   1. Cadena con Story al primer Y al último elemento.
+//   2. Cadena con Story al primero (no al último).
+//   3. Cadena con Story al último (no al primero).
+//   4. Cadena con Story en algún elemento intermedio (ni primero ni último).
+//   5. Cadena más larga sin ningún Story.
+//
+// En caso de empate (misma prioridad y misma longitud) se elige la que
+// contenga más Story en su interior.
 
-function findLongestPathEnd(
+function pickChronologicalChain(
   blocks: Block[],
   connections: Connection[]
-): Block | null {
+): Block[] | null {
   if (blocks.length === 0) return null;
 
   const adj = new Map<string, string[]>();
@@ -881,36 +913,99 @@ function findLongestPathEnd(
   for (const c of connections) {
     incoming.set(c.to, (incoming.get(c.to) ?? 0) + 1);
   }
+
+  // Las cadenas son los caminos simples desde "raíces" (sin entrantes) o,
+  // si no hay raíces (grafo cíclico), desde cualquier nodo.
   const roots = blocks.filter((b) => (incoming.get(b.id) ?? 0) === 0);
   const seeds = roots.length > 0 ? roots : blocks;
 
-  let best: { id: string; distance: number } = {
-    id: seeds[0].id,
-    distance: 0,
-  };
+  // Enumeramos todos los caminos simples maximales que no se puedan extender.
+  const allChains: Block[][] = [];
+  for (const seed of seeds) {
+    enumerateMaximalPaths(seed.id, blocks, adj, allChains);
+  }
 
-  for (const root of seeds) {
-    const stack: Array<{ id: string; dist: number; path: Set<string> }> = [
-      { id: root.id, dist: 0, path: new Set([root.id]) },
-    ];
-    while (stack.length > 0) {
-      const current = stack.pop();
-      if (!current) continue;
-      if (current.dist > best.distance) {
-        best = { id: current.id, distance: current.dist };
-      }
-      const outs = adj.get(current.id) ?? [];
-      for (const next of outs) {
-        if (!current.path.has(next)) {
-          const nextPath = new Set(current.path);
-          nextPath.add(next);
-          stack.push({ id: next, dist: current.dist + 1, path: nextPath });
-        }
-      }
+  if (allChains.length === 0) {
+    // Sin conexiones cada bloque es su propia cadena (longitud 1).
+    return blocks.length > 0 ? [blocks[0]] : null;
+  }
+
+  let best: Block[] | null = null;
+  let bestKey: ChainKey | null = null;
+
+  for (const chain of allChains) {
+    const key = scoreChain(chain);
+    if (!bestKey || compareChainKey(key, bestKey) > 0) {
+      bestKey = key;
+      best = chain;
     }
   }
 
-  return blocks.find((b) => b.id === best.id) ?? null;
+  return best;
+}
+
+interface ChainKey {
+  priority: number; // 4 mejor → 0 peor
+  length: number;
+  storyCount: number;
+}
+
+function scoreChain(chain: Block[]): ChainKey {
+  const length = chain.length;
+  const firstIsStory = length > 0 && chain[0].type === STORY_TYPE;
+  const lastIsStory = length > 0 && chain[length - 1].type === STORY_TYPE;
+  const hasMiddleStory = chain
+    .slice(1, Math.max(1, length - 1))
+    .some((b) => b.type === STORY_TYPE);
+  const storyCount = chain.filter((b) => b.type === STORY_TYPE).length;
+
+  let priority: number;
+  if (firstIsStory && lastIsStory) priority = 4;
+  else if (firstIsStory) priority = 3;
+  else if (lastIsStory) priority = 2;
+  else if (hasMiddleStory) priority = 1;
+  else priority = 0;
+
+  return { priority, length, storyCount };
+}
+
+function compareChainKey(a: ChainKey, b: ChainKey): number {
+  if (a.priority !== b.priority) return a.priority - b.priority;
+  if (a.length !== b.length) return a.length - b.length;
+  return a.storyCount - b.storyCount;
+}
+
+function enumerateMaximalPaths(
+  startId: string,
+  blocks: Block[],
+  adj: Map<string, string[]>,
+  out: Block[][]
+) {
+  const blockMap = new Map<string, Block>();
+  for (const b of blocks) blockMap.set(b.id, b);
+
+  const stack: Array<{ path: string[]; visited: Set<string> }> = [
+    { path: [startId], visited: new Set([startId]) },
+  ];
+
+  while (stack.length > 0) {
+    const current = stack.pop();
+    if (!current) continue;
+    const lastId = current.path[current.path.length - 1];
+    const next = (adj.get(lastId) ?? []).filter((n) => !current.visited.has(n));
+    if (next.length === 0) {
+      const chain = current.path
+        .map((id) => blockMap.get(id))
+        .filter((b): b is Block => Boolean(b));
+      if (chain.length > 0) out.push(chain);
+      continue;
+    }
+    for (const n of next) {
+      const visited = new Set(current.visited);
+      visited.add(n);
+      stack.push({ path: [...current.path, n], visited });
+    }
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -920,30 +1015,6 @@ function findLongestPathEnd(
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
-
-const initialBlocks: Block[] = [
-  {
-    id: 'seed-1',
-    x: 80,
-    y: 80,
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    type: 'historia',
-  },
-  {
-    id: 'seed-2',
-    x: 420,
-    y: 80,
-    text: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
-    type: 'mision',
-  },
-  {
-    id: 'seed-3',
-    x: 80,
-    y: 300,
-    text: 'Lorem ipsum dolor sit amet. Nam mattis sed urna et ullamcorper.',
-    type: 'combate',
-  },
-];
 
 // ---------------------------------------------------------------------------
 // Iconos

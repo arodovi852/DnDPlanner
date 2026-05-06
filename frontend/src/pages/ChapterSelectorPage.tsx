@@ -89,6 +89,7 @@ export function ChapterSelectorPage() {
     const newChapter: Chapter = {
       id: `chapter-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: '',
+      events: { blocks: [], connections: [] },
     };
     setChapters((prev) => [...prev, newChapter]);
     setEditingId(newChapter.id);

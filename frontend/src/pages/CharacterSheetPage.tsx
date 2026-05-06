@@ -4,6 +4,8 @@ import {
   useRef,
   useState,
   type ChangeEvent,
+  type PointerEvent as ReactPointerEvent,
+  type WheelEvent as ReactWheelEvent,
 } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -15,11 +17,13 @@ import {
   isDungeonMaster,
   useCampaigns,
   type Character,
+  type CharacterAttack,
   type CharacterStats,
 } from '../context/CampaignContext';
 import { useAuth } from '../context/AuthContext';
 import { useUndoableState } from '../hooks/useUndoableState';
 import { useDndClasses } from '../hooks/useDndClasses';
+import { useDndMonsters } from '../hooks/useDndMonsters';
 
 const HOMEBREW_VALUE = '__homebrew__';
 
@@ -50,6 +54,7 @@ export function CharacterSheetPage() {
   const { user } = useAuth();
   const { activeCampaign, updateCharacter } = useCampaigns();
   const { classes, fetchClassDetail } = useDndClasses();
+  const { monsters, fetchMonsterDetail } = useDndMonsters();
 
   const real = activeCampaign?.characters.find((c) => c.id === characterId);
 
@@ -91,6 +96,7 @@ export function CharacterSheetPage() {
   }, [classes.length, real?.className]);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [croppingSrc, setCroppingSrc] = useState<string | null>(null);
 
   const mods = useMemo<CharacterStats>(() => {
     const s = draft?.stats ?? {
@@ -165,6 +171,32 @@ export function CharacterSheetPage() {
     });
   };
 
+  /** Vincula un enemigo con un monstruo del API y auto-rellena todo. */
+  const handleMonsterChange = async (value: string) => {
+    if (!value) {
+      patch({ apiIndex: undefined });
+      return;
+    }
+    const detail = await fetchMonsterDetail(value);
+    if (!detail) {
+      patch({ apiIndex: value });
+      return;
+    }
+    patch({
+      apiIndex: detail.index,
+      name: detail.name,
+      image: detail.image,
+      armor: detail.armorClass,
+      hp: detail.hitPoints,
+      maxHp: detail.hitPoints,
+      damageDice: detail.hitPointsRoll ?? draft.damageDice,
+      movement: detail.speed,
+      stats: detail.stats,
+      attacks: detail.attacks,
+      level: Math.max(1, Math.round(detail.challengeRating || 1)),
+    });
+  };
+
   const handleSave = () => {
     if (!activeCampaign || !draft) return;
     updateCharacter(activeCampaign.id, draft.id, draft);
@@ -173,14 +205,23 @@ export function CharacterSheetPage() {
 
   const handleImagePick = (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    // Reseteamos el input para que volver a elegir el mismo fichero
+    // dispare onChange (de lo contrario el crop modal no se reabre).
+    event.target.value = '';
     if (!file) return;
     const reader = new FileReader();
     reader.onload = () => {
       if (typeof reader.result === 'string') {
-        patch({ image: reader.result });
+        // Abrimos el cropper en lugar de guardar la imagen completa.
+        setCroppingSrc(reader.result);
       }
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (dataUrl: string) => {
+    patch({ image: dataUrl });
+    setCroppingSrc(null);
   };
 
   const statKeys: Array<keyof CharacterStats> = [
@@ -298,6 +339,26 @@ export function CharacterSheetPage() {
 
       {/* Identity traits */}
       <div className="character-sheet__traits">
+        {draft.kind === 'enemy' && (
+          <div className="character-sheet__field">
+            <span className="character-sheet__field-label">
+              {t('characterSheet.monster')}
+            </span>
+            <select
+              className="character-sheet__field-input"
+              value={draft.apiIndex ?? ''}
+              onChange={(e) => handleMonsterChange(e.target.value)}
+              aria-label={t('characterSheet.monster')}
+            >
+              <option value="">—</option>
+              {monsters.map((m) => (
+                <option key={m.index} value={m.index}>
+                  {m.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="character-sheet__field">
           <span className="character-sheet__field-label">
             {t('characterSheet.class')}
@@ -370,6 +431,11 @@ export function CharacterSheetPage() {
       </div>
 
       <div className="character-sheet__lists">
+        <AttacksField
+          label={t('characterSheet.attacks')}
+          values={draft.attacks}
+          onChange={(next) => patch({ attacks: next })}
+        />
         <StringListField
           label={t('characterSheet.savingThrows')}
           values={draft.savingThrows}
@@ -409,7 +475,7 @@ export function CharacterSheetPage() {
           <SpoilerTextarea
             value={draft.description}
             onChange={(next) => patch({ description: next })}
-            rows={6}
+            rows={14}
             className="character-sheet__description"
             ariaLabel={t('characterSheet.description')}
             readOnlyMarker={!isDM}
@@ -434,6 +500,14 @@ export function CharacterSheetPage() {
           targetType="character"
           targetId={characterId}
           title={t('annotations.characterHeading')}
+        />
+      )}
+
+      {croppingSrc && (
+        <ImageCropModal
+          src={croppingSrc}
+          onCancel={() => setCroppingSrc(null)}
+          onConfirm={handleCropComplete}
         />
       )}
     </section>
@@ -646,6 +720,325 @@ function InventoryField({ label, values, slots, onChange, onSlotsChange }: Inven
           placeholder="+"
           aria-label={`Add to ${label}`}
         />
+      </div>
+    </div>
+  );
+}
+
+interface AttacksFieldProps {
+  label: string;
+  values: CharacterAttack[];
+  onChange: (next: CharacterAttack[]) => void;
+}
+
+function AttacksField({ label, values, onChange }: AttacksFieldProps) {
+  const [open, setOpen] = useState<number | null>(null);
+  const [draftEntry, setDraftEntry] = useState('');
+
+  const remove = (index: number) => {
+    onChange(values.filter((_, i) => i !== index));
+  };
+
+  const addBlank = () => {
+    const name = draftEntry.trim();
+    if (!name) return;
+    onChange([...values, { name, description: '' }]);
+    setDraftEntry('');
+  };
+
+  const update = (index: number, patchAttack: Partial<CharacterAttack>) => {
+    onChange(values.map((a, i) => (i === index ? { ...a, ...patchAttack } : a)));
+  };
+
+  return (
+    <div className="character-sheet__list character-sheet__list--attacks">
+      <span className="character-sheet__list-label">{label}</span>
+      <ul className="character-sheet__list-items">
+        {values.map((attack, i) => (
+          <li
+            key={`${attack.name}-${i}`}
+            className="character-sheet__attack"
+          >
+            <button
+              type="button"
+              className="character-sheet__attack-summary"
+              onClick={() => setOpen(open === i ? null : i)}
+              aria-expanded={open === i}
+            >
+              <span className="character-sheet__attack-name">{attack.name}</span>
+              {attack.attackBonus !== undefined && (
+                <span className="character-sheet__attack-bonus">
+                  {attack.attackBonus >= 0 ? `+${attack.attackBonus}` : attack.attackBonus}
+                </span>
+              )}
+              {attack.damage && (
+                <span className="character-sheet__attack-damage">{attack.damage}</span>
+              )}
+            </button>
+            {open === i && (
+              <div className="character-sheet__attack-detail">
+                <input
+                  className="character-sheet__attack-edit"
+                  value={attack.name}
+                  onChange={(e) => update(i, { name: e.target.value })}
+                  aria-label="name"
+                />
+                <textarea
+                  className="character-sheet__attack-edit"
+                  value={attack.description}
+                  onChange={(e) => update(i, { description: e.target.value })}
+                  rows={3}
+                />
+                <div className="character-sheet__attack-edit-row">
+                  <input
+                    type="number"
+                    placeholder="+0"
+                    value={attack.attackBonus ?? ''}
+                    onChange={(e) =>
+                      update(i, {
+                        attackBonus: e.target.value === '' ? undefined : parseInt(e.target.value),
+                      })
+                    }
+                  />
+                  <input
+                    type="text"
+                    placeholder="2d8 piercing"
+                    value={attack.damage ?? ''}
+                    onChange={(e) =>
+                      update(i, { damage: e.target.value || undefined })
+                    }
+                  />
+                </div>
+                <button
+                  type="button"
+                  className="character-sheet__list-remove"
+                  onClick={() => remove(i)}
+                  aria-label={`Remove ${attack.name}`}
+                >
+                  ×
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+      <div className="character-sheet__list-add">
+        <input
+          value={draftEntry}
+          onChange={(e) => setDraftEntry(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') {
+              e.preventDefault();
+              addBlank();
+            }
+          }}
+          placeholder="+"
+          aria-label={`Add to ${label}`}
+        />
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Modal de recorte de imagen
+// ---------------------------------------------------------------------------
+//
+// Presenta la imagen subida en un viewport cuadrado. El usuario puede:
+//   · Arrastrar la imagen para reposicionarla.
+//   · Hacer scroll / +/- para hacer zoom.
+// Al confirmar se exporta la región visible como PNG (data URL) y se
+// guarda como `image` del personaje.
+
+interface ImageCropModalProps {
+  src: string;
+  onCancel: () => void;
+  onConfirm: (dataUrl: string) => void;
+}
+
+const CROP_SIZE = 320;
+
+function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
+  const { t } = useTranslation();
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
+  const [scale, setScale] = useState(1);
+  const [offset, setOffset] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{
+    startPointerX: number;
+    startPointerY: number;
+    startOffsetX: number;
+    startOffsetY: number;
+  } | null>(null);
+
+  // Cuando cargamos la imagen calculamos el zoom mínimo (cover).
+  const handleImgLoad = () => {
+    const el = imgRef.current;
+    if (!el) return;
+    const w = el.naturalWidth;
+    const h = el.naturalHeight;
+    setNaturalSize({ w, h });
+    const minScale = CROP_SIZE / Math.min(w, h);
+    setScale(minScale);
+    setOffset({
+      x: (CROP_SIZE - w * minScale) / 2,
+      y: (CROP_SIZE - h * minScale) / 2,
+    });
+  };
+
+  const minScale = naturalSize
+    ? CROP_SIZE / Math.min(naturalSize.w, naturalSize.h)
+    : 0.1;
+  const maxScale = minScale * 6;
+
+  const clampOffset = (x: number, y: number, s: number) => {
+    if (!naturalSize) return { x, y };
+    const w = naturalSize.w * s;
+    const h = naturalSize.h * s;
+    const minX = CROP_SIZE - w;
+    const minY = CROP_SIZE - h;
+    return {
+      x: Math.min(0, Math.max(minX, x)),
+      y: Math.min(0, Math.max(minY, y)),
+    };
+  };
+
+  const handlePointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    dragRef.current = {
+      startPointerX: event.clientX,
+      startPointerY: event.clientY,
+      startOffsetX: offset.x,
+      startOffsetY: offset.y,
+    };
+    (event.currentTarget as HTMLDivElement).setPointerCapture(event.pointerId);
+  };
+
+  const handlePointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    const drag = dragRef.current;
+    if (!drag) return;
+    const nextX = drag.startOffsetX + (event.clientX - drag.startPointerX);
+    const nextY = drag.startOffsetY + (event.clientY - drag.startPointerY);
+    setOffset(clampOffset(nextX, nextY, scale));
+  };
+
+  const handlePointerUp = () => {
+    dragRef.current = null;
+  };
+
+  const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
+    if (!naturalSize) return;
+    event.preventDefault();
+    const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
+    applyZoomAt(scale * factor, CROP_SIZE / 2, CROP_SIZE / 2);
+  };
+
+  const applyZoomAt = (nextScale: number, anchorX: number, anchorY: number) => {
+    const clamped = Math.max(minScale, Math.min(maxScale, nextScale));
+    if (clamped === scale) return;
+    // Mantén el punto bajo `anchor` estable cambiando el offset.
+    const ratio = clamped / scale;
+    const nextX = anchorX - (anchorX - offset.x) * ratio;
+    const nextY = anchorY - (anchorY - offset.y) * ratio;
+    setScale(clamped);
+    setOffset(clampOffset(nextX, nextY, clamped));
+  };
+
+  const handleConfirm = () => {
+    if (!naturalSize) return;
+    const canvas = document.createElement('canvas');
+    canvas.width = CROP_SIZE;
+    canvas.height = CROP_SIZE;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const img = imgRef.current;
+    if (!img) return;
+    ctx.drawImage(
+      img,
+      0,
+      0,
+      naturalSize.w,
+      naturalSize.h,
+      offset.x,
+      offset.y,
+      naturalSize.w * scale,
+      naturalSize.h * scale
+    );
+    onConfirm(canvas.toDataURL('image/png'));
+  };
+
+  return (
+    <div
+      className="image-crop-modal"
+      role="dialog"
+      aria-label={t('characterSheet.cropTitle')}
+      onClick={onCancel}
+    >
+      <div
+        className="image-crop-modal__panel"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <h2 className="image-crop-modal__title">{t('characterSheet.cropTitle')}</h2>
+        <p className="image-crop-modal__hint">{t('characterSheet.cropHint')}</p>
+
+        <div
+          className="image-crop-modal__viewport"
+          style={{ width: CROP_SIZE, height: CROP_SIZE }}
+          onPointerDown={handlePointerDown}
+          onPointerMove={handlePointerMove}
+          onPointerUp={handlePointerUp}
+          onPointerCancel={handlePointerUp}
+          onWheel={handleWheel}
+        >
+          <img
+            ref={imgRef}
+            src={src}
+            alt=""
+            onLoad={handleImgLoad}
+            draggable={false}
+            style={{
+              transform: `translate(${offset.x}px, ${offset.y}px) scale(${scale})`,
+              transformOrigin: '0 0',
+              userSelect: 'none',
+              pointerEvents: 'none',
+              maxWidth: 'none',
+              maxHeight: 'none',
+            }}
+          />
+        </div>
+
+        <div className="image-crop-modal__zoom">
+          <span>{t('characterSheet.cropZoom')}</span>
+          <input
+            type="range"
+            min={minScale}
+            max={maxScale}
+            step={(maxScale - minScale) / 100 || 0.01}
+            value={scale}
+            onChange={(e) =>
+              applyZoomAt(parseFloat(e.target.value), CROP_SIZE / 2, CROP_SIZE / 2)
+            }
+            aria-label={t('characterSheet.cropZoom')}
+          />
+        </div>
+
+        <div className="image-crop-modal__actions">
+          <button
+            type="button"
+            className="image-crop-modal__cancel"
+            onClick={onCancel}
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            type="button"
+            className="image-crop-modal__confirm"
+            onClick={handleConfirm}
+          >
+            {t('common.confirm')}
+          </button>
+        </div>
       </div>
     </div>
   );
