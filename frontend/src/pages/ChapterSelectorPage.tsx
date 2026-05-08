@@ -90,6 +90,7 @@ export function ChapterSelectorPage() {
       id: `chapter-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: '',
       events: { blocks: [], connections: [] },
+      map: { cells: {}, cols: 15, rows: 15 },
     };
     setChapters((prev) => [...prev, newChapter]);
     setEditingId(newChapter.id);

@@ -22,6 +22,12 @@ export interface PublicUser {
   username: string;
   email?: string;
   avatar?: string;
+  description?: string;
+  /** Si está activo, este usuario no aparece en búsquedas
+   *  generales ni se puede visitar su perfil público
+   *  (excepto desde un DM cuya campaña tenga al usuario
+   *  como jugador). */
+  isPrivate?: boolean;
 }
 
 export interface FollowEdge {
@@ -104,15 +110,36 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     window.localStorage.setItem(FOLLOWS_KEY, JSON.stringify(follows));
   }, [follows]);
 
-  // Cada vez que cambia el usuario autenticado lo registramos en el directorio.
+  // Cada vez que cambia el usuario autenticado sincronizamos sus datos
+  // públicos en el directorio (avatar, descripción, privacidad incluidos)
+  // para que las búsquedas y MembersPanel los vean al instante.
   useEffect(() => {
     if (!user) return;
     setUsers((prev) => {
-      if (prev.some((u) => u.id === user.id)) return prev;
-      return [
-        ...prev,
-        { id: user.id, username: user.username, email: user.email },
-      ];
+      const idx = prev.findIndex((u) => u.id === user.id);
+      const next: PublicUser = {
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        avatar: user.avatar,
+        description: user.description,
+        isPrivate: user.isPrivate,
+      };
+      if (idx === -1) return [...prev, next];
+      const existing = prev[idx];
+      // Evita re-renders cuando nada relevante cambió.
+      if (
+        existing.username === next.username &&
+        existing.email === next.email &&
+        existing.avatar === next.avatar &&
+        existing.description === next.description &&
+        existing.isPrivate === next.isPrivate
+      ) {
+        return prev;
+      }
+      const copy = [...prev];
+      copy[idx] = { ...existing, ...next };
+      return copy;
     });
   }, [user]);
 

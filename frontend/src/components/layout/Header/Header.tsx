@@ -45,6 +45,7 @@ export function Header({ hideLogo = false, transparent = false }: HeaderProps) {
           {isAuthenticated ? (
             <Profile
               name={user?.username ?? t('header.profile')}
+              image={user?.avatar}
               active
               onSelect={() => navigate('/profile')}
             />

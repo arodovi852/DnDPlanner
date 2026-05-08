@@ -13,19 +13,39 @@ import {
 // ---------------------------------------------------------------------------
 
 export type EventType =
-  | 'combate'
-  | 'historia'
-  | 'mision'
-  | 'exploracion'
-  | 'dialogo';
+  | 'Mission'
+  | 'Combat'
+  | 'MainStory'
+  | 'CharacterArc'
+  | 'Exploration'
+  | 'Social'
+  | 'Rest'
+  | 'Other';
 
 export const EVENT_TYPES: EventType[] = [
-  'combate',
-  'historia',
-  'mision',
-  'exploracion',
-  'dialogo',
+  'Mission',
+  'Combat',
+  'MainStory',
+  'CharacterArc',
+  'Exploration',
+  'Social',
+  'Rest',
+  'Other',
 ];
+
+const LEGACY_EVENT_TYPE_MAP: Record<string, EventType> = {
+  combate: 'Combat',
+  historia: 'MainStory',
+  mision: 'Mission',
+  exploracion: 'Exploration',
+  dialogo: 'Social',
+};
+
+export function normalizeEventType(type: string | undefined): EventType {
+  if (!type) return 'Other';
+  if (EVENT_TYPES.includes(type as EventType)) return type as EventType;
+  return LEGACY_EVENT_TYPE_MAP[type] ?? 'Other';
+}
 
 export interface ChapterEventBlock {
   id: string;
@@ -41,6 +61,17 @@ export interface ChapterEventConnection {
   to: string;
 }
 
+export interface ChapterMapEntity {
+  category: 'character' | 'terrain' | 'enemy';
+  subtype: string;
+}
+
+export interface ChapterMap {
+  cells: Record<string, ChapterMapEntity>;
+  cols: number;
+  rows: number;
+}
+
 export interface Chapter {
   id: string;
   title: string;
@@ -48,6 +79,7 @@ export interface Chapter {
     blocks: ChapterEventBlock[];
     connections: ChapterEventConnection[];
   };
+  map: ChapterMap;
 }
 
 export interface CharacterStats {
@@ -138,8 +170,17 @@ export interface Campaign {
   annotations: Annotation[];
   /** Hashes de spoilers revelados por el DM → jugadores pueden verlos. */
   revealedSpoilers: string[];
-  /** Token opaco para enlaces de invitación. */
+  /** Token opaco para enlaces de invitación (une como jugador). */
   shareToken?: string;
+  /** Token opaco para enlaces de solo lectura (ver sin unirse). */
+  viewToken?: string;
+  /** Imagen de la campaña (data URL o URL externa). Si está, sobreescribe
+   *  la imagen de la plantilla en las tarjetas del perfil. */
+  image?: string;
+  /** Visibilidad. `private` solo para el DM y los miembros invitados;
+   *  `public` aparece en /templates para que cualquiera la clone o pida
+   *  unirse. Por defecto privada. */
+  visibility?: 'public' | 'private';
 }
 
 // ---------------------------------------------------------------------------
@@ -221,6 +262,20 @@ interface CampaignContextValue {
   }) => Campaign;
   updateCampaign: (id: string, patch: Partial<Campaign>) => void;
   deleteCampaign: (id: string) => void;
+  /** Reordena las campañas del array global (drag&drop en el perfil). */
+  reorderCampaigns: (orderedIds: string[]) => void;
+  /** Duplica una campaña existente como una nueva con el usuario actual
+   *  como dueño. Útil al "clonar" una plantilla pública. Devuelve la
+   *  campaña recién creada. */
+  cloneCampaign: (sourceId: string, newOwnerId: string) => Campaign | null;
+  /** Inscribe al usuario como `player` en una campaña pública (si no es
+   *  ya miembro). No requiere aprobación: para mantener el flujo simple. */
+  requestJoin: (campaignId: string, userId: string) => boolean;
+
+  // --- Vista de solo lectura (view token) ---------------------------------
+  generateViewToken: (campaignId: string) => string;
+  revokeViewToken: (campaignId: string) => void;
+  findByViewToken: (token: string) => Campaign | null;
 
   addChapter: (campaignId: string, title?: string) => Chapter;
   updateChapter: (campaignId: string, chapterId: string, patch: Partial<Chapter>) => void;
@@ -229,6 +284,11 @@ interface CampaignContextValue {
     campaignId: string,
     chapterId: string,
     events: Chapter['events']
+  ) => void;
+  updateChapterMap: (
+    campaignId: string,
+    chapterId: string,
+    map: ChapterMap
   ) => void;
 
   addCharacter: (
@@ -311,17 +371,28 @@ function normalizeCampaign(raw: Partial<Campaign>): Campaign {
     annotations: raw.annotations ?? [],
     revealedSpoilers: raw.revealedSpoilers ?? [],
     shareToken: raw.shareToken,
+    viewToken: raw.viewToken,
+    image: raw.image,
+    visibility: raw.visibility ?? 'private',
   };
 }
 
-/** Garantiza que capítulos antiguos tengan los campos nuevos (events). */
+/** Garantiza que capítulos antiguos tengan los campos nuevos (events, map). */
 function normalizeChapter(raw: Partial<Chapter>): Chapter {
   return {
     id: raw.id ?? generateId('ch'),
     title: raw.title ?? '',
     events: {
-      blocks: raw.events?.blocks ?? [],
+      blocks: (raw.events?.blocks ?? []).map((b) => ({
+        ...b,
+        type: normalizeEventType(b.type as unknown as string),
+      })),
       connections: raw.events?.connections ?? [],
+    },
+    map: {
+      cells: raw.map?.cells ?? {},
+      cols: raw.map?.cols ?? 15,
+      rows: raw.map?.rows ?? 15,
     },
   };
 }
@@ -466,6 +537,73 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     setActiveCampaignIdState((curr) => (curr === id ? null : curr));
   }, []);
 
+  const cloneCampaign = useCallback(
+    (sourceId: string, newOwnerId: string): Campaign | null => {
+      const source = campaigns.find((c) => c.id === sourceId);
+      if (!source) return null;
+      const now = new Date().toISOString();
+      // Copia profunda barata: como todo es JSON-serializable funciona.
+      const copy: Campaign = JSON.parse(JSON.stringify(source));
+      copy.id = generateId('camp');
+      copy.name = `${source.name} (clone)`;
+      copy.ownerId = newOwnerId;
+      copy.createdAt = now;
+      copy.updatedAt = now;
+      copy.visibility = 'private';
+      copy.shareToken = undefined;
+      // El nuevo dueño es DM. Limpiamos miembros y anotaciones del original.
+      copy.members = [{ userId: newOwnerId, role: 'dm', joinedAt: now }];
+      copy.annotations = [];
+      copy.revealedSpoilers = [];
+      setCampaigns((prev) => [...prev, copy]);
+      setActiveCampaignIdState(copy.id);
+      return copy;
+    },
+    [campaigns]
+  );
+
+  const requestJoin = useCallback(
+    (campaignId: string, userId: string): boolean => {
+      let joined = false;
+      setCampaigns((prev) =>
+        prev.map((c) => {
+          if (c.id !== campaignId) return c;
+          if (c.visibility !== 'public') return c;
+          if (c.members.some((m) => m.userId === userId)) return c;
+          joined = true;
+          return {
+            ...c,
+            members: [
+              ...c.members,
+              { userId, role: 'player', joinedAt: new Date().toISOString() },
+            ],
+            updatedAt: new Date().toISOString(),
+          };
+        })
+      );
+      return joined;
+    },
+    []
+  );
+
+  const reorderCampaigns = useCallback((orderedIds: string[]) => {
+    setCampaigns((prev) => {
+      const byId = new Map(prev.map((c) => [c.id, c] as const));
+      const next: Campaign[] = [];
+      // Primero las que vienen en `orderedIds` en su nuevo orden.
+      for (const id of orderedIds) {
+        const camp = byId.get(id);
+        if (camp) {
+          next.push(camp);
+          byId.delete(id);
+        }
+      }
+      // Después las restantes que no estén en la lista (defensivo).
+      for (const camp of byId.values()) next.push(camp);
+      return next;
+    });
+  }, []);
+
   // ------------------------------------------------------------------
   // Chapters
   // ------------------------------------------------------------------
@@ -510,6 +648,18 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         ...c,
         chapters: c.chapters.map((ch) =>
           ch.id === chapterId ? { ...ch, events } : ch
+        ),
+      }));
+    },
+    [patchCampaign]
+  );
+
+  const updateChapterMap = useCallback(
+    (campaignId: string, chapterId: string, map: ChapterMap) => {
+      patchCampaign(campaignId, (c) => ({
+        ...c,
+        chapters: c.chapters.map((ch) =>
+          ch.id === chapterId ? { ...ch, map } : ch
         ),
       }));
     },
@@ -722,6 +872,30 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     [patchCampaign]
   );
 
+  const generateViewToken = useCallback(
+    (campaignId: string): string => {
+      const token = generateId('view').replace(/[^a-z0-9-]/gi, '');
+      patchCampaign(campaignId, (c) => ({ ...c, viewToken: token }));
+      return token;
+    },
+    [patchCampaign]
+  );
+
+  const revokeViewToken = useCallback(
+    (campaignId: string) => {
+      patchCampaign(campaignId, (c) => ({ ...c, viewToken: undefined }));
+    },
+    [patchCampaign]
+  );
+
+  const findByViewToken = useCallback(
+    (token: string): Campaign | null => {
+      if (!token) return null;
+      return campaigns.find((c) => c.viewToken === token) ?? null;
+    },
+    [campaigns]
+  );
+
   const findByShareToken = useCallback(
     (token: string): Campaign | null => {
       if (!token) return null;
@@ -781,10 +955,14 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       createCampaign,
       updateCampaign,
       deleteCampaign,
+      reorderCampaigns,
+      cloneCampaign,
+      requestJoin,
       addChapter,
       updateChapter,
       deleteChapter,
       updateChapterEvents,
+      updateChapterMap,
       addCharacter,
       updateCharacter,
       deleteCharacter,
@@ -800,6 +978,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       generateShareToken,
       revokeShareToken,
       findByShareToken,
+      generateViewToken,
+      revokeViewToken,
+      findByViewToken,
       acceptInvite,
       getRole,
     }),
@@ -811,10 +992,14 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       createCampaign,
       updateCampaign,
       deleteCampaign,
+      reorderCampaigns,
+      cloneCampaign,
+      requestJoin,
       addChapter,
       updateChapter,
       deleteChapter,
       updateChapterEvents,
+      updateChapterMap,
       addCharacter,
       updateCharacter,
       deleteCharacter,
@@ -830,6 +1015,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       generateShareToken,
       revokeShareToken,
       findByShareToken,
+      generateViewToken,
+      revokeViewToken,
+      findByViewToken,
       acceptInvite,
       getRole,
     ]
@@ -908,6 +1096,7 @@ function emptyChapter(title: string): Chapter {
     id: generateId('ch'),
     title,
     events: { blocks: [], connections: [] },
+    map: { cells: {}, cols: 15, rows: 15 },
   };
 }
 

@@ -1,0 +1,386 @@
+// ============================================================================
+// Components / Responsive overrides
+// ----------------------------------------------------------------------------
+// Breakpoints:
+//   · Tablet:  ≤ 768px
+//   · Mobile:  ≤ 360px (con un punto intermedio en 480px para teléfonos
+//                       grandes / móviles modernos)
+// ============================================================================
+
+// ----------------------------------------------------------------------------
+// TABLET (≤ 768px)
+// ----------------------------------------------------------------------------
+@media (max-width: 768px) {
+  // Header: reduce padding y permite envolver enlaces.
+  .header {
+    padding: var(--space-sm) var(--space-md);
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+
+    &__nav {
+      gap: var(--space-md);
+      flex-wrap: wrap;
+    }
+
+    &__logo {
+      font-size: var(--font-size-base);
+    }
+  }
+
+  // Footer: stack en columnas, centrado.
+  .footer {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: var(--space-md);
+    gap: var(--space-md);
+
+    &__nav {
+      justify-content: center;
+    }
+  }
+
+  // Main page: hero más pequeño, padding reducido.
+  .main-page {
+    padding: 0 var(--space-md) var(--space-xl);
+    gap: var(--space-xl);
+
+    &__hero {
+      min-height: auto;
+      padding: var(--space-xl) 0;
+      padding-left: 0;
+    }
+
+    &__taglines {
+      font-size: var(--font-size-base);
+    }
+  }
+
+  // Profile page y cards
+  .profile-page {
+    padding: var(--space-md);
+
+    &__campaigns {
+      grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+    }
+  }
+
+  // Chapter selector: reduce padding, ancho 100%.
+  .chapter-selector {
+    padding: var(--space-md);
+
+    &__add-button {
+      min-width: 10rem;
+      font-size: var(--font-size-lg);
+    }
+
+    &__list-wrapper {
+      max-width: 100%;
+    }
+  }
+
+  // Character selector: scroll horizontal sustituido por wrap.
+  .character-selector {
+    &__grid {
+      gap: var(--space-md);
+      justify-content: center;
+    }
+  }
+
+  // Chapter page (Events/Map): pestañas más pequeñas, folder con menos padding.
+  .chapter-page {
+    padding: var(--space-sm);
+
+    &__tab {
+      padding: var(--space-xs) var(--space-md);
+      font-size: var(--font-size-base);
+    }
+
+    &__folder {
+      padding: var(--space-sm);
+      border-width: 4px;
+    }
+  }
+
+  // Toolbar de canvas: hacer scroll horizontal si no entra.
+  .events-canvas__toolbar {
+    bottom: var(--space-sm);
+    padding: var(--space-xs) var(--space-sm);
+    gap: var(--space-xs);
+    max-width: calc(100% - 2rem);
+    overflow-x: auto;
+  }
+
+  .events-canvas__tool {
+    width: 2rem;
+    height: 2rem;
+    flex-shrink: 0;
+  }
+
+  // Map controls envuelven mejor.
+  .map-canvas__controls {
+    padding: var(--space-xs) var(--space-sm);
+    gap: var(--space-sm);
+  }
+
+  .map-canvas__picker {
+    width: 11rem;
+    right: var(--space-sm);
+    top: 3.5rem;
+  }
+
+  // Stats popup: ancho fluido en pantallas pequeñas.
+  .map-canvas__stats-popup {
+    width: min(15rem, calc(100vw - 2rem));
+    left: var(--space-sm);
+    top: var(--space-sm);
+    padding: var(--space-sm);
+  }
+
+  // Character sheet: padding reducido, max-width adaptado.
+  .character-sheet {
+    padding: var(--space-md) var(--space-sm);
+    gap: var(--space-md);
+
+    &__top {
+      grid-template-columns: 1fr;
+    }
+
+    &__stats-panel {
+      grid-template-columns: 1fr;
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    &__traits {
+      grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
+      padding: var(--space-sm) var(--space-md);
+    }
+
+    &__lists {
+      grid-template-columns: 1fr;
+    }
+
+    &__description {
+      min-height: 12rem;
+    }
+  }
+
+  // Auth / NewCampaign / Confirm modals
+  .auth-modal,
+  .new-campaign-modal,
+  .confirm-modal {
+    width: min(calc(100vw - 1.5rem), 24rem);
+    padding: var(--space-md);
+  }
+
+  // Members panel y annotation thread
+  .members-panel,
+  .annotation-thread {
+    padding: var(--space-sm);
+  }
+
+  // Campaigns page (lista de campañas)
+  .campaigns-page {
+    padding: var(--space-md);
+
+    &__grid {
+      grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+      gap: var(--space-md);
+    }
+  }
+
+  // Users page
+  .users-page {
+    padding: var(--space-md);
+  }
+
+  // Invite page
+  .invite-page {
+    padding: var(--space-md);
+  }
+
+  // Campaign card más compacta en tablet.
+  .campaign-card {
+    --campaign-card-size: 11rem;
+  }
+
+  // Creator selector (chapters/characters chooser)
+  .creator-selector {
+    padding: var(--space-md);
+    gap: var(--space-md);
+  }
+
+  // Chapter or character chooser: cards apiladas.
+  .chapter-or-character {
+    padding: var(--space-md);
+
+    &__grid {
+      grid-template-columns: 1fr;
+      gap: var(--space-md);
+    }
+  }
+}
+
+// ----------------------------------------------------------------------------
+// MOBILE (≤ 480px) — punto intermedio
+// ----------------------------------------------------------------------------
+@media (max-width: 480px) {
+  // Header: el spacer se oculta, todo en una fila ajustada.
+  .header__spacer {
+    display: none;
+  }
+
+  .header__nav {
+    width: 100%;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .header__link {
+    font-size: var(--font-size-sm);
+  }
+
+  // Footer: enlaces como wrap en línea
+  .footer__nav {
+    gap: var(--space-sm);
+    font-size: var(--font-size-sm);
+  }
+
+  .footer__link {
+    font-size: var(--font-size-sm);
+  }
+
+  // Character sheet: stat-panel se reorganiza más.
+  .character-sheet {
+    &__stat {
+      grid-template-columns: 2.4rem 2.8rem auto;
+    }
+
+    &__combat-value {
+      width: 3.2rem;
+    }
+
+    &__traits {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  // Reducir aún más el toolbar y picker
+  .events-canvas__tool {
+    width: 1.85rem;
+    height: 1.85rem;
+  }
+
+  .map-canvas__picker {
+    width: calc(100vw - 2rem);
+    right: var(--space-sm);
+    left: var(--space-sm);
+    top: 3rem;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// SMALL MOBILE (≤ 360px) — pantallas más estrechas
+// ----------------------------------------------------------------------------
+@media (max-width: 360px) {
+  // Tipografía global ligeramente más pequeña.
+  :root {
+    --space-md: 0.8rem;
+    --space-lg: 1.1rem;
+    --space-xl: 1.5rem;
+  }
+
+  // Header con menos visualmente: logo abreviado posible.
+  .header {
+    padding: var(--space-xs) var(--space-sm);
+  }
+
+  .header__logo {
+    font-size: var(--font-size-sm);
+  }
+
+  // Reduce paddings de páginas a mínimo.
+  .main-page,
+  .chapter-selector,
+  .chapter-page,
+  .character-selector,
+  .character-sheet,
+  .campaigns-page,
+  .users-page,
+  .invite-page,
+  .profile-page {
+    padding: var(--space-sm);
+  }
+
+  // Campaign card aún más pequeña en móvil estrecho.
+  .campaign-card {
+    --campaign-card-size: 9rem;
+    border-width: 3px;
+  }
+
+  // Chapter page tabs apilados.
+  .chapter-page__tabs {
+    margin-left: var(--space-sm);
+  }
+
+  .chapter-page__tab {
+    padding: var(--space-xs) var(--space-sm);
+    font-size: var(--font-size-sm);
+    border-width: 4px;
+  }
+
+  // Modales casi a pantalla completa.
+  .auth-modal,
+  .new-campaign-modal,
+  .confirm-modal {
+    width: calc(100vw - 1rem);
+    padding: var(--space-sm);
+  }
+
+  // Character sheet: spacings mínimos.
+  .character-sheet {
+    &__stat {
+      grid-template-columns: 2.2rem 2.4rem auto;
+      gap: 0.25rem;
+    }
+
+    &__stat-label {
+      font-size: var(--font-size-sm);
+    }
+
+    &__combat-value {
+      width: 2.8rem;
+    }
+
+    &__list-items {
+      max-height: 7rem;
+    }
+
+    &__description {
+      min-height: 8rem;
+    }
+  }
+
+  // Toolbar canvas más compacto.
+  .events-canvas__toolbar {
+    gap: 0.15rem;
+    padding: 0.2rem var(--space-xs);
+  }
+
+  .events-canvas__tool {
+    width: 1.7rem;
+    height: 1.7rem;
+  }
+
+  // Stats popup minimal.
+  .map-canvas__stats-popup {
+    width: calc(100vw - 1rem);
+    left: 0.5rem;
+    top: 0.5rem;
+
+    &-grid,
+    &-abilities {
+      grid-template-columns: 1fr 1fr;
+    }
+  }
+}

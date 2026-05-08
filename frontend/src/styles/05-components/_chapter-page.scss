@@ -14,14 +14,20 @@
   flex-direction: column;
   flex: 1;
   min-height: 0;
-  padding: var(--space-md) clamp(1rem, 3vw, 3rem) var(--space-md);
+  // Margen amplio a los bordes de la página: la carpeta no llega hasta
+  // el filo del viewport, dejando aire alrededor.
+  padding: var(--space-md) clamp(2rem, 6vw, 5rem) var(--space-md);
+  align-items: center;
 }
 
 .chapter-page__tabs {
   display: flex;
   gap: var(--space-xs);
-  margin-left: var(--space-lg);
-  // Las pestañas apoyan su base sobre el borde superior del folder.
+  // Las pestañas apoyan su base sobre el borde superior del folder y
+  // se alinean a su esquina superior izquierda (no a la página).
+  width: 100%;
+  max-width: min(95vw, 85vh);
+  padding-left: var(--space-lg);
   margin-bottom: -6px;
   position: relative;
   z-index: 2;
@@ -58,8 +64,14 @@
 
 .chapter-page__folder {
   position: relative;
-  flex: 1;
-  min-height: 0;
+  // El folder es CUADRADO. Su lado es el menor de "ancho disponible" o
+  // "85% de la altura del viewport" — así en pantallas anchas se queda
+  // alto y compacto, no se estira. Se permite que las anotaciones queden
+  // por debajo del fold y se accedan haciendo scroll en la página.
+  aspect-ratio: 1 / 1;
+  width: 100%;
+  max-width: min(95vw, 85vh);
+  flex: 0 0 auto;
   display: flex;
   flex-direction: column;
   padding: clamp(var(--space-md), 2vw, var(--space-xl));
@@ -67,10 +79,13 @@
   border: 6px solid var(--color-border);
   border-radius: var(--radius-lg);
   box-shadow: 0 6px 16px var(--color-shadow);
-  width: 100%;
 
-  // En fullscreen la carpeta ocupa toda la pantalla.
+  // En fullscreen la carpeta ocupa toda la pantalla y rompe el cuadrado.
   &:fullscreen {
+    aspect-ratio: auto;
+    max-width: none;
+    width: 100%;
+    height: 100%;
     border-radius: 0;
     padding: var(--space-lg);
     background-color: var(--color-textbox-light);
@@ -177,6 +192,7 @@
     &--tool-text   { cursor: text; }
     &--tool-create { cursor: crosshair; }
     &--tool-connect { cursor: cell; }
+    &--tool-redact { cursor: pointer; }
     &--tool-zoom   { cursor: ns-resize; }
   }
 

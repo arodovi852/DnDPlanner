@@ -57,10 +57,21 @@
     opacity: 0.75;
   }
 
+  // Contenedor con scroll para que la lista no haga overflow infinito
+  // cuando hay miles de usuarios. Limita la altura visible al viewport.
+  &__scroll {
+    max-height: 60vh;
+    overflow-y: auto;
+    padding-right: 0.25rem;
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-textbox-dark);
+  }
+
   &__list {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0.5rem;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
@@ -68,7 +79,7 @@
 
   &__item {
     display: grid;
-    grid-template-columns: auto 1fr auto;
+    grid-template-columns: 1fr auto;
     gap: 0.75rem;
     align-items: center;
     padding: 0.5rem 0.75rem;
@@ -77,10 +88,29 @@
     background-color: var(--color-chrome-strong);
   }
 
+  // Link clickable que ocupa la zona izquierda del item.
+  &__link {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.75rem;
+    align-items: center;
+    text-decoration: none;
+    color: inherit;
+    min-width: 0;
+
+    &:hover &__name,
+    &:focus-visible &__name {
+      color: var(--color-primary-hover);
+    }
+  }
+
   &__name {
     font-family: var(--font-family-base);
     font-size: var(--font-size-base);
     font-weight: 600;
     color: var(--color-text-inverse);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 }

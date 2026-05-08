@@ -1,0 +1,151 @@
+// ============================================================================
+// Components / Info Page
+// ----------------------------------------------------------------------------
+// Página estática reutilizada por los enlaces del footer (About, Contact,
+// News, Terms, Privacy, API, Roadmap). Una columna centrada con un panel
+// cromo strong y secciones internas — coherente con Profile / Campaigns.
+// ============================================================================
+
+.info-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: clamp(2rem, 6vw, 5rem) clamp(2rem, 8vw, 6rem);
+  color: var(--color-text-on-chrome);
+
+  &__header {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    max-width: 60rem;
+    margin: 0 auto;
+    width: 100%;
+    text-align: center;
+  }
+
+  &__title {
+    font-family: var(--font-family-heading);
+    font-size: clamp(var(--font-size-xl), 4vw, 3rem);
+    color: var(--color-text-on-chrome);
+    margin: 0;
+    letter-spacing: 0.04em;
+  }
+
+  &__lead {
+    margin: 0;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-lg);
+    color: var(--color-text-on-chrome);
+    opacity: 0.85;
+    line-height: var(--line-height-base);
+  }
+
+  &__panel {
+    width: 100%;
+    max-width: 60rem;
+    margin: 0 auto;
+    padding: clamp(var(--space-lg), 4vw, var(--space-xl));
+    border: 5px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    background-color: var(--color-chrome-strong);
+    color: var(--color-text-inverse);
+    box-shadow: 0 6px 16px var(--color-shadow);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xl);
+  }
+
+  &__section {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+
+  &__section-title {
+    margin: 0;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-inverse);
+    letter-spacing: 0.03em;
+    border-bottom: 3px solid var(--color-primary);
+    padding-bottom: var(--space-xs);
+  }
+
+  &__body {
+    margin: 0;
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--color-text-inverse);
+    white-space: pre-wrap;
+  }
+
+  &__list {
+    margin: 0;
+    padding-left: var(--space-xl);
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    line-height: var(--line-height-base);
+    color: var(--color-text-inverse);
+
+    li::marker {
+      color: var(--color-primary);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Formulario de contacto (solo /contact)
+  // --------------------------------------------------------------------------
+  &__form {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  &__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+  }
+
+  &__field-label {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-sm);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-text-inverse);
+  }
+
+  &__field-input {
+    padding: var(--space-sm) var(--space-md);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+
+    &:focus-visible {
+      outline: 3px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+
+    &--textarea {
+      resize: vertical;
+      min-height: 7rem;
+    }
+  }
+
+  &__form-actions {
+    display: flex;
+    justify-content: flex-end;
+  }
+
+  &__contact-form {
+    border-top: 2px dashed var(--color-border);
+    padding-top: var(--space-lg);
+  }
+}

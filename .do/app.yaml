@@ -1,0 +1,73 @@
+name: dndplanner
+region: fra
+
+# ----------------------------------------------------------------------------
+# FRONTEND — sitio estático de React/Vite. Gratis en App Platform (cuenta
+# 3 sitios estáticos sin coste). Se construye con `npm run build` y se
+# sirve la carpeta `dist`.
+# ----------------------------------------------------------------------------
+static_sites:
+  - name: dndplanner-web
+    source_dir: /frontend
+    github:
+      repo: arodovi852/AROProyectoFinDeGrado2026
+      branch: main
+      deploy_on_push: true
+    build_command: npm ci && npm run build
+    output_dir: dist
+    # SPA: cualquier ruta no encontrada devuelve index.html para que
+    # React Router pueda manejarla en el cliente.
+    catchall_document: index.html
+    envs:
+      - key: VITE_API_URL
+        scope: BUILD_TIME
+        value: ${dndplanner-api.PUBLIC_URL}
+
+# ----------------------------------------------------------------------------
+# BACKEND — servicio Node/Express. Tier Basic XXS = $5/mes (con los $200
+# de créditos del GitHub Student Pack llega para ~3 años).
+# ----------------------------------------------------------------------------
+services:
+  - name: dndplanner-api
+    source_dir: /backend
+    github:
+      repo: arodovi852/AROProyectoFinDeGrado2026
+      branch: main
+      deploy_on_push: true
+    build_command: npm ci --omit=dev
+    run_command: node src/server.js
+    instance_count: 1
+    instance_size_slug: basic-xxs
+    http_port: 3000
+    health_check:
+      http_path: /api/health
+    envs:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: "3000"
+      - key: MONGO_URI
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_REFRESH_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: JWT_REFRESH_EXPIRES_IN
+        value: 30d
+      - key: CLOUDINARY_CLOUD_NAME
+        scope: RUN_TIME
+        type: SECRET
+      - key: CLOUDINARY_API_KEY
+        scope: RUN_TIME
+        type: SECRET
+      - key: CLOUDINARY_API_SECRET
+        scope: RUN_TIME
+        type: SECRET
+      - key: CORS_ORIGIN
+        scope: RUN_TIME
+        value: ${dndplanner-web.PUBLIC_URL}

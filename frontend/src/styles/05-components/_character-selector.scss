@@ -6,6 +6,25 @@
 // El canvas interno contiene un grid de personajes + un buscador abajo.
 // ============================================================================
 
+// La carpeta de Players/Enemies hereda el estilo de chapter-page__folder
+// pero no necesita ser cuadrada — debe crecer en altura. Reseteamos
+// aspect-ratio y dejamos que flex:1 la haga ocupar todo el alto.
+.chapter-page__folder.character-selector__folder {
+  aspect-ratio: auto;
+  flex: 1;
+  min-height: 0;
+  max-width: min(95vw, 70rem);
+}
+
+// Las pestañas (Playable / Enemies) deben quedar pegadas a la esquina
+// superior izquierda del folder, igual que Events / Map en /chapter.
+// Sin esta regla, .chapter-page__tabs tiene max-width 85vh (más ancho
+// que el folder de 70rem) y las pestañas se separan visualmente.
+.character-selector > .chapter-page__tabs {
+  max-width: min(95vw, 70rem);
+  justify-content: flex-start;
+}
+
 .character-selector__canvas {
   background-color: var(--color-chrome);
   padding: 0;
@@ -23,6 +42,9 @@
   flex: 1;
   min-height: 0;
   align-content: flex-start;
+  // El selector de Players/Enemies ahora también respeta el margen
+  // amplio de chapter-page (clamp(2rem, 6vw, 5rem)) gracias al padding
+  // inherited del padre. Aquí solo aseguramos que el grid no rebose.
 }
 
 .character-selector__search {

@@ -2,6 +2,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { CampaignCard } from '../components/shared/CampaignCard';
 import { useCampaigns } from '../context/CampaignContext';
+import { useAuth } from '../context/AuthContext';
 
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
 import destinosCruzadosHover from '../assets/campaigns/destinos-cruzados-hover.png';
@@ -28,7 +29,12 @@ const TEMPLATE_IMAGES: Record<string, { image: string; hoverImage: string }> = {
 export function CampaignsPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { user } = useAuth();
   const { campaigns, setActiveCampaign } = useCampaigns();
+
+  const myCampaigns = campaigns.filter(
+    (c) => c.ownerId === user?.id || c.members.some((m) => m.userId === user?.id)
+  );
 
   const openCampaign = (id: string) => {
     setActiveCampaign(id);
@@ -42,11 +48,13 @@ export function CampaignsPage() {
       </h1>
 
       <div className="campaigns-page__grid">
-        {campaigns.map((campaign) => {
-          const images = TEMPLATE_IMAGES[campaign.templateId ?? ''] ?? {
-            image: destinosCruzados,
-            hoverImage: destinosCruzadosHover,
-          };
+        {myCampaigns.map((campaign) => {
+          const images = campaign.image
+            ? { image: campaign.image, hoverImage: campaign.image }
+            : TEMPLATE_IMAGES[campaign.templateId ?? ''] ?? {
+                image: destinosCruzados,
+                hoverImage: destinosCruzadosHover,
+              };
           return (
             <CampaignCard
               key={campaign.id}

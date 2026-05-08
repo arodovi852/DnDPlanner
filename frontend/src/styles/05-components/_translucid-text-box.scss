@@ -27,4 +27,25 @@
   &:focus-visible {
     background-color: var(--color-translucid-opaque);
   }
+
+  // Variante "dark": fondo opaco oscuro desde el inicio (no translúcido).
+  // Se usa en lugares donde el contraste con el fondo de la página es
+  // bajo (ej. la descripción del perfil) y queremos que el panel destaque
+  // visualmente sin necesitar hover.
+  &--dark {
+    background-color: var(--color-chrome-strong);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-chrome-strong);
+    }
+  }
+
+  // Variante "tall": altura mínima para alinearse con elementos vecinos
+  // (avatar + nombre del perfil).
+  &--tall {
+    min-height: 12rem;
+    display: flex;
+    align-items: flex-start;
+  }
 }

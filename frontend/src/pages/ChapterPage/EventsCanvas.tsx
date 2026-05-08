@@ -20,6 +20,7 @@ import {
   type ChapterEventConnection as Connection,
   type EventType,
 } from '../../context/CampaignContext';
+import { SpoilerText } from '../../components/shared/Spoiler';
 
 // ---------------------------------------------------------------------------
 // Tipos locales
@@ -37,7 +38,8 @@ type Tool =
   | 'create'
   | 'connect'
   | 'zoom'
-  | 'notes';
+  | 'notes'
+  | 'redact';
 
 const BLOCK_WIDTH = 220;
 const BLOCK_HEIGHT = 150;
@@ -92,7 +94,7 @@ export function EventsCanvas() {
   const [tool, setTool] = useState<Tool>('select');
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
-  const [eventType, setEventType] = useState<EventType>('historia');
+  const [eventType, setEventType] = useState<EventType>('MainStory');
   const [connectFrom, setConnectFrom] = useState<string | null>(null);
 
   const [editingBlockId, setEditingBlockId] = useState<string | null>(null);
@@ -224,6 +226,26 @@ export function EventsCanvas() {
     updateBlock(editingBlockId, { text: editingText });
     setEditingBlockId(null);
     setEditingText('');
+  };
+
+  /**
+   * Aplica/quita marcadores `||...||` al texto de un bloque para censurarlo
+   * a los jugadores. El DM siempre ve el contenido. Si el texto del bloque
+   * ya está envuelto en spoilers, se quitan; en caso contrario se envuelve
+   * todo el contenido.
+   */
+  const toggleBlockRedacted = (block: Block) => {
+    const text = block.text ?? '';
+    const trimmed = text.trim();
+    let next: string;
+    if (trimmed.startsWith('||') && trimmed.endsWith('||') && trimmed.length >= 4) {
+      next = trimmed.slice(2, -2);
+    } else if (trimmed.length === 0) {
+      next = '||secreto||';
+    } else {
+      next = `||${trimmed}||`;
+    }
+    updateBlock(block.id, { text: next });
   };
 
   useEffect(() => {
@@ -405,6 +427,11 @@ export function EventsCanvas() {
       return;
     }
 
+    if (tool === 'redact') {
+      toggleBlockRedacted(block);
+      return;
+    }
+
     if (tool === 'connect') {
       if (connectFrom === null) {
         setConnectFrom(block.id);
@@ -523,7 +550,9 @@ export function EventsCanvas() {
                 <span className="events-canvas__note-type">
                   {t(`chapter.eventTypes.${entry.block.type}`)}
                 </span>
-                <p className="events-canvas__note-text">{entry.block.text}</p>
+                <p className="events-canvas__note-text">
+                  <SpoilerText text={entry.block.text} />
+                </p>
               </div>
             ))
           )}
@@ -658,7 +687,9 @@ export function EventsCanvas() {
                         onClick={(event) => event.stopPropagation()}
                       />
                     ) : (
-                      <p className="events-canvas__block-text">{block.text}</p>
+                      <p className="events-canvas__block-text">
+                        <SpoilerText text={block.text} />
+                      </p>
                     )}
                   </div>
                 </div>
@@ -705,6 +736,9 @@ export function EventsCanvas() {
         </div>
         <ToolButton current={tool} value="connect" label={t('chapter.tools.connect')} onSelect={setTool}>
           <LineIcon />
+        </ToolButton>
+        <ToolButton current={tool} value="redact" label={t('chapter.tools.redact')} onSelect={setTool}>
+          <RedactIcon />
         </ToolButton>
         <ToolButton current={tool} value="zoom" label={t('chapter.tools.zoom')} onSelect={setTool}>
           <ZoomIcon />
@@ -860,6 +894,17 @@ function NotesIcon() {
   return (
     <svg viewBox="0 0 24 24" width="1.25rem" height="1.25rem" fill="currentColor" aria-hidden="true">
       <path d="M6 2h9l5 5v15H6zm8 1v5h5zM8 12h8v2H8zm0 4h8v2H8z" />
+    </svg>
+  );
+}
+
+function RedactIcon() {
+  // Marca de censura: barras negras tipo "documento clasificado".
+  return (
+    <svg viewBox="0 0 24 24" width="1.25rem" height="1.25rem" fill="currentColor" aria-hidden="true">
+      <rect x="3" y="6" width="14" height="3" rx="0.5" />
+      <rect x="3" y="11" width="18" height="3" rx="0.5" />
+      <rect x="3" y="16" width="10" height="3" rx="0.5" />
     </svg>
   );
 }

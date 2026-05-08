@@ -15,6 +15,16 @@ import { ChapterOrCharacterPage } from './pages/ChapterOrCharacterPage';
 import { ChapterPage } from './pages/ChapterPage';
 import { UsersPage } from './pages/UsersPage';
 import { InvitePage } from './pages/InvitePage';
+import { TemplatesPage } from './pages/TemplatesPage';
+import { AboutPage } from './pages/info/AboutPage';
+import { ContactPage } from './pages/info/ContactPage';
+import { NewsPage } from './pages/info/NewsPage';
+import { TermsPage } from './pages/info/TermsPage';
+import { PrivacyPage } from './pages/info/PrivacyPage';
+import { ApiPage } from './pages/info/ApiPage';
+import { RoadmapPage } from './pages/info/RoadmapPage';
+import { CampaignViewPage } from './pages/CampaignViewPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 
 /**
  * En /main la propia página renderiza su Header (porque la variante
@@ -50,6 +60,7 @@ function App() {
                   <Route path="/" element={<Navigate to="/main" replace />} />
                   <Route path="/main" element={<MainPage />} />
                   <Route path="/profile" element={<ProfilePage />} />
+                  <Route path="/profile/:userId" element={<UserProfilePage />} />
                   <Route path="/users" element={<UsersPage />} />
                   <Route path="/campaigns" element={<CampaignsPage />} />
                   <Route path="/creatorSelector" element={<CreatorSelectorPage />} />
@@ -59,6 +70,15 @@ function App() {
                   <Route path="/character/:characterId" element={<CharacterSheetPage />} />
                   <Route path="/chapter/:chapterId" element={<ChapterPage />} />
                   <Route path="/invite/:token" element={<InvitePage />} />
+                  <Route path="/templates" element={<TemplatesPage />} />
+                  <Route path="/about" element={<AboutPage />} />
+                  <Route path="/contact" element={<ContactPage />} />
+                  <Route path="/news" element={<NewsPage />} />
+                  <Route path="/terms" element={<TermsPage />} />
+                  <Route path="/privacy" element={<PrivacyPage />} />
+                  <Route path="/api" element={<ApiPage />} />
+                  <Route path="/roadmap" element={<RoadmapPage />} />
+                  <Route path="/view/:viewToken" element={<CampaignViewPage />} />
                   <Route path="*" element={<Navigate to="/main" replace />} />
                 </Routes>
               </main>

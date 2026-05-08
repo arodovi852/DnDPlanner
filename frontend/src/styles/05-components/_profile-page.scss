@@ -14,6 +14,42 @@
   gap: var(--space-xl);
   padding: var(--space-xl) clamp(3rem, 10vw, 8rem);
 
+  // Barra superior con acciones globales (logout). El logout se separa
+  // del bloque "edit profile" porque cerrar sesión es una acción crítica
+  // que debe estar siempre accesible aunque no estemos en modo edición.
+  &__bar {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--space-sm);
+  }
+
+  &__logout {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    // Más alto que los botones-tab (0.55rem) para sentirse "presionable":
+    // los botones finos (~28px) se quedan cortos en pantallas táctiles.
+    padding: 0.55rem 1rem;
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-textbox-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary);
+      transform: translateY(-1px);
+    }
+
+    svg {
+      flex-shrink: 0;
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Fila superior: identidad + descripción
   // --------------------------------------------------------------------------
@@ -36,6 +72,38 @@
     }
   }
 
+  // Wrapper relativo para colocar el botón flotante "✏︎" en una esquina
+  // del avatar cuando el usuario está en modo edición.
+  &__avatar {
+    position: relative;
+    display: inline-block;
+  }
+
+  &__avatar-edit {
+    position: absolute;
+    right: -0.4rem;
+    bottom: -0.4rem;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    border: 3px solid var(--color-border);
+    border-radius: 50%;
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    box-shadow: 0 3px 8px var(--color-shadow);
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-primary-hover);
+      transform: scale(1.06);
+    }
+  }
+
   &__name-row {
     display: flex;
     align-items: center;
@@ -46,6 +114,55 @@
     font-family: var(--font-family-heading);
     font-size: var(--font-size-lg);
     color: var(--color-text-on-chrome);
+  }
+
+  &__name-input {
+    padding: 0.25rem 0.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    min-width: 12rem;
+  }
+
+  // Toggle "Cuenta privada" en modo edición.
+  &__privacy {
+    display: inline-flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--space-xs) var(--space-sm);
+    color: var(--color-text-on-chrome);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+
+    input[type='checkbox'] {
+      width: 1.1rem;
+      height: 1.1rem;
+      cursor: pointer;
+    }
+  }
+
+  &__privacy-hint {
+    flex-basis: 100%;
+    font-size: var(--font-size-xs);
+    opacity: 0.7;
+    font-style: italic;
+  }
+
+  &__description-input {
+    width: 100%;
+    min-height: 5rem;
+    padding: var(--space-sm) var(--space-md);
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-base);
+    resize: vertical;
   }
 
   &__edit {
@@ -119,6 +236,231 @@
     flex-wrap: wrap;
     gap: var(--space-xl);
     justify-content: flex-start;
+  }
+
+  // --------------------------------------------------------------------------
+  // Tabs DM / Jugador / Todas
+  // --------------------------------------------------------------------------
+  &__campaigns-controls {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+  }
+
+  &__campaigns-tabs {
+    display: inline-flex;
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    overflow: hidden;
+    background-color: var(--color-textbox-dark);
+  }
+
+  &__campaigns-tab {
+    // Padding vertical incrementado para que el "click area" sea cómodo
+    // en mobile. Antes 0.3rem (~5px) — ahora 0.55rem (~9px).
+    padding: 0.55rem 1rem;
+    border: none;
+    background: transparent;
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    transition: background-color var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-textbox-dark-hover);
+    }
+
+    &--active {
+      background-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+  }
+
+  // --------------------------------------------------------------------------
+  // Tarjeta con etiquetas y acciones de edición superpuestas
+  // --------------------------------------------------------------------------
+  &__card-wrapper {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__card-name {
+    max-width: 14rem;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    color: var(--color-text-on-chrome);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  // Etiqueta de rol (DM / Co-DM / Player) en esquina superior izquierda.
+  &__card-role {
+    position: absolute;
+    top: -0.5rem;
+    left: -0.5rem;
+    padding: 0.15rem 0.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    z-index: 3;
+
+    &--dm {
+      background-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+
+    &--codm {
+      background-color: var(--color-primary-dark);
+      color: var(--color-text-inverse);
+    }
+
+    &--player {
+      background-color: var(--color-surface-cream);
+      color: var(--color-text);
+    }
+  }
+
+  // Acciones por tarjeta (visible solo en modo edición).
+  &__card-actions {
+    position: absolute;
+    bottom: -0.6rem;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    gap: 0.25rem;
+    padding: 0.2rem 0.4rem;
+    border: 3px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-chrome);
+    z-index: 4;
+  }
+
+  &__card-action {
+    // Bumped up de 1.6 → 1.9rem para que sean más cómodos de pulsar.
+    width: 1.9rem;
+    height: 1.9rem;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background-color: var(--color-textbox-dark);
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    font-size: 0.95rem;
+    line-height: 1;
+    transition: background-color var(--transition-fast);
+
+    &:hover:not(:disabled),
+    &:focus-visible:not(:disabled) {
+      background-color: var(--color-primary);
+    }
+
+    &:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    &--danger {
+      background-color: #c0392b;
+
+      &:hover:not(:disabled),
+      &:focus-visible:not(:disabled) {
+        background-color: #e74c3c;
+      }
+    }
+
+    // Estado activo del toggle público/privado (🔒 ↔ 🌐).
+    &--public {
+      background-color: var(--color-primary);
+    }
+  }
+
+  // Input para renombrar la campaña en modo edición. Sustituye al
+  // span con el nombre.
+  &__card-name-input {
+    max-width: 14rem;
+    width: 100%;
+    padding: 0.25rem 0.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    text-align: center;
+  }
+
+  // Botón flotante de visibilidad en la esquina inferior derecha de la
+  // card. Muestra 🔒 si la campaña es privada y 🌐 si es pública. Solo
+  // se renderiza para DM y co-DM. El click abre un ConfirmModal antes
+  // de cambiar el estado para prevenir clicks accidentales.
+  &__card-visibility-toggle {
+    position: absolute;
+    right: -0.5rem;
+    bottom: 2.2rem; // Encima del nombre, sobre la portada
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 3px solid var(--color-border);
+    border-radius: 50%;
+    background-color: var(--color-textbox-dark);
+    color: var(--color-text-inverse);
+    font-size: 1.05rem;
+    line-height: 1;
+    cursor: pointer;
+    box-shadow: 0 3px 8px var(--color-shadow);
+    z-index: 4;
+    transition: background-color var(--transition-fast), transform var(--transition-fast);
+
+    &:hover,
+    &:focus-visible {
+      transform: scale(1.06);
+    }
+
+    &--public {
+      background-color: var(--color-primary);
+    }
+  }
+
+  // En modo edición ponemos un overlay sobre la card que ABSORBE los clicks
+  // antes de que lleguen a la tarjeta. Así editar una imagen / borrar /
+  // mover no abre la campaña sin querer.
+  &__card-block {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--radius-lg);
+    background-color: rgba(0, 0, 0, 0.04);
+    cursor: default;
+    z-index: 2;
+  }
+
+  &__card-index {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    padding: 0.15rem 0.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-textbox-light);
+    color: var(--color-text);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    z-index: 3;
   }
 }
 

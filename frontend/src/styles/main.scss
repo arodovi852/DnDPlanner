@@ -41,3 +41,10 @@
 @use '05-components/annotation-thread';
 @use '05-components/users-page';
 @use '05-components/invite-page';
+@use '05-components/info-page';
+@use '05-components/templates-page';
+@use '05-components/campaign-view-page';
+@use '05-components/user-profile-page';
+// El archivo de responsive debe ir el ÚLTIMO para que sus media queries
+// puedan sobrescribir cualquier regla anterior cuando el viewport coincide.
+@use '05-components/responsive';

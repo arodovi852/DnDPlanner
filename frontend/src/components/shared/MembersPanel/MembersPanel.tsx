@@ -32,7 +32,7 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { campaigns, addMember, removeMember, updateMemberRole, assignCharacter,
-    generateShareToken, revokeShareToken } = useCampaigns();
+    generateShareToken, revokeShareToken, generateViewToken, revokeViewToken } = useCampaigns();
   const { users, searchUsers, findByUsername } = useUsers();
 
   const campaign = useMemo(
@@ -43,6 +43,7 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
   const [query, setQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [copyState, setCopyState] = useState<'idle' | 'copied'>('idle');
+  const [viewCopyState, setViewCopyState] = useState<'idle' | 'copied'>('idle');
 
   useEffect(() => {
     if (!open) return;
@@ -58,6 +59,7 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
       setQuery('');
       setError(null);
       setCopyState('idle');
+      setViewCopyState('idle');
     }
   }, [open]);
 
@@ -69,8 +71,26 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
   const canManage = isOwner || currentMemberRole === 'co-dm';
 
   const memberIds = new Set(campaign.members.map((m) => m.userId));
+  // El DM ya gestiona la campaña, así que ya tiene acceso a sus jugadores
+  // (incluso a los privados): los privados solo se ocultan de búsquedas
+  // generales, no de "añadir miembro" cuando ya forman parte de OTRA
+  // campaña del mismo DM. Para invitar a un privado totalmente externo,
+  // habría que conocer su nombre exacto: lo respetamos.
+  const isAlreadyMyPlayer = (u: PublicUser): boolean => {
+    if (!user) return false;
+    return campaigns.some(
+      (c) =>
+        c.members.some(
+          (m) => m.userId === user.id && (m.role === 'dm' || m.role === 'co-dm')
+        ) &&
+        c.members.some((m) => m.userId === u.id && m.role === 'player')
+    );
+  };
   const suggestions = query
-    ? searchUsers(query).filter((u) => !memberIds.has(u.id)).slice(0, 5)
+    ? searchUsers(query)
+        .filter((u) => !memberIds.has(u.id))
+        .filter((u) => !u.isPrivate || isAlreadyMyPlayer(u))
+        .slice(0, 5)
     : [];
 
   const handleAddByUsername = (username: string) => {
@@ -81,6 +101,11 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
     }
     if (memberIds.has(found.id)) {
       setError(t('members.alreadyMember'));
+      return;
+    }
+    if (found.isPrivate && !isAlreadyMyPlayer(found)) {
+      // Los perfiles privados solo entran por enlace de invitación.
+      setError(t('members.notFound'));
       return;
     }
     addMember(campaign.id, { userId: found.id, role: 'player' });
@@ -105,6 +130,26 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
   const handleGenerateLink = () => {
     generateShareToken(campaign.id);
     setCopyState('idle');
+  };
+
+  const handleGenerateViewLink = () => {
+    generateViewToken(campaign.id);
+    setViewCopyState('idle');
+  };
+
+  const handleCopyViewLink = async () => {
+    if (!campaign.viewToken) return;
+    const url = buildViewUrl(campaign.viewToken);
+    try {
+      await navigator.clipboard.writeText(url);
+      setViewCopyState('copied');
+      window.setTimeout(() => setViewCopyState('idle'), 2000);
+    } catch {
+      const input = document.getElementById(
+        'members-panel-view-url'
+      ) as HTMLInputElement | null;
+      input?.select();
+    }
   };
 
   const handleCopyLink = async () => {
@@ -261,50 +306,88 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
         )}
 
         {canManage && (
-          <section className="members-panel__section">
-            <h3 className="members-panel__section-title">
-              {t('members.inviteLink')}
-            </h3>
+          <section className="members-panel__section members-panel__section--links">
+            <div className="members-panel__links">
+              <div className="members-panel__link-block">
+                <h3 className="members-panel__section-title">
+                  {t('members.inviteLink')}
+                </h3>
 
-            {campaign.shareToken ? (
-              <>
-                <div className="members-panel__link-row">
-                  <input
-                    id="members-panel-invite-url"
-                    className="auth-modal__field"
-                    readOnly
-                    value={buildInviteUrl(campaign.shareToken)}
-                    onFocus={(e) => e.currentTarget.select()}
-                  />
-                  <Button size="small" onClick={handleCopyLink}>
-                    {copyState === 'copied'
-                      ? t('members.copied')
-                      : t('members.copy')}
+                {campaign.shareToken ? (
+                  <>
+                    <div className="members-panel__link-row">
+                      <input
+                        id="members-panel-invite-url"
+                        className="auth-modal__field"
+                        readOnly
+                        value={buildInviteUrl(campaign.shareToken)}
+                        onFocus={(e) => e.currentTarget.select()}
+                      />
+                      <Button size="small" onClick={handleCopyLink}>
+                        {copyState === 'copied'
+                          ? t('members.copied')
+                          : t('members.copy')}
+                      </Button>
+                      <button
+                        type="button"
+                        className="members-panel__revoke"
+                        onClick={() => revokeShareToken(campaign.id)}
+                      >
+                        {t('members.revoke')}
+                      </button>
+                    </div>
+
+                    <ShareButtons
+                      url={buildInviteUrl(campaign.shareToken)}
+                      title={campaign.name}
+                      t={t}
+                    />
+                  </>
+                ) : (
+                  <Button size="small" onClick={handleGenerateLink}>
+                    {t('members.generateLink')}
                   </Button>
-                  <button
-                    type="button"
-                    className="members-panel__revoke"
-                    onClick={() => revokeShareToken(campaign.id)}
-                  >
-                    {t('members.revoke')}
-                  </button>
-                </div>
+                )}
 
-                <ShareButtons
-                  url={buildInviteUrl(campaign.shareToken)}
-                  title={campaign.name}
-                  t={t}
-                />
-              </>
-            ) : (
-              <Button size="small" onClick={handleGenerateLink}>
-                {t('members.generateLink')}
-              </Button>
-            )}
+                <p className="members-panel__hint">{t('members.inviteHint')}</p>
+              </div>
 
-            <p className="members-panel__hint">
-              {t('members.inviteHint')}
-            </p>
+              <div className="members-panel__link-block">
+                <h3 className="members-panel__section-title">
+                  {t('members.viewLink')}
+                </h3>
+
+                {campaign.viewToken ? (
+                  <div className="members-panel__link-row">
+                    <input
+                      id="members-panel-view-url"
+                      className="auth-modal__field"
+                      readOnly
+                      value={buildViewUrl(campaign.viewToken)}
+                      onFocus={(e) => e.currentTarget.select()}
+                    />
+                    <Button size="small" onClick={handleCopyViewLink}>
+                      {viewCopyState === 'copied'
+                        ? t('members.copied')
+                        : t('members.copy')}
+                    </Button>
+                    <button
+                      type="button"
+                      className="members-panel__revoke"
+                      onClick={() => revokeViewToken(campaign.id)}
+                    >
+                      {t('members.revoke')}
+                    </button>
+                  </div>
+                ) : (
+                  <Button size="small" onClick={handleGenerateViewLink}>
+                    {t('members.generateViewLink')}
+                  </Button>
+                )}
+
+                <p className="members-panel__hint">{t('members.viewLinkHint')}</p>
+              </div>
+            </div>
           </section>
         )}
       </div>
@@ -315,6 +398,11 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
 function buildInviteUrl(token: string): string {
   if (typeof window === 'undefined') return `/invite/${token}`;
   return `${window.location.origin}/invite/${token}`;
+}
+
+function buildViewUrl(token: string): string {
+  if (typeof window === 'undefined') return `/view/${token}`;
+  return `${window.location.origin}/view/${token}`;
 }
 
 /**

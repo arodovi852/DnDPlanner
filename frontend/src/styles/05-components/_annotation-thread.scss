@@ -17,6 +17,11 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
+  // Mantenemos el panel de notas a una altura razonable: si hay muchas
+  // anotaciones se hace scroll dentro del panel en lugar de extender la
+  // página entera.
+  max-height: 32rem;
+  min-height: 0;
 
   &__header {
     display: flex;
@@ -55,12 +60,19 @@
   &__list {
     list-style: none;
     margin: 0;
-    padding: 0;
+    padding: 0 var(--space-xs) 0 0;
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    max-height: 22rem;
+    // El contenedor padre limita la altura total; aquí dejamos que la lista
+    // crezca dentro de ese hueco con scroll vertical. Reducimos la altura
+    // máxima al valor que cabe cuando el form de envío también está visible.
+    flex: 1;
+    min-height: 0;
+    max-height: 16rem;
     overflow-y: auto;
+    // Pista visual de que se puede hacer scroll cuando hay muchas notas.
+    scrollbar-gutter: stable;
   }
 
   &__item {

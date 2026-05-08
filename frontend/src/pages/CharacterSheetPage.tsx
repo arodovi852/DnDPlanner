@@ -61,12 +61,17 @@ export function CharacterSheetPage() {
   // --- Permisos ---------------------------------------------------------
   // El DM y el Co-DM pueden editar cualquier personaje.
   // El jugador sólo puede editar el personaje que tenga asignado.
+  // Si no hay sesión iniciada o el usuario es el propietario de la campaña,
+  // permitimos editar (modo local sin autenticación / dueño de la campaña).
   const isDM = isDungeonMaster(activeCampaign, user?.id ?? null);
   const ownerMember = activeCampaign?.members.find(
     (m) => m.characterId === characterId
   );
   const isMyCharacter = !!user && ownerMember?.userId === user.id;
-  const canEdit = isDM || isMyCharacter;
+  const isCampaignOwner =
+    !!user && !!activeCampaign && activeCampaign.ownerId === user.id;
+  const noAuth = !user;
+  const canEdit = isDM || isMyCharacter || isCampaignOwner || noAuth;
 
   const [draft, setDraft, history] = useUndoableState<Character | null>(
     real ?? null
@@ -490,7 +495,9 @@ export function CharacterSheetPage() {
 
       {canEdit && (
         <div className="character-sheet__actions">
-          <Button onClick={handleSave}>{t('characterSheet.saveChanges')}</Button>
+          <Button onClick={handleSave}>
+            {t('characterSheet.saveToCampaign')}
+          </Button>
         </div>
       )}
 
@@ -732,11 +739,30 @@ interface AttacksFieldProps {
 }
 
 function AttacksField({ label, values, onChange }: AttacksFieldProps) {
-  const [open, setOpen] = useState<number | null>(null);
+  // Usamos un Set para que se puedan tener varios ataques desplegados
+  // a la vez. Click sobre un ataque ya abierto lo cierra (toggle).
+  const [open, setOpen] = useState<Set<number>>(new Set());
   const [draftEntry, setDraftEntry] = useState('');
+
+  const toggleOpen = (index: number) => {
+    setOpen((prev) => {
+      const next = new Set(prev);
+      if (next.has(index)) next.delete(index);
+      else next.add(index);
+      return next;
+    });
+  };
 
   const remove = (index: number) => {
     onChange(values.filter((_, i) => i !== index));
+    setOpen((prev) => {
+      const next = new Set<number>();
+      for (const i of prev) {
+        if (i < index) next.add(i);
+        else if (i > index) next.add(i - 1);
+      }
+      return next;
+    });
   };
 
   const addBlank = () => {
@@ -762,8 +788,8 @@ function AttacksField({ label, values, onChange }: AttacksFieldProps) {
             <button
               type="button"
               className="character-sheet__attack-summary"
-              onClick={() => setOpen(open === i ? null : i)}
-              aria-expanded={open === i}
+              onClick={() => toggleOpen(i)}
+              aria-expanded={open.has(i)}
             >
               <span className="character-sheet__attack-name">{attack.name}</span>
               {attack.attackBonus !== undefined && (
@@ -775,7 +801,7 @@ function AttacksField({ label, values, onChange }: AttacksFieldProps) {
                 <span className="character-sheet__attack-damage">{attack.damage}</span>
               )}
             </button>
-            {open === i && (
+            {open.has(i) && (
               <div className="character-sheet__attack-detail">
                 <input
                   className="character-sheet__attack-edit"
@@ -783,11 +809,11 @@ function AttacksField({ label, values, onChange }: AttacksFieldProps) {
                   onChange={(e) => update(i, { name: e.target.value })}
                   aria-label="name"
                 />
-                <textarea
+                <AutoGrowTextarea
                   className="character-sheet__attack-edit"
                   value={attack.description}
-                  onChange={(e) => update(i, { description: e.target.value })}
-                  rows={3}
+                  onChange={(value) => update(i, { description: value })}
+                  minRows={3}
                 />
                 <div className="character-sheet__attack-edit-row">
                   <input
@@ -1041,6 +1067,52 @@ function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
         </div>
       </div>
     </div>
+  );
+}
+
+/**
+ * Textarea que ajusta su altura al contenido en cada cambio. Lo usamos en
+ * la descripción de los ataques para que un ataque con muchas líneas
+ * (típico en monstruos del SRD) se vea entero sin recortes.
+ */
+interface AutoGrowTextareaProps {
+  value: string;
+  onChange: (value: string) => void;
+  className?: string;
+  minRows?: number;
+  ariaLabel?: string;
+}
+
+function AutoGrowTextarea({
+  value,
+  onChange,
+  className,
+  minRows = 2,
+  ariaLabel,
+}: AutoGrowTextareaProps) {
+  const ref = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${el.scrollHeight}px`;
+  }, [value]);
+
+  return (
+    <textarea
+      ref={ref}
+      className={className}
+      value={value}
+      rows={minRows}
+      aria-label={ariaLabel}
+      onChange={(e) => onChange(e.target.value)}
+      onInput={(e) => {
+        const t = e.currentTarget;
+        t.style.height = 'auto';
+        t.style.height = `${t.scrollHeight}px`;
+      }}
+    />
   );
 }
 

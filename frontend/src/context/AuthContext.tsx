@@ -19,6 +19,12 @@ export interface AuthUser {
   id: string;
   username: string;
   email?: string;
+  description?: string;
+  avatar?: string;
+  /** Si está activo, el perfil no aparece en búsquedas y la página
+   *  pública responde con "perfil privado" salvo para DMs que tengan
+   *  a este usuario como jugador en una de sus campañas. */
+  isPrivate?: boolean;
 }
 
 interface AuthContextValue {
@@ -26,17 +32,42 @@ interface AuthContextValue {
   isAuthenticated: boolean;
   login: (input: { username: string; email?: string }) => void;
   logout: () => void;
+  updateUser: (patch: Partial<Omit<AuthUser, 'id'>>) => void;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
 const STORAGE_KEY = 'dndplanner:user';
+/** Diccionario id → datos editables del perfil (avatar, descripción,
+ *  privacidad). Se conserva al cerrar sesión, así que cuando el mismo
+ *  usuario vuelva a entrar recupera sus ajustes. */
+const PROFILES_KEY = 'dndplanner:profiles';
+
+type StoredProfile = Pick<AuthUser, 'avatar' | 'description' | 'isPrivate'>;
 
 function slugifyId(name: string): string {
   return `user-${name
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '') || 'anon'}`;
+}
+
+function readStoredProfiles(): Record<string, StoredProfile> {
+  if (typeof window === 'undefined') return {};
+  try {
+    const raw = window.localStorage.getItem(PROFILES_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return {};
+    return parsed as Record<string, StoredProfile>;
+  } catch {
+    return {};
+  }
+}
+
+function writeStoredProfiles(profiles: Record<string, StoredProfile>) {
+  if (typeof window === 'undefined') return;
+  window.localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
 }
 
 function readStoredUser(): AuthUser | null {
@@ -46,10 +77,15 @@ function readStoredUser(): AuthUser | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Partial<AuthUser>;
     if (!parsed.username) return null;
+    const id = parsed.id ?? slugifyId(parsed.username);
+    const stored = readStoredProfiles()[id];
     return {
-      id: parsed.id ?? slugifyId(parsed.username),
+      id,
       username: parsed.username,
       email: parsed.email,
+      description: parsed.description ?? stored?.description,
+      avatar: parsed.avatar ?? stored?.avatar,
+      isPrivate: parsed.isPrivate ?? stored?.isPrivate,
     };
   } catch {
     return null;
@@ -69,10 +105,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [user]);
 
   const login = useCallback((input: { username: string; email?: string }) => {
+    const id = slugifyId(input.username);
+    const stored = readStoredProfiles()[id];
     setUser({
-      id: slugifyId(input.username),
+      id,
       username: input.username,
       email: input.email,
+      avatar: stored?.avatar,
+      description: stored?.description,
+      isPrivate: stored?.isPrivate,
     });
   }, []);
 
@@ -80,14 +121,33 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setUser(null);
   }, []);
 
+  const updateUser = useCallback(
+    (patch: Partial<Omit<AuthUser, 'id'>>) => {
+      setUser((prev) => {
+        if (!prev) return prev;
+        const next = { ...prev, ...patch };
+        const all = readStoredProfiles();
+        all[next.id] = {
+          avatar: next.avatar,
+          description: next.description,
+          isPrivate: next.isPrivate,
+        };
+        writeStoredProfiles(all);
+        return next;
+      });
+    },
+    []
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
       isAuthenticated: user !== null,
       login,
       logout,
+      updateUser,
     }),
-    [user, login, logout]
+    [user, login, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

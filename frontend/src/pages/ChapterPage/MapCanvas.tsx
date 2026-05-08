@@ -1,4 +1,5 @@
 import {
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -6,7 +7,6 @@ import {
   type ChangeEvent,
   type MouseEvent as ReactMouseEvent,
   type PointerEvent as ReactPointerEvent,
-  type WheelEvent as ReactWheelEvent,
 } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -44,9 +44,18 @@ interface FullEntityStats {
   attacks?: CharacterAttack[];
 }
 
+// La celda solo persiste category + subtype (id de personaje o terrain key).
+// Toda la info visual (label, image, stats, boss) se resuelve en tiempo de
+// render desde la campaña activa para que cualquier cambio en la ficha del
+// personaje (foto, hp…) se vea reflejado aquí sin necesidad de recolocarlo.
 interface Entity {
-  subtype: string;
   category: EntityCategory;
+  subtype: string;
+}
+
+interface ResolvedEntity {
+  category: EntityCategory;
+  subtype: string;
   label: string;
   boss?: boolean;
   image?: string;
@@ -97,6 +106,34 @@ function characterToOption(character: Character): EntityOption {
   };
 }
 
+function resolveEntity(
+  entity: Entity,
+  characters: Character[]
+): ResolvedEntity | null {
+  if (entity.category === 'character' || entity.category === 'enemy') {
+    const character = characters.find((c) => c.id === entity.subtype);
+    if (!character) {
+      // El personaje fue eliminado — celda fantasma; mostramos placeholder.
+      return {
+        category: entity.category,
+        subtype: entity.subtype,
+        label: '—',
+      };
+    }
+    return {
+      category: entity.category,
+      subtype: entity.subtype,
+      ...characterToOption(character),
+    };
+  }
+  const opt = TERRAIN_OPTIONS.find((o) => o.value === entity.subtype);
+  return {
+    category: 'terrain',
+    subtype: entity.subtype,
+    label: opt?.label ?? entity.subtype,
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Componente
 // ---------------------------------------------------------------------------
@@ -105,14 +142,49 @@ export function MapCanvas() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { chapterId } = useParams<{ chapterId: string }>();
-  const { activeCampaign } = useCampaigns();
+  const { activeCampaign, updateChapterMap } = useCampaigns();
 
-  const [state, setState] = useUndoableState<MapState>({
-    cells: {},
-    cols: 15,
-    rows: 15,
+  // Capítulo actualmente abierto. Su `map` persistido es la fuente de
+  // verdad: lo cargamos al montar / cambiar de capítulo y autoguardamos
+  // cualquier modificación local.
+  const currentChapter = useMemo(() => {
+    if (!activeCampaign || !chapterId) return null;
+    return activeCampaign.chapters.find((c) => c.id === chapterId) ?? null;
+  }, [activeCampaign, chapterId]);
+
+  const [state, setState, history] = useUndoableState<MapState>({
+    cells: currentChapter?.map.cells ?? {},
+    cols: currentChapter?.map.cols ?? 15,
+    rows: currentChapter?.map.rows ?? 15,
   });
   const { cells, cols, rows } = state;
+
+  // Reset cuando cambia el capítulo o la campaña activa.
+  useEffect(() => {
+    history.reset({
+      cells: currentChapter?.map.cells ?? {},
+      cols: currentChapter?.map.cols ?? 15,
+      rows: currentChapter?.map.rows ?? 15,
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chapterId, activeCampaign?.id]);
+
+  // Autoguardado: cualquier cambio en cells/cols/rows se persiste en el
+  // capítulo. Evitamos escrituras redundantes cuando el estado coincide
+  // con lo que ya hay guardado (típicamente justo después de un reset).
+  useEffect(() => {
+    if (!activeCampaign || !chapterId || !currentChapter) return;
+    const persisted = currentChapter.map;
+    if (
+      persisted.cells === cells &&
+      persisted.cols === cols &&
+      persisted.rows === rows
+    ) {
+      return;
+    }
+    updateChapterMap(activeCampaign.id, chapterId, { cells, cols, rows });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [cells, cols, rows]);
 
   const characterOptions = useMemo<EntityOption[]>(() => {
     return (activeCampaign?.characters ?? [])
@@ -131,6 +203,8 @@ export function MapCanvas() {
   const [query, setQuery] = useState('');
 
   const [zoom, setZoom] = useState(1);
+  const zoomRef = useRef(zoom);
+  zoomRef.current = zoom;
   const [pan, setPan] = useState({ x: 0, y: 0 });
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null);
 
@@ -164,12 +238,8 @@ export function MapCanvas() {
   // pulsación que termina su gesto de pintura no abre el popup.
   const justPaintedRef = useRef(false);
 
-  const [tooltip, setTooltip] = useState<
-    | { x: number; y: number; text: string }
-    | null
-  >(null);
   const [statsPopup, setStatsPopup] = useState<
-    | { key: string; entity: Entity; stats: FullEntityStats }
+    | { key: string; entity: ResolvedEntity; stats: FullEntityStats }
     | null
   >(null);
 
@@ -196,10 +266,6 @@ export function MapCanvas() {
       [key]: {
         category: tool as EntityCategory,
         subtype: option.value,
-        label: option.label,
-        boss: option.boss,
-        image: option.image,
-        stats: option.stats,
       },
     });
   };
@@ -303,15 +369,29 @@ export function MapCanvas() {
     erasingRef.current = false;
   };
 
-  const handleWheel = (event: ReactWheelEvent<HTMLDivElement>) => {
-    const rect = event.currentTarget.getBoundingClientRect();
-    const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
-    applyZoomAtPoint(
-      zoom * factor,
-      event.clientX - rect.left,
-      event.clientY - rect.top
-    );
-  };
+  // Native non-passive wheel listener so preventDefault() actually works.
+  // React's onWheel is passive in some environments and can't stop page scroll.
+  useEffect(() => {
+    const el = viewportRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const rect = el.getBoundingClientRect();
+      const localX = e.clientX - rect.left;
+      const localY = e.clientY - rect.top;
+      const currentZoom = zoomRef.current;
+      const factor = e.deltaY < 0 ? 1.1 : 1 / 1.1;
+      const nextZoom = clamp(currentZoom * factor, 0.3, 3);
+      setPan((prev) => ({
+        x: localX - ((localX - prev.x) * nextZoom) / currentZoom,
+        y: localY - ((localY - prev.y) * nextZoom) / currentZoom,
+      }));
+      setZoom(nextZoom);
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
+    return () => el.removeEventListener('wheel', onWheel);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // ------------------------------------------------------------------
   // Handlers por celda
@@ -347,9 +427,11 @@ export function MapCanvas() {
     }
   };
 
-  // Solo en herramienta "select" tratamos los clics como selección /
-  // apertura de stats. En las demás herramientas el click es parte del
-  // gesto de pintura/borrado/pan/zoom y nunca debe abrir el popup.
+  // Solo en herramienta "select" tratamos los clics como selección y
+  // apertura de stats. Un único click izquierdo selecciona la celda y, si
+  // tiene stats (personaje/enemigo), abre el popup informativo. En las
+  // demás herramientas el click es parte del gesto de pintura/borrado/
+  // pan/zoom y nunca debe abrir el popup.
   const handleCellClick = (
     event: ReactMouseEvent<HTMLButtonElement>,
     x: number,
@@ -358,7 +440,6 @@ export function MapCanvas() {
     event.stopPropagation();
     if (tool !== 'select') return;
     if (justPaintedRef.current) {
-      // Suelta tras pintar — descartamos.
       justPaintedRef.current = false;
       return;
     }
@@ -370,48 +451,18 @@ export function MapCanvas() {
       return;
     }
 
-    // Si ya estaba seleccionado y la entidad tiene stats → abrir popup.
-    if (selectedCellKey === key) {
-      const supportsStats =
-        (entity.category === 'character' || entity.category === 'enemy') &&
-        entity.stats;
-      if (supportsStats && entity.stats) {
-        setStatsPopup({ key, entity, stats: { ...entity.stats } });
-      }
-      return;
-    }
-
     setSelectedCellKey(key);
-    setStatsPopup(null);
-  };
 
-  const handleCellPointerMove = (
-    event: ReactPointerEvent<HTMLButtonElement>,
-    x: number,
-    y: number
-  ) => {
-    const key = cellKey(x, y);
-    const entity = cells[key];
-    if (!entity) {
-      if (tooltip) setTooltip(null);
-      return;
+    const resolved = resolveEntity(entity, activeCampaign?.characters ?? []);
+    if (
+      resolved &&
+      (resolved.category === 'character' || resolved.category === 'enemy') &&
+      resolved.stats
+    ) {
+      setStatsPopup({ key, entity: resolved, stats: { ...resolved.stats } });
+    } else {
+      setStatsPopup(null);
     }
-    const viewportEl = event.currentTarget.closest(
-      '.map-canvas__viewport'
-    ) as HTMLElement | null;
-    if (!viewportEl) return;
-    const rect = viewportEl.getBoundingClientRect();
-    setTooltip({
-      x: event.clientX - rect.left + 12,
-      y: event.clientY - rect.top + 12,
-      text: `${entity.label} · ${t(
-        `chapter.mapCategories.${entityCategoryLabelKey(entity)}`
-      )}`,
-    });
-  };
-
-  const handleCellPointerLeave = () => {
-    setTooltip(null);
   };
 
   // ------------------------------------------------------------------
@@ -501,7 +552,6 @@ export function MapCanvas() {
         onPointerMove={handleViewportPointerMove}
         onPointerUp={handleViewportPointerUp}
         onPointerCancel={handleViewportPointerUp}
-        onWheel={handleWheel}
         onContextMenu={(e) => e.preventDefault()}
       >
         <div
@@ -516,6 +566,9 @@ export function MapCanvas() {
             Array.from({ length: cols }).map((__, x) => {
               const key = cellKey(x, y);
               const entity = cells[key];
+              const resolved = entity
+                ? resolveEntity(entity, activeCampaign?.characters ?? [])
+                : null;
               const isSelected = selectedCellKey === key;
               return (
                 <button
@@ -527,41 +580,21 @@ export function MapCanvas() {
                       : 'map-canvas__cell'
                   }
                   aria-label={
-                    entity
-                      ? `Cell ${x},${y}: ${entity.label}`
+                    resolved
+                      ? `Cell ${x},${y}: ${resolved.label}`
                       : `Cell ${x},${y} empty`
                   }
                   onPointerDown={(e) => handleCellPointerDown(e, x, y)}
                   onPointerEnter={() => handleCellPointerEnter(x, y)}
-                  onPointerMove={(e) => handleCellPointerMove(e, x, y)}
-                  onPointerLeave={handleCellPointerLeave}
                   onClick={(e) => handleCellClick(e, x, y)}
                   onContextMenu={(e) => e.preventDefault()}
                 >
-                  {entity && <EntityGlyph entity={entity} />}
-                  {entity && entity.stats && (
-                    <span className="map-canvas__stats" aria-hidden="true">
-                      <span className="map-canvas__stats-row">
-                        <span title="HP">♥{entity.stats.hp}</span>
-                        <span title="AC">⛨{entity.stats.armor}</span>
-                      </span>
-                    </span>
-                  )}
+                  {resolved && <EntityGlyph entity={resolved} />}
                 </button>
               );
             })
           )}
         </div>
-
-        {tooltip && (
-          <div
-            className="map-canvas__tooltip"
-            style={{ left: tooltip.x, top: tooltip.y }}
-            role="tooltip"
-          >
-            {tooltip.text}
-          </div>
-        )}
 
         {statsPopup && (
           <StatsPopup
@@ -682,7 +715,7 @@ function MapToolButton({ current, value, label, onSelect, children }: MapToolBut
   );
 }
 
-function EntityGlyph({ entity }: { entity: Entity }) {
+function EntityGlyph({ entity }: { entity: ResolvedEntity }) {
   if (entity.category === 'character' || entity.category === 'enemy') {
     if (entity.image) {
       return (
@@ -894,13 +927,6 @@ function pickOptions(
   return fromCampaign.enemy;
 }
 
-function entityCategoryLabelKey(entity: Entity): string {
-  if (entity.category === 'character') return 'character';
-  if (entity.category === 'enemy') return entity.boss ? 'boss' : 'enemy';
-  if (entity.subtype === 'object') return 'object';
-  if (entity.subtype === 'trap') return 'trap';
-  return 'terrain';
-}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));

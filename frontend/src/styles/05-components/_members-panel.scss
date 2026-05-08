@@ -150,13 +150,34 @@
     font-size: var(--font-size-xs);
   }
 
+  // Layout side-by-side de los dos bloques de enlaces (invitación + vista).
+  &__links {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-md);
+
+    @media (max-width: 36rem) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__link-block {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-sm);
+    padding: var(--space-sm);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: rgba(255, 255, 255, 0.03);
+  }
+
   &__link-row {
     display: grid;
     grid-template-columns: 1fr auto auto;
     gap: 0.5rem;
     align-items: center;
 
-    @media (max-width: 34rem) {
+    @media (max-width: 60rem) {
       grid-template-columns: 1fr;
     }
   }

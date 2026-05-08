@@ -6,6 +6,9 @@ import type { ReactNode } from 'react';
 export interface TranslucidTextBoxProps {
   /** Contenido que se renderiza siempre con opacidad 100%. */
   children: ReactNode;
+  /** Clase extra para casos donde se necesite una variante (`--dark`,
+   *  `--tall`…). */
+  className?: string;
 }
 
 /**
@@ -13,9 +16,11 @@ export interface TranslucidTextBoxProps {
  * El texto permanece al 100% de opacidad para garantizar contraste
  * y cumplir con WCAG 2.1 AA.
  */
-export function TranslucidTextBox({ children }: TranslucidTextBoxProps) {
+export function TranslucidTextBox({ children, className }: TranslucidTextBoxProps) {
+  const classes = ['translucid-text-box'];
+  if (className) classes.push(className);
   return (
-    <div className="translucid-text-box" tabIndex={0}>
+    <div className={classes.join(' ')} tabIndex={0}>
       <span className="translucid-text-box__content">{children}</span>
     </div>
   );

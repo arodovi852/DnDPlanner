@@ -92,6 +92,59 @@
   }
 
   // --------------------------------------------------------------------------
+  // Tarjetas con badge de rol y nombre debajo (idéntico a /profile)
+  // --------------------------------------------------------------------------
+  &__card-wrapper {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__card-name {
+    max-width: 14rem;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    color: var(--color-text-on-chrome);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  &__card-role {
+    position: absolute;
+    top: -0.5rem;
+    left: -0.5rem;
+    padding: 0.15rem 0.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    z-index: 3;
+
+    &--dm {
+      background-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+
+    &--codm {
+      background-color: var(--color-primary-dark);
+      color: var(--color-text-inverse);
+    }
+
+    &--player {
+      background-color: var(--color-surface-cream);
+      color: var(--color-text);
+    }
+  }
+
+  // --------------------------------------------------------------------------
   // Search (logged in)
   // --------------------------------------------------------------------------
   &__search {

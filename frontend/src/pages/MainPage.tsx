@@ -141,7 +141,11 @@ function LoggedInView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { campaigns, setActiveCampaign, createCampaign } = useCampaigns();
+  const { campaigns, setActiveCampaign, createCampaign, getRole } = useCampaigns();
+
+  const myCampaigns = campaigns.filter(
+    (c) => c.ownerId === user?.id || c.members.some((m) => m.userId === user?.id)
+  );
 
   const [search, setSearch] = useState('');
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
@@ -199,15 +203,33 @@ function LoggedInView() {
 
         <div className="main-page__grid">
           <CreateCampaignCard onCreate={handleCreateCampaign} />
-          {campaigns.map((campaign) => (
-            <CampaignCard
-              key={campaign.id}
-              name={campaign.name}
-              image={pickPreviewImage(campaign.templateId).image}
-              hoverImage={pickPreviewImage(campaign.templateId).hoverImage}
-              onSelect={() => handleOpenExistingCampaign(campaign.id)}
-            />
-          ))}
+          {myCampaigns.map((campaign) => {
+            const role = user ? getRole(campaign.id, user.id) : null;
+            const roleKey =
+              role === 'co-dm' ? 'CoDm' : role === 'dm' ? 'Dm' : 'Player';
+            const roleClass = role
+              ? `main-page__card-role main-page__card-role--${role.replace('-', '')}`
+              : '';
+            const images = campaign.image
+              ? { image: campaign.image, hoverImage: campaign.image }
+              : pickPreviewImage(campaign.templateId);
+            return (
+              <div className="main-page__card-wrapper" key={campaign.id}>
+                <CampaignCard
+                  name={campaign.name}
+                  image={images.image}
+                  hoverImage={images.hoverImage}
+                  onSelect={() => handleOpenExistingCampaign(campaign.id)}
+                />
+                {role && (
+                  <span className={roleClass}>
+                    {t(`members.role${roleKey}`)}
+                  </span>
+                )}
+                <span className="main-page__card-name">{campaign.name}</span>
+              </div>
+            );
+          })}
         </div>
       </section>
 

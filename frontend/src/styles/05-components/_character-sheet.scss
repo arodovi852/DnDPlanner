@@ -21,6 +21,22 @@
   padding: var(--space-xl) clamp(1rem, 3vw, 2rem);
   color: var(--color-text-on-chrome);
 
+  // Quitamos los botones nativos de incremento/decremento (spinners) que
+  // los navegadores añaden a `<input type="number">`. Estos botones roban
+  // ~16px de ancho horizontal y por eso los valores de stats parecían
+  // recortados (ARM "15" mostraba "1." porque el "5" se solapaba con el
+  // botón). Tras quitarlos el número se pinta centrado en todo el input.
+  input[type='number'] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+  }
+  input[type='number']::-webkit-outer-spin-button,
+  input[type='number']::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    appearance: none;
+    margin: 0;
+  }
+
   // --------------------------------------------------------------------------
   // Fila superior: retrato a la izquierda + panel de stats a la derecha
   // --------------------------------------------------------------------------
@@ -155,7 +171,9 @@
 
   &__stat {
     display: grid;
-    grid-template-columns: 2.6rem 3.2rem auto;
+    // Más ancho para el input ahora que los spinners ya no ocupan espacio,
+    // y para que números de 3 dígitos (ej. 100) sigan cabiendo.
+    grid-template-columns: 2.6rem 3.6rem auto;
     gap: 0.4rem;
     align-items: center;
   }
@@ -224,7 +242,19 @@
     font-size: var(--font-size-sm);
     font-weight: 600;
     text-align: center;
-    width: 4rem;
+    width: 4.5rem;
+    // Si el contenido se acerca al ancho del input, encogemos un poco la
+    // letra para que números largos (ej. dado de daño "12d8+10") sigan
+    // siendo legibles sin recortarse.
+    min-width: 0;
+  }
+
+  // Para el campo "Damage dice" (texto libre) y otros textuales: si el
+  // valor introducido es más largo de lo que cabe, reducimos la fuente
+  // gradualmente con clamp en lugar de recortarlo.
+  &__combat-value[type='text'] {
+    font-size: clamp(0.65rem, 1.1vw, var(--font-size-sm));
+    text-align: center;
   }
 
   &__combat-unit {
@@ -367,6 +397,28 @@
     gap: 0.25rem;
     max-height: 10rem;
     overflow-y: auto;
+  }
+
+  // La lista de ataques NO se recorta: el detalle de un ataque puede
+  // tener mucha descripción y queremos que se lea por completo, aunque
+  // ello implique que la página entera haga scroll vertical.
+  &__list--attacks &__list-items {
+    max-height: none;
+    overflow: visible;
+  }
+
+  // El detalle desplegado del ataque también deja crecer el textarea para
+  // que la descripción larga se vea sin clipping.
+  &__attack-detail {
+    overflow: visible;
+  }
+
+  &__attack-detail &__attack-edit {
+    min-height: 4rem;
+    height: auto;
+    overflow: visible;
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   &__list-item {

@@ -1,0 +1,140 @@
+// ============================================================================
+// Components / User Profile Page (/profile/:userId)
+// ----------------------------------------------------------------------------
+// Vista pública de solo lectura del perfil de otro usuario. Si el perfil
+// es privado y el visitante no es DM con esa persona como jugador, sólo
+// se muestra un mensaje "perfil privado".
+// ============================================================================
+
+.user-profile-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xl);
+  padding: var(--space-xl) clamp(2rem, 8vw, 6rem);
+  color: var(--color-text-on-chrome);
+
+  &__title {
+    margin: 0;
+    font-family: var(--font-family-heading);
+    font-size: clamp(var(--font-size-xl), 4vw, 2.5rem);
+    color: var(--color-text-on-chrome);
+  }
+
+  &__lead {
+    margin: 0;
+    font-family: var(--font-family-base);
+    opacity: 0.85;
+  }
+
+  &__back {
+    align-self: flex-start;
+    color: var(--color-primary-hover);
+    text-decoration: underline;
+  }
+
+  &__top {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: var(--space-xl);
+    align-items: start;
+
+    @media (max-width: 40rem) {
+      grid-template-columns: 1fr;
+    }
+  }
+
+  &__identity {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-sm);
+
+    .profile {
+      --profile-size: 9rem;
+    }
+  }
+
+  &__description {
+    display: flex;
+    align-items: stretch;
+
+    > .translucid-text-box {
+      width: 100%;
+    }
+  }
+
+  &__private {
+    margin: 0;
+    padding: var(--space-md) var(--space-lg);
+    border: 3px dashed var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-chrome-strong);
+    color: var(--color-text-inverse);
+    font-style: italic;
+    text-align: center;
+  }
+
+  &__campaigns {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  &__section-title {
+    margin: 0;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-xl);
+    color: var(--color-text-on-chrome);
+  }
+
+  &__empty {
+    margin: 0;
+    font-style: italic;
+    opacity: 0.7;
+  }
+
+  &__grid {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-xl);
+  }
+
+  &__card {
+    position: relative;
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--space-xs);
+  }
+
+  &__card-name {
+    max-width: 14rem;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-base);
+    color: var(--color-text-on-chrome);
+    text-align: center;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    width: 100%;
+  }
+
+  &__card-role {
+    position: absolute;
+    top: -0.5rem;
+    left: -0.5rem;
+    padding: 0.15rem 0.5rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-pill);
+    background-color: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-xs);
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+}

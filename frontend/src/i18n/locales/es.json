@@ -64,7 +64,56 @@
   "profile": {
     "campaigns": "Campañas",
     "editProfile": "Editar perfil",
-    "finishEdit": "Terminar edición"
+    "finishEdit": "Terminar edición",
+    "namePlaceholder": "Nombre de usuario",
+    "descriptionPlaceholder": "Cuéntale a otros sobre ti…",
+    "moveUp": "Mover a la izquierda",
+    "moveDown": "Mover a la derecha",
+    "changeImage": "Cambiar imagen",
+    "changeAvatar": "Cambiar foto de perfil",
+    "renameCampaign": "Nombre de la campaña",
+    "logout": "Cerrar sesión",
+    "makePublic": "Hacer pública",
+    "makePrivate": "Hacer privada",
+    "public": "Pública",
+    "private": "Privada",
+    "confirmDeleteTitle": "¿Eliminar campaña?",
+    "confirmDeleteDescription": "Esta acción no se puede deshacer. Se eliminará \"{{name}}\".",
+    "confirmMakePublicTitle": "¿Hacer pública la campaña?",
+    "confirmMakePublicDescription": "\"{{name}}\" aparecerá en /templates y cualquiera podrá clonarla o pedir unirse. ¿Continuar?",
+    "confirmMakePrivateTitle": "¿Hacer privada la campaña?",
+    "confirmMakePrivateDescription": "\"{{name}}\" dejará de aparecer en /templates. Los miembros actuales seguirán teniendo acceso. ¿Continuar?",
+    "privateAccount": "Cuenta privada",
+    "privateAccountHint": "No aparecerás en búsquedas de usuarios. Los DMs de campañas en las que ya juegas seguirán pudiendo verte.",
+    "tab": {
+      "all": "Todas",
+      "dm": "Como DM",
+      "player": "Como jugador"
+    }
+  },
+  "userProfile": {
+    "publicCampaigns": "Campañas públicas",
+    "noPublicCampaigns": "Esta persona aún no ha publicado ninguna campaña.",
+    "noDescription": "Sin descripción.",
+    "privateBody": "Este perfil es privado.",
+    "notFoundTitle": "Usuario no encontrado",
+    "notFoundBody": "No existe un usuario con ese identificador.",
+    "backToUsers": "Volver al directorio"
+  },
+  "templates": {
+    "title": "Plantillas de la comunidad",
+    "lead": "Campañas marcadas como públicas por sus DMs. Clona una para empezar la tuya o pide unirte como jugador.",
+    "searchPlaceholder": "Buscar plantilla por nombre o autor…",
+    "filterAll": "Todas",
+    "by": "Por",
+    "creators": "Creadores:",
+    "basedOn": "Basada en:",
+    "clone": "Clonar",
+    "join": "Unirse como jugador",
+    "joined": "Ya eres miembro",
+    "loginToInteract": "Inicia sesión para clonar o unirte",
+    "empty": "Aún no hay campañas públicas. ¡Sé el primero en compartir una!",
+    "publishHint": "Para publicar una campaña tuya, abre tu perfil → editar → pulsa el icono 🔒 de la tarjeta para alternar a 🌐."
   },
   "chapterOrCharacter": {
     "heading": "¿Qué quieres abrir?",
@@ -120,6 +169,7 @@
     "monster": "Monstruo (SRD)",
     "description": "Descripción / Trasfondo",
     "saveChanges": "Guardar cambios",
+    "saveToCampaign": "Guardar en la campaña",
     "proficiencyBonus": "Bonificador de competencia"
   },
   "chapter": {
@@ -137,6 +187,7 @@
       "text": "Editar texto",
       "create": "Crear bloque",
       "connect": "Conectar bloques (clic o arrastrar)",
+      "redact": "Censurar (||spoiler||) — clic en un bloque",
       "zoom": "Zoom (mantén y arrastra)",
       "notes": "Modo notas",
       "character": "Añadir personaje",
@@ -145,11 +196,14 @@
       "simplify": "Simplificar vista"
     },
     "eventTypes": {
-      "combate": "Combate",
-      "historia": "Historia",
-      "mision": "Misión",
-      "exploracion": "Exploración",
-      "dialogo": "Diálogo"
+      "Mission": "Misión",
+      "Combat": "Combate",
+      "MainStory": "Historia principal",
+      "CharacterArc": "Arco de personaje",
+      "Exploration": "Exploración",
+      "Social": "Social / Diálogo",
+      "Rest": "Descanso",
+      "Other": "Otro"
     },
     "emptyNotes": "No hay eventos que mostrar. Vuelve al modo canvas para crear alguno.",
     "mapCols": "Columnas",
@@ -199,6 +253,9 @@
     "alreadyMember": "Ya es miembro de esta campaña.",
     "inviteLink": "Enlace de invitación",
     "generateLink": "Generar enlace",
+    "viewLink": "Enlace de vista",
+    "generateViewLink": "Generar enlace de vista",
+    "viewLinkHint": "Quien tenga este enlace puede ver la campaña sin unirse ni iniciar sesión.",
     "copy": "Copiar",
     "copied": "¡Copiado!",
     "revoke": "Revocar",
@@ -220,6 +277,18 @@
     "invalidBody": "Este enlace de invitación ya no es válido o el DM lo ha revocado.",
     "goHome": "Ir al inicio"
   },
+  "view": {
+    "readOnly": "Vista de solo lectura",
+    "memberCount_one": "{{count}} miembro",
+    "memberCount_other": "{{count}} miembros",
+    "chapterCount_one": "{{count}} capítulo",
+    "chapterCount_other": "{{count}} capítulos",
+    "invalidTitle": "Enlace de vista inválido",
+    "invalidBody": "Este enlace de vista ya no es válido o ha sido revocado.",
+    "goToMyCampaign": "Ir a la campaña",
+    "joinLink": "Unirse como jugador",
+    "footerNote": "Esta es una vista pública compartida por el DM."
+  },
   "annotations": {
     "heading": "Anotaciones",
     "characterHeading": "Anotaciones de jugadores",
@@ -232,5 +301,201 @@
     "mark": "Marcar como spoiler",
     "revealAll": "Revelar todos los spoilers",
     "hideAll": "Ocultar todos los spoilers"
+  },
+  "infoPages": {
+    "about": {
+      "title": "Sobre DnDPlanner",
+      "lead": "Una herramienta hecha por y para másters que quieren dejar de pelearse con hojas sueltas y notas en libretas.",
+      "sections": [
+        {
+          "heading": "La idea",
+          "body": "DnDPlanner empezó como un Trabajo Fin de Grado con una pregunta simple: ¿por qué no existe un planner de campañas de rol que sea cómodo, visual y gratuito? El proyecto pretende cubrir ese hueco con un enfoque modular: capítulos, eventos en lienzo, mapas con grid, fichas de personaje y anotaciones colaborativas, todo en una misma página."
+        },
+        {
+          "heading": "Para qué sirve",
+          "body": [
+            "Preparar capítulos completos antes de la sesión, con eventos en árbol y notas con spoilers que el DM revela cuando le interese.",
+            "Diseñar mapas tácticos por capítulo y reusar enemigos del SRD oficial de D&D 5e.",
+            "Compartir la campaña con jugadores mediante un enlace y dejar que cada uno tenga su ficha.",
+            "Iterar sin miedo: deshacer / rehacer, autoguardado y persistencia local."
+          ]
+        },
+        {
+          "heading": "Filosofía",
+          "body": "Sin sustos, sin tarifas escondidas. Todo se guarda primero en tu navegador; cuando subas la app a un servidor también podrás sincronizar con tu cuenta. Lo que ves es lo que hay."
+        }
+      ]
+    },
+    "contact": {
+      "title": "Contacto",
+      "lead": "¿Has encontrado un bug, tienes una idea de feature o simplemente quieres saludar? Encantado de leerte.",
+      "sections": [
+        {
+          "heading": "Canales rápidos",
+          "body": [
+            "Correo: hola@dndplanner.example",
+            "Discord: dndplanner#0001",
+            "Issues en GitHub: github.com/USUARIO/AROProyectoFinDeGrado2026"
+          ]
+        },
+        {
+          "heading": "Tiempo de respuesta",
+          "body": "Esto es un proyecto académico mantenido por una sola persona, así que no esperes respuestas instantáneas. Suelo responder en 2-5 días."
+        }
+      ],
+      "formHeading": "O escríbeme directamente",
+      "formName": "Tu nombre",
+      "formEmail": "Tu correo",
+      "formMessage": "Mensaje",
+      "formSubmit": "Enviar",
+      "thanks": "¡Recibido! Te responderé en cuanto pueda."
+    },
+    "news": {
+      "title": "Novedades",
+      "lead": "Cambios importantes recientes y lo que está cocinándose para próximas versiones.",
+      "sections": [
+        {
+          "heading": "Mayo 2026 — v0.4",
+          "body": [
+            "Mapa de capítulo persistido por capítulo con autoguardado.",
+            "Editor de eventos con tipos alineados al backend (8 categorías) y soporte de censura ||spoiler||.",
+            "Perfil editable: nombre, descripción, avatar y reordenación / borrado de campañas con confirmación.",
+            "Diseño responsive completo (768 px y 360 px).",
+            "Páginas estáticas del footer (la que estás leyendo)."
+          ]
+        },
+        {
+          "heading": "Abril 2026 — v0.3",
+          "body": [
+            "Folder cuadrado en /chapter para mejorar la legibilidad del mapa.",
+            "Múltiples ataques abiertos a la vez en la ficha de personaje.",
+            "Spinners ocultos en inputs numéricos para que números de tres dígitos no se recorten."
+          ]
+        },
+        {
+          "heading": "Próximos pasos",
+          "body": "Persistencia online (cuenta + sync), modo offline-first robusto, exportación a PDF de capítulos."
+        }
+      ]
+    },
+    "terms": {
+      "title": "Términos de uso",
+      "lead": "Este es un proyecto académico (TFG) y se ofrece tal cual, sin garantías. Las condiciones de abajo son orientativas; no sustituyen un asesoramiento legal profesional.",
+      "sections": [
+        {
+          "heading": "1. Aceptación",
+          "body": "Al acceder a DnDPlanner aceptas estos términos. Si no estás de acuerdo con alguno, deja de usar la aplicación."
+        },
+        {
+          "heading": "2. Cuentas",
+          "body": "Las cuentas son personales. Eres responsable de mantener tu contraseña en secreto. No compartas credenciales."
+        },
+        {
+          "heading": "3. Contenido",
+          "body": "El contenido que crees (campañas, personajes, anotaciones) es tuyo. Nos concedes una licencia limitada para almacenarlo y mostrártelo desde la aplicación."
+        },
+        {
+          "heading": "4. Uso permitido",
+          "body": [
+            "No subir contenido ilegal, ofensivo o que infrinja derechos de terceros.",
+            "No automatizar peticiones masivas ni intentar romper el sistema.",
+            "Respetar el SRD 5.1 cuando uses contenido derivado de él."
+          ]
+        },
+        {
+          "heading": "5. Cambios",
+          "body": "Podemos actualizar estos términos. Te avisaremos en la sección de Novedades cuando haya cambios relevantes."
+        }
+      ]
+    },
+    "privacy": {
+      "title": "Privacidad",
+      "lead": "Qué datos guardamos, dónde y por qué. Sin letra pequeña inútil.",
+      "sections": [
+        {
+          "heading": "Datos que guardamos",
+          "body": [
+            "Tu nombre de usuario, correo y descripción si los rellenas.",
+            "Las campañas, capítulos, mapas y personajes que creas.",
+            "Las anotaciones que tú o tus jugadores escriben en cada campaña."
+          ]
+        },
+        {
+          "heading": "Dónde se guardan",
+          "body": "Por ahora todo vive en el localStorage de tu navegador. Si en el futuro conectamos un backend (por ejemplo en DigitalOcean), los datos se sincronizarán a una base de datos cifrada en tránsito por TLS."
+        },
+        {
+          "heading": "Cookies",
+          "body": "Solo usamos una cookie técnica de respaldo de tu sesión. No hay cookies de seguimiento ni de publicidad."
+        },
+        {
+          "heading": "Tus derechos",
+          "body": "Puedes exportar y borrar tus datos en cualquier momento desde tu perfil. Para cualquier solicitud relacionada con tus datos personales, escríbenos desde la página de Contacto."
+        }
+      ]
+    },
+    "api": {
+      "title": "API",
+      "lead": "Si quieres integrar DnDPlanner con otras herramientas, esta sección te explica los endpoints públicos y cómo autenticarte.",
+      "sections": [
+        {
+          "heading": "Estado",
+          "body": "La API REST está implementada en /backend usando Express + Mongoose. Aún no es pública; este documento describe lo que se expondrá en la próxima versión."
+        },
+        {
+          "heading": "Endpoints principales",
+          "body": [
+            "GET /api/health — comprobación de estado",
+            "POST /api/auth/login — autenticación con email + contraseña",
+            "GET /api/campaigns — lista las campañas del usuario",
+            "GET /api/campaigns/:id/chapters — capítulos de una campaña",
+            "POST /api/campaigns/:id/events — crear un evento",
+            "GET /api/dnd/monsters — pasarela al SRD 5.1"
+          ]
+        },
+        {
+          "heading": "Autenticación",
+          "body": "Token JWT en el header `Authorization: Bearer <token>`. Los refresh tokens duran 30 días por defecto y se rotan en cada uso."
+        },
+        {
+          "heading": "Rate limiting",
+          "body": "100 peticiones por IP cada 15 minutos sobre `/api/*`. Si necesitas más para una integración legítima, contáctanos."
+        }
+      ]
+    },
+    "roadmap": {
+      "title": "Roadmap",
+      "lead": "Lo que está hecho, lo que está en marcha y lo que vendrá. El roadmap es indicativo y puede cambiar.",
+      "sections": [
+        {
+          "heading": "Hecho ✓",
+          "body": [
+            "Editor de eventos en lienzo con conexiones y censura.",
+            "Mapa táctico con grid, terreno y entidades del SRD.",
+            "Ficha de personaje DnD 5e con clases y monstruos del API.",
+            "Anotaciones colaborativas con spoilers.",
+            "Diseño responsive 768 / 360 px.",
+            "Despliegue en DigitalOcean App Platform documentado."
+          ]
+        },
+        {
+          "heading": "En curso",
+          "body": [
+            "Backend Express + Mongo conectado al frontend.",
+            "Sincronización offline-first con conflict resolution.",
+            "Editor de mapas multinivel (ej. dungeon con plantas)."
+          ]
+        },
+        {
+          "heading": "Planeado",
+          "body": [
+            "Exportación de capítulos a PDF imprimible.",
+            "Importación de personajes desde D&D Beyond.",
+            "Modo en directo durante la sesión con dado virtual.",
+            "Marketplace de plantillas creadas por la comunidad."
+          ]
+        }
+      ]
+    }
   }
 }
