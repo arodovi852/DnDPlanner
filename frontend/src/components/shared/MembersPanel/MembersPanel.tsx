@@ -70,7 +70,10 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
     user && campaign.members.find((m) => m.userId === user.id)?.role;
   const canManage = isOwner || currentMemberRole === 'co-dm';
 
-  const memberIds = new Set(campaign.members.map((m) => m.userId));
+  const memberIds = useMemo(
+    () => new Set(campaign.members.map((m) => m.userId)),
+    [campaign.members]
+  );
   // El DM ya gestiona la campaña, así que ya tiene acceso a sus jugadores
   // (incluso a los privados): los privados solo se ocultan de búsquedas
   // generales, no de "añadir miembro" cuando ya forman parte de OTRA
@@ -86,12 +89,35 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
         c.members.some((m) => m.userId === u.id && m.role === 'player')
     );
   };
-  const suggestions = query
-    ? searchUsers(query)
-        .filter((u) => !memberIds.has(u.id))
-        .filter((u) => !u.isPrivate || isAlreadyMyPlayer(u))
-        .slice(0, 5)
-    : [];
+
+  // searchUsers ahora pega al backend; lo lanzamos cuando cambia query
+  // (debounced con un pequeño retardo para no saturar la API mientras se
+  // escribe). El array final filtra los que ya son miembros y los privados
+  // que no son nuestros jugadores.
+  const [suggestions, setSuggestions] = useState<PublicUser[]>([]);
+  useEffect(() => {
+    let cancelled = false;
+    if (!query.trim()) {
+      setSuggestions([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      void searchUsers(query).then((results) => {
+        if (cancelled) return;
+        setSuggestions(
+          results
+            .filter((u) => !memberIds.has(u.id))
+            .filter((u) => !u.isPrivate || isAlreadyMyPlayer(u))
+            .slice(0, 5)
+        );
+      });
+    }, 250);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [query, memberIds, campaigns, user?.id]);
 
   const handleAddByUsername = (username: string) => {
     const found = findByUsername(username);

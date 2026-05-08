@@ -3,14 +3,20 @@ const router = express.Router();
 
 const authRoutes = require('./auth.routes');
 const campaignRoutes = require('./campaign.routes');
-const chapterRoutes = require('./chapter.routes');
-const eventRoutes = require('./event.routes');
-const mapRoutes = require('./map.routes');
-const characterRoutes = require('./character.routes');
 const dndRoutes = require('./dnd.routes');
 const uploadRoutes = require('./upload.routes');
+const followRoutes = require('./follow.routes');
 
-// Health check
+/**
+ * @openapi
+ * /health:
+ *   get:
+ *     summary: Liveness probe
+ *     tags: [System]
+ *     responses:
+ *       200:
+ *         description: API is up.
+ */
 router.get('/health', (req, res) => {
   res.json({
     success: true,
@@ -19,14 +25,10 @@ router.get('/health', (req, res) => {
   });
 });
 
-// API routes
 router.use('/auth', authRoutes);
 router.use('/campaigns', campaignRoutes);
-router.use('/chapters', chapterRoutes);
-router.use('/events', eventRoutes);
-router.use('/maps', mapRoutes);
-router.use('/characters', characterRoutes);
 router.use('/dnd', dndRoutes);
 router.use('/upload', uploadRoutes);
+router.use('/follows', followRoutes);
 
 module.exports = router;

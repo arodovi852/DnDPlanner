@@ -1,10 +1,17 @@
 const { Campaign } = require('../models');
 
-// Check if user has access to campaign
+/**
+ * Role-based access control middleware.
+ *
+ * `campaignAccessMiddleware` loads the campaign by id (from `req.params.id`
+ * or `req.params.campaignId`), verifies the requester has access (owner
+ * or member), and attaches `req.campaign` and `req.userRole` for the
+ * downstream handler. Unauthorized requests get a 403 / 404 immediately.
+ */
+
 const campaignAccessMiddleware = async (req, res, next) => {
   try {
     const campaignId = req.params.campaignId || req.params.id;
-
     if (!campaignId) {
       return res.status(400).json({
         success: false,
@@ -13,7 +20,6 @@ const campaignAccessMiddleware = async (req, res, next) => {
     }
 
     const campaign = await Campaign.findById(campaignId);
-
     if (!campaign) {
       return res.status(404).json({
         success: false,
@@ -21,9 +27,7 @@ const campaignAccessMiddleware = async (req, res, next) => {
       });
     }
 
-    const hasAccess = campaign.hasAccess(req.user.id);
-
-    if (!hasAccess) {
+    if (!campaign.hasAccess(req.user.id) && campaign.visibility !== 'public') {
       return res.status(403).json({
         success: false,
         message: 'Access denied. You do not have access to this campaign.',
@@ -31,31 +35,27 @@ const campaignAccessMiddleware = async (req, res, next) => {
     }
 
     req.campaign = campaign;
-    req.userRole = campaign.getUserRole(req.user.id);
-
+    req.userRole = campaign.getMemberRole(req.user.id);
     next();
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: 'Internal server error.',
-    });
+    next(error);
   }
 };
 
-// Check if user is DM of campaign
+/** Route guard: only DM and co-DM proceed. */
 const dmOnlyMiddleware = (req, res, next) => {
-  if (req.userRole !== 'DM') {
+  if (req.userRole !== 'dm' && req.userRole !== 'co-dm') {
     return res.status(403).json({
       success: false,
-      message: 'Access denied. Only the DM can perform this action.',
+      message: 'Access denied. Only the DM or co-DM can perform this action.',
     });
   }
   next();
 };
 
-// Check if user is owner of campaign
+/** Route guard: only the campaign owner proceeds. */
 const ownerOnlyMiddleware = (req, res, next) => {
-  if (req.campaign.createdBy.toString() !== req.user.id.toString()) {
+  if (String(req.campaign.ownerId) !== String(req.user.id)) {
     return res.status(403).json({
       success: false,
       message: 'Access denied. Only the owner can perform this action.',

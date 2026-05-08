@@ -1,54 +1,44 @@
 const { body, param } = require('express-validator');
 
+/**
+ * Validators for the `/api/campaigns` routes.
+ *
+ * Validation here is intentionally permissive on body shape because the
+ * full-document update endpoint accepts the entire denormalised tree.
+ * We only enforce the top-level invariants (id format, name length,
+ * visibility enum). Nested validation lives in the Mongoose schemas.
+ */
+
 const createCampaignValidation = [
-  body('title')
+  body('name')
     .trim()
     .notEmpty()
-    .withMessage('Title is required')
+    .withMessage('Name is required')
     .isLength({ max: 100 })
-    .withMessage('Title cannot exceed 100 characters'),
-
-  body('description')
-    .optional()
-    .trim()
-    .isLength({ max: 2000 })
-    .withMessage('Description cannot exceed 2000 characters'),
-
+    .withMessage('Name cannot exceed 100 characters'),
+  body('templateId').optional({ nullable: true }).isString(),
   body('visibility')
     .optional()
-    .isIn(['private', 'shared', 'public'])
-    .withMessage('Visibility must be private, shared, or public'),
-
-  body('settings.gameSystem')
-    .optional()
-    .trim()
-    .isLength({ max: 50 })
-    .withMessage('Game system cannot exceed 50 characters'),
-
-  body('settings.language')
-    .optional()
-    .isIn(['es', 'en'])
-    .withMessage('Language must be es or en'),
+    .isIn(['public', 'private'])
+    .withMessage('Visibility must be public or private'),
 ];
 
 const updateCampaignValidation = [
   param('id').isMongoId().withMessage('Invalid campaign ID'),
-  ...createCampaignValidation,
-];
-
-const shareCampaignValidation = [
-  param('id').isMongoId().withMessage('Invalid campaign ID'),
-
-  body('userId')
-    .notEmpty()
-    .withMessage('User ID is required')
-    .isMongoId()
-    .withMessage('Invalid user ID'),
-
-  body('role')
+  body('name')
     .optional()
-    .isIn(['DM', 'Player'])
-    .withMessage('Role must be DM or Player'),
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Name cannot exceed 100 characters'),
+  body('visibility')
+    .optional()
+    .isIn(['public', 'private'])
+    .withMessage('Visibility must be public or private'),
+  body('chapters').optional().isArray(),
+  body('characters').optional().isArray(),
+  body('members').optional().isArray(),
+  body('annotations').optional().isArray(),
+  body('revealedSpoilers').optional().isArray(),
 ];
 
 const campaignIdValidation = [
@@ -58,6 +48,5 @@ const campaignIdValidation = [
 module.exports = {
   createCampaignValidation,
   updateCampaignValidation,
-  shareCampaignValidation,
   campaignIdValidation,
 };

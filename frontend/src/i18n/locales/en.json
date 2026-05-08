@@ -14,7 +14,8 @@
     "untitled": "Untitled",
     "language": "Language",
     "english": "English",
-    "spanish": "Spanish"
+    "spanish": "Spanish",
+    "loading": "Loading…"
   },
   "header": {
     "logIn": "Log In",
@@ -52,7 +53,10 @@
     "createAccountAction": "Create account",
     "newHere": "New here? Create an account!",
     "alreadyHave": "Already have an account? Log in",
-    "passwordsDontMatch": "Passwords don't match"
+    "passwordsDontMatch": "Passwords don't match",
+    "submitting": "Loading…",
+    "unexpectedError": "Unexpected error. Please try again.",
+    "usernameRules": "Letters, numbers and underscores only (3-30 characters)."
   },
   "newCampaign": {
     "title": "New campaign",
@@ -112,6 +116,7 @@
     "join": "Join as player",
     "joined": "Already a member",
     "loginToInteract": "Log in to clone or join",
+    "loginToBrowse": "Log in to browse public campaigns from other users.",
     "empty": "No public campaigns yet. Be the first to share one!",
     "publishHint": "To publish one of yours, open your profile → edit → click the 🔒 icon on a card to toggle to 🌐."
   },

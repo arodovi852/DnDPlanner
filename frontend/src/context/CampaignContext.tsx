@@ -4,9 +4,12 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
+import { campaignsApi, type CampaignDTO } from '../api';
+import { useAuth } from './AuthContext';
 
 // ---------------------------------------------------------------------------
 // Tipos del dominio
@@ -108,7 +111,6 @@ export interface Character {
   name: string;
   kind: 'playable' | 'enemy';
   image?: string;
-  /** Slug del monstruo en dnd5eapi (sólo enemigos vinculados al API). */
   apiIndex?: string;
   className?: string;
   level: number;
@@ -128,21 +130,15 @@ export interface Character {
   inventorySlots: number;
   spells: string[];
   features: string[];
-  /** Ataques (de jugador o monstruo). Para enemigos suelen venir del API. */
   attacks: CharacterAttack[];
   description: string;
 }
-
-// ---------------------------------------------------------------------------
-// Social: miembros, roles, anotaciones, spoilers, invitaciones
-// ---------------------------------------------------------------------------
 
 export type MemberRole = 'dm' | 'co-dm' | 'player';
 
 export interface CampaignMember {
   userId: string;
   role: MemberRole;
-  /** Sólo `player`: id del personaje asignado al jugador. */
   characterId?: string;
   joinedAt: string;
 }
@@ -162,30 +158,26 @@ export interface Campaign {
   templateId?: string;
   createdAt: string;
   updatedAt: string;
-  /** Creador original (DM por defecto). */
   ownerId: string;
   chapters: Chapter[];
   characters: Character[];
   members: CampaignMember[];
   annotations: Annotation[];
-  /** Hashes de spoilers revelados por el DM → jugadores pueden verlos. */
   revealedSpoilers: string[];
-  /** Token opaco para enlaces de invitación (une como jugador). */
   shareToken?: string;
-  /** Token opaco para enlaces de solo lectura (ver sin unirse). */
   viewToken?: string;
-  /** Imagen de la campaña (data URL o URL externa). Si está, sobreescribe
-   *  la imagen de la plantilla en las tarjetas del perfil. */
   image?: string;
-  /** Visibilidad. `private` solo para el DM y los miembros invitados;
-   *  `public` aparece en /templates para que cualquiera la clone o pida
-   *  unirse. Por defecto privada. */
   visibility?: 'public' | 'private';
+  /** Solo presente en listados públicos. */
+  ownerProfile?: {
+    id: string;
+    username: string;
+    avatar?: string;
+  } | null;
 }
 
 // ---------------------------------------------------------------------------
-// Plantillas predefinidas (provisional — el usuario aportará datos reales
-// en un prompt posterior).
+// Plantillas predefinidas (cliente)
 // ---------------------------------------------------------------------------
 
 export interface CampaignTemplate {
@@ -200,10 +192,7 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
     id: 'blank',
     name: 'Blank',
     description: 'Empty campaign — start from scratch.',
-    build: () => ({
-      chapters: [],
-      characters: [],
-    }),
+    build: () => ({ chapters: [], characters: [] }),
   },
   {
     id: 'destinos-cruzados',
@@ -252,6 +241,12 @@ export const CAMPAIGN_TEMPLATES: CampaignTemplate[] = [
 
 interface CampaignContextValue {
   campaigns: Campaign[];
+  /** True while the initial fetch from the API is in flight. */
+  loading: boolean;
+  /** True when at least one mutation is being persisted to the API. */
+  syncing: boolean;
+  /** Last sync error (network/API). Cleared on next successful sync. */
+  syncError: string | null;
   activeCampaignId: string | null;
   activeCampaign: Campaign | null;
   setActiveCampaign: (id: string | null) => void;
@@ -262,17 +257,10 @@ interface CampaignContextValue {
   }) => Campaign;
   updateCampaign: (id: string, patch: Partial<Campaign>) => void;
   deleteCampaign: (id: string) => void;
-  /** Reordena las campañas del array global (drag&drop en el perfil). */
   reorderCampaigns: (orderedIds: string[]) => void;
-  /** Duplica una campaña existente como una nueva con el usuario actual
-   *  como dueño. Útil al "clonar" una plantilla pública. Devuelve la
-   *  campaña recién creada. */
   cloneCampaign: (sourceId: string, newOwnerId: string) => Campaign | null;
-  /** Inscribe al usuario como `player` en una campaña pública (si no es
-   *  ya miembro). No requiere aprobación: para mantener el flujo simple. */
   requestJoin: (campaignId: string, userId: string) => boolean;
 
-  // --- Vista de solo lectura (view token) ---------------------------------
   generateViewToken: (campaignId: string) => string;
   revokeViewToken: (campaignId: string) => void;
   findByViewToken: (token: string) => Campaign | null;
@@ -302,7 +290,6 @@ interface CampaignContextValue {
   ) => void;
   deleteCharacter: (campaignId: string, characterId: string) => void;
 
-  // --- Miembros -----------------------------------------------------------
   addMember: (
     campaignId: string,
     input: { userId: string; role: MemberRole; characterId?: string }
@@ -319,7 +306,6 @@ interface CampaignContextValue {
     characterId: string | null
   ) => void;
 
-  // --- Anotaciones --------------------------------------------------------
   addAnnotation: (
     campaignId: string,
     input: {
@@ -331,12 +317,10 @@ interface CampaignContextValue {
   ) => Annotation;
   removeAnnotation: (campaignId: string, annotationId: string) => void;
 
-  // --- Spoilers -----------------------------------------------------------
   toggleSpoiler: (campaignId: string, hash: string) => void;
   revealAllSpoilers: (campaignId: string) => void;
   hideAllSpoilers: (campaignId: string) => void;
 
-  // --- Invitaciones -------------------------------------------------------
   generateShareToken: (campaignId: string) => string;
   revokeShareToken: (campaignId: string) => void;
   findByShareToken: (token: string) => Campaign | null;
@@ -346,38 +330,22 @@ interface CampaignContextValue {
     role?: MemberRole
   ) => Campaign | null;
 
-  // --- Helpers de rol -----------------------------------------------------
   getRole: (campaignId: string, userId: string) => MemberRole | null;
 }
 
 const CampaignContext = createContext<CampaignContextValue | undefined>(undefined);
 
-const STORAGE_KEY = 'dndplanner:campaigns';
 const ACTIVE_KEY = 'dndplanner:activeCampaign';
-const DRAFT_COOKIE = 'dndplanner_campaigns_draft';
 
-/** Normaliza una campaña leída de localStorage rellenando campos nuevos. */
-function normalizeCampaign(raw: Partial<Campaign>): Campaign {
-  return {
-    id: raw.id ?? generateId('camp'),
-    name: raw.name ?? 'Untitled Campaign',
-    templateId: raw.templateId,
-    createdAt: raw.createdAt ?? new Date().toISOString(),
-    updatedAt: raw.updatedAt ?? new Date().toISOString(),
-    ownerId: raw.ownerId ?? '',
-    chapters: (raw.chapters ?? []).map(normalizeChapter),
-    characters: (raw.characters ?? []).map(normalizeCharacter),
-    members: raw.members ?? [],
-    annotations: raw.annotations ?? [],
-    revealedSpoilers: raw.revealedSpoilers ?? [],
-    shareToken: raw.shareToken,
-    viewToken: raw.viewToken,
-    image: raw.image,
-    visibility: raw.visibility ?? 'private',
-  };
+function readActiveCampaignId(): string | null {
+  if (typeof window === 'undefined') return null;
+  return window.localStorage.getItem(ACTIVE_KEY);
 }
 
-/** Garantiza que capítulos antiguos tengan los campos nuevos (events, map). */
+// ---------------------------------------------------------------------------
+// Helpers de normalización (reciben CampaignDTO → Campaign)
+// ---------------------------------------------------------------------------
+
 function normalizeChapter(raw: Partial<Chapter>): Chapter {
   return {
     id: raw.id ?? generateId('ch'),
@@ -397,7 +365,6 @@ function normalizeChapter(raw: Partial<Chapter>): Chapter {
   };
 }
 
-/** Garantiza que personajes antiguos tengan los campos nuevos (attacks, etc.). */
 function normalizeCharacter(raw: Partial<Character>): Character {
   return {
     ...createEmptyCharacter(raw.kind ?? 'playable', raw.name),
@@ -412,44 +379,89 @@ function normalizeCharacter(raw: Partial<Character>): Character {
   } as Character;
 }
 
-function readStoredCampaigns(): Campaign[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return [];
-    return (parsed as Array<Partial<Campaign>>).map(normalizeCampaign);
-  } catch {
-    return [];
-  }
-}
-
-function readActiveCampaignId(): string | null {
-  if (typeof window === 'undefined') return null;
-  return window.localStorage.getItem(ACTIVE_KEY);
+function dtoToCampaign(dto: CampaignDTO): Campaign {
+  return {
+    id: dto.id,
+    name: dto.name,
+    templateId: dto.templateId,
+    createdAt: dto.createdAt,
+    updatedAt: dto.updatedAt,
+    ownerId: dto.ownerId,
+    chapters: (dto.chapters ?? []).map((c) =>
+      normalizeChapter(c as unknown as Chapter)
+    ),
+    characters: (dto.characters ?? []).map((c) =>
+      normalizeCharacter(c as unknown as Character)
+    ),
+    members: (dto.members ?? []).map((m) => ({
+      userId: m.userId,
+      role: m.role,
+      characterId: m.characterId,
+      joinedAt: m.joinedAt,
+    })),
+    annotations: dto.annotations ?? [],
+    revealedSpoilers: dto.revealedSpoilers ?? [],
+    shareToken: dto.shareToken,
+    viewToken: dto.viewToken,
+    image: dto.image,
+    visibility: dto.visibility,
+    ownerProfile: dto.ownerProfile,
+  };
 }
 
 // ---------------------------------------------------------------------------
 // Provider
 // ---------------------------------------------------------------------------
 
+const SYNC_DEBOUNCE_MS = 600;
+
 export function CampaignProvider({ children }: { children: ReactNode }) {
-  const [campaigns, setCampaigns] = useState<Campaign[]>(() => readStoredCampaigns());
-  const [activeCampaignId, setActiveCampaignIdState] = useState<string | null>(() =>
-    readActiveCampaignId()
+  const { isAuthenticated, status } = useAuth();
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [activeCampaignId, setActiveCampaignIdState] = useState<string | null>(
+    () => readActiveCampaignId()
   );
+  const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncError, setSyncError] = useState<string | null>(null);
 
-  // Persistencia: localStorage + cookie de respaldo ("draft").
+  // Per-campaign debounce timers + a snapshot of the in-flight version so
+  // we can drop stale updates if the user kept editing while a request
+  // was in flight.
+  const syncTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const inFlight = useRef<Set<string>>(new Set());
+
+  // ------------------------------------------------------------------
+  // Initial load: fetch all campaigns from the API once authenticated.
+  // ------------------------------------------------------------------
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const serialized = JSON.stringify(campaigns);
-    window.localStorage.setItem(STORAGE_KEY, serialized);
-    document.cookie = `${DRAFT_COOKIE}=${encodeURIComponent(
-      serialized
-    )}; max-age=${60 * 60 * 24 * 7}; path=/; SameSite=Lax`;
-  }, [campaigns]);
+    if (status !== 'authenticated' || !isAuthenticated) {
+      // Logged out → drop in-memory state. Don't make API calls.
+      setCampaigns([]);
+      setActiveCampaignIdState(null);
+      return;
+    }
+    let cancelled = false;
+    setLoading(true);
+    (async () => {
+      try {
+        const list = await campaignsApi.list();
+        if (cancelled) return;
+        setCampaigns(list.map(dtoToCampaign));
+        setSyncError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setSyncError(err instanceof Error ? err.message : 'Could not load campaigns');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, status]);
 
+  // Persist active campaign id locally so a refresh keeps the same workspace.
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (activeCampaignId) {
@@ -459,11 +471,74 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     }
   }, [activeCampaignId]);
 
+  // ------------------------------------------------------------------
+  // Sync helpers
+  // ------------------------------------------------------------------
+
+  /**
+   * Push a campaign's current state to the server.
+   *
+   * Debounced per-campaign so rapid edits collapse into one PUT. Fire and
+   * forget — we don't await callers; UI errors surface via `syncError`.
+   */
+  const scheduleSync = useCallback((campaignId: string) => {
+    const timers = syncTimers.current;
+    const existing = timers.get(campaignId);
+    if (existing) clearTimeout(existing);
+    const handle = setTimeout(async () => {
+      timers.delete(campaignId);
+      // Read the latest snapshot from setState so we PUT what's current.
+      let snapshot: Campaign | undefined;
+      setCampaigns((prev) => {
+        snapshot = prev.find((c) => c.id === campaignId);
+        return prev;
+      });
+      if (!snapshot) return;
+      inFlight.current.add(campaignId);
+      setSyncing(true);
+      try {
+        await campaignsApi.update(campaignId, {
+          name: snapshot.name,
+          chapters: snapshot.chapters as unknown as CampaignDTO['chapters'],
+          characters: snapshot.characters as unknown as CampaignDTO['characters'],
+          members: snapshot.members.map((m) => ({
+            userId: m.userId,
+            role: m.role,
+            characterId: m.characterId,
+            joinedAt: m.joinedAt,
+          })),
+          annotations: snapshot.annotations,
+          revealedSpoilers: snapshot.revealedSpoilers,
+          image: snapshot.image,
+          visibility: snapshot.visibility,
+        });
+        setSyncError(null);
+      } catch (err) {
+        setSyncError(err instanceof Error ? err.message : 'Sync failed');
+      } finally {
+        inFlight.current.delete(campaignId);
+        if (inFlight.current.size === 0 && syncTimers.current.size === 0) {
+          setSyncing(false);
+        }
+      }
+    }, SYNC_DEBOUNCE_MS);
+    timers.set(campaignId, handle);
+  }, []);
+
+  // Cleanup pending timers on unmount so we don't fire after the provider dies.
+  useEffect(() => {
+    const timers = syncTimers.current;
+    return () => {
+      timers.forEach((t) => clearTimeout(t));
+      timers.clear();
+    };
+  }, []);
+
   const setActiveCampaign = useCallback((id: string | null) => {
     setActiveCampaignIdState(id);
   }, []);
 
-  // Helper interno para mutar una campaña por id.
+  // Helper: mutate a campaign by id and schedule a sync.
   const patchCampaign = useCallback(
     (campaignId: string, patch: (c: Campaign) => Campaign) => {
       setCampaigns((prev) =>
@@ -473,8 +548,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
             : c
         )
       );
+      scheduleSync(campaignId);
     },
-    []
+    [scheduleSync]
   );
 
   // ------------------------------------------------------------------
@@ -491,6 +567,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       templateId?: string;
       ownerId: string;
     }) => {
+      // Optimistic creation: insert locally with a temp id, then replace it
+      // with the server id when the POST resolves. This keeps the call
+      // synchronous to consumers that expect a Campaign back.
       const now = new Date().toISOString();
       const finalName = name.trim() || 'Untitled Campaign';
       const template = templateId
@@ -498,8 +577,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         : undefined;
       const base = template ? template.build() : { chapters: [], characters: [] };
 
-      const campaign: Campaign = {
-        id: generateId('camp'),
+      const tempId = generateId('camp-tmp');
+      const local: Campaign = {
+        id: tempId,
         name: finalName,
         templateId: template?.id,
         createdAt: now,
@@ -507,20 +587,38 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         ownerId,
         chapters: base.chapters,
         characters: base.characters,
-        members: [
-          {
-            userId: ownerId,
-            role: 'dm',
-            joinedAt: now,
-          },
-        ],
+        members: [{ userId: ownerId, role: 'dm', joinedAt: now }],
         annotations: [],
         revealedSpoilers: [],
       };
 
-      setCampaigns((prev) => [...prev, campaign]);
-      setActiveCampaignIdState(campaign.id);
-      return campaign;
+      setCampaigns((prev) => [...prev, local]);
+      setActiveCampaignIdState(tempId);
+
+      // Real POST in background.
+      (async () => {
+        try {
+          const dto = await campaignsApi.create({
+            name: finalName,
+            templateId: template?.id,
+            chapters: base.chapters as unknown as CampaignDTO['chapters'],
+            characters: base.characters as unknown as CampaignDTO['characters'],
+          });
+          const real = dtoToCampaign(dto);
+          setCampaigns((prev) =>
+            prev.map((c) => (c.id === tempId ? real : c))
+          );
+          setActiveCampaignIdState((curr) => (curr === tempId ? real.id : curr));
+          setSyncError(null);
+        } catch (err) {
+          setSyncError(err instanceof Error ? err.message : 'Could not create campaign');
+          // Roll back local optimistic insertion.
+          setCampaigns((prev) => prev.filter((c) => c.id !== tempId));
+          setActiveCampaignIdState((curr) => (curr === tempId ? null : curr));
+        }
+      })();
+
+      return local;
     },
     []
   );
@@ -533,8 +631,18 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   );
 
   const deleteCampaign = useCallback((id: string) => {
+    // Optimistic: remove locally, then DELETE on the server.
     setCampaigns((prev) => prev.filter((c) => c.id !== id));
     setActiveCampaignIdState((curr) => (curr === id ? null : curr));
+    if (id.startsWith('camp-tmp-')) return; // never reached the server
+    (async () => {
+      try {
+        await campaignsApi.delete(id);
+        setSyncError(null);
+      } catch (err) {
+        setSyncError(err instanceof Error ? err.message : 'Could not delete campaign');
+      }
+    })();
   }, []);
 
   const cloneCampaign = useCallback(
@@ -542,55 +650,66 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       const source = campaigns.find((c) => c.id === sourceId);
       if (!source) return null;
       const now = new Date().toISOString();
-      // Copia profunda barata: como todo es JSON-serializable funciona.
-      const copy: Campaign = JSON.parse(JSON.stringify(source));
-      copy.id = generateId('camp');
-      copy.name = `${source.name} (clone)`;
-      copy.ownerId = newOwnerId;
-      copy.createdAt = now;
-      copy.updatedAt = now;
-      copy.visibility = 'private';
-      copy.shareToken = undefined;
-      // El nuevo dueño es DM. Limpiamos miembros y anotaciones del original.
-      copy.members = [{ userId: newOwnerId, role: 'dm', joinedAt: now }];
-      copy.annotations = [];
-      copy.revealedSpoilers = [];
-      setCampaigns((prev) => [...prev, copy]);
-      setActiveCampaignIdState(copy.id);
-      return copy;
+      const tempId = generateId('camp-tmp');
+      const optimistic: Campaign = JSON.parse(JSON.stringify(source));
+      optimistic.id = tempId;
+      optimistic.name = `${source.name} (clone)`;
+      optimistic.ownerId = newOwnerId;
+      optimistic.createdAt = now;
+      optimistic.updatedAt = now;
+      optimistic.visibility = 'private';
+      optimistic.shareToken = undefined;
+      optimistic.viewToken = undefined;
+      optimistic.members = [{ userId: newOwnerId, role: 'dm', joinedAt: now }];
+      optimistic.annotations = [];
+      optimistic.revealedSpoilers = [];
+
+      setCampaigns((prev) => [...prev, optimistic]);
+      setActiveCampaignIdState(tempId);
+
+      (async () => {
+        try {
+          const dto = await campaignsApi.clone(sourceId);
+          const real = dtoToCampaign(dto);
+          setCampaigns((prev) =>
+            prev.map((c) => (c.id === tempId ? real : c))
+          );
+          setActiveCampaignIdState((curr) => (curr === tempId ? real.id : curr));
+          setSyncError(null);
+        } catch (err) {
+          setSyncError(err instanceof Error ? err.message : 'Could not clone campaign');
+          setCampaigns((prev) => prev.filter((c) => c.id !== tempId));
+        }
+      })();
+
+      return optimistic;
     },
     [campaigns]
   );
 
   const requestJoin = useCallback(
     (campaignId: string, userId: string): boolean => {
-      let joined = false;
-      setCampaigns((prev) =>
-        prev.map((c) => {
-          if (c.id !== campaignId) return c;
-          if (c.visibility !== 'public') return c;
-          if (c.members.some((m) => m.userId === userId)) return c;
-          joined = true;
-          return {
-            ...c,
-            members: [
-              ...c.members,
-              { userId, role: 'player', joinedAt: new Date().toISOString() },
-            ],
-            updatedAt: new Date().toISOString(),
-          };
-        })
-      );
-      return joined;
+      const c = campaigns.find((x) => x.id === campaignId);
+      if (!c || c.visibility !== 'public') return false;
+      if (c.members.some((m) => m.userId === userId)) return false;
+      patchCampaign(campaignId, (c) => ({
+        ...c,
+        members: [
+          ...c.members,
+          { userId, role: 'player', joinedAt: new Date().toISOString() },
+        ],
+      }));
+      return true;
     },
-    []
+    [campaigns, patchCampaign]
   );
 
   const reorderCampaigns = useCallback((orderedIds: string[]) => {
+    // Reordering is purely client-side; the API doesn't store user-specific
+    // sort order yet. We mutate local state only.
     setCampaigns((prev) => {
       const byId = new Map(prev.map((c) => [c.id, c] as const));
       const next: Campaign[] = [];
-      // Primero las que vienen en `orderedIds` en su nuevo orden.
       for (const id of orderedIds) {
         const camp = byId.get(id);
         if (camp) {
@@ -598,7 +717,6 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           byId.delete(id);
         }
       }
-      // Después las restantes que no estén en la lista (defensivo).
       for (const camp of byId.values()) next.push(camp);
       return next;
     });
@@ -702,7 +820,6 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       patchCampaign(campaignId, (c) => ({
         ...c,
         characters: c.characters.filter((ch) => ch.id !== characterId),
-        // También desasignamos el personaje de cualquier miembro que lo tuviera.
         members: c.members.map((m) =>
           m.characterId === characterId ? { ...m, characterId: undefined } : m
         ),
@@ -726,12 +843,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           ...c,
           members: [
             ...c.members,
-            {
-              userId,
-              role,
-              characterId,
-              joinedAt: new Date().toISOString(),
-            },
+            { userId, role, characterId, joinedAt: new Date().toISOString() },
           ],
         };
       });
@@ -743,7 +855,6 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     (campaignId: string, userId: string) => {
       patchCampaign(campaignId, (c) => ({
         ...c,
-        // El owner nunca puede ser expulsado.
         members: c.members.filter(
           (m) => m.userId !== userId || m.userId === c.ownerId
         ),
@@ -853,14 +964,32 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   );
 
   // ------------------------------------------------------------------
-  // Invitaciones
+  // Invitaciones / view-only links — server-issued
   // ------------------------------------------------------------------
 
   const generateShareToken = useCallback(
     (campaignId: string): string => {
-      const token = generateId('inv').replace(/[^a-z0-9-]/gi, '');
-      patchCampaign(campaignId, (c) => ({ ...c, shareToken: token }));
-      return token;
+      // Optimistic placeholder while the request is in flight; replaced
+      // with the real token when the API answers.
+      const placeholder = generateId('inv').replace(/[^a-z0-9-]/gi, '');
+      patchCampaign(campaignId, (c) => ({ ...c, shareToken: placeholder }));
+      (async () => {
+        try {
+          const real = await campaignsApi.generateShareToken(campaignId);
+          setCampaigns((prev) =>
+            prev.map((c) => (c.id === campaignId ? { ...c, shareToken: real } : c))
+          );
+          setSyncError(null);
+        } catch (err) {
+          setSyncError(err instanceof Error ? err.message : 'Could not generate share token');
+          setCampaigns((prev) =>
+            prev.map((c) =>
+              c.id === campaignId ? { ...c, shareToken: undefined } : c
+            )
+          );
+        }
+      })();
+      return placeholder;
     },
     [patchCampaign]
   );
@@ -868,15 +997,39 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const revokeShareToken = useCallback(
     (campaignId: string) => {
       patchCampaign(campaignId, (c) => ({ ...c, shareToken: undefined }));
+      (async () => {
+        try {
+          await campaignsApi.revokeShareToken(campaignId);
+          setSyncError(null);
+        } catch (err) {
+          setSyncError(err instanceof Error ? err.message : 'Could not revoke share token');
+        }
+      })();
     },
     [patchCampaign]
   );
 
   const generateViewToken = useCallback(
     (campaignId: string): string => {
-      const token = generateId('view').replace(/[^a-z0-9-]/gi, '');
-      patchCampaign(campaignId, (c) => ({ ...c, viewToken: token }));
-      return token;
+      const placeholder = generateId('view').replace(/[^a-z0-9-]/gi, '');
+      patchCampaign(campaignId, (c) => ({ ...c, viewToken: placeholder }));
+      (async () => {
+        try {
+          const real = await campaignsApi.generateViewToken(campaignId);
+          setCampaigns((prev) =>
+            prev.map((c) => (c.id === campaignId ? { ...c, viewToken: real } : c))
+          );
+          setSyncError(null);
+        } catch (err) {
+          setSyncError(err instanceof Error ? err.message : 'Could not generate view token');
+          setCampaigns((prev) =>
+            prev.map((c) =>
+              c.id === campaignId ? { ...c, viewToken: undefined } : c
+            )
+          );
+        }
+      })();
+      return placeholder;
     },
     [patchCampaign]
   );
@@ -884,6 +1037,14 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const revokeViewToken = useCallback(
     (campaignId: string) => {
       patchCampaign(campaignId, (c) => ({ ...c, viewToken: undefined }));
+      (async () => {
+        try {
+          await campaignsApi.revokeViewToken(campaignId);
+          setSyncError(null);
+        } catch (err) {
+          setSyncError(err instanceof Error ? err.message : 'Could not revoke view token');
+        }
+      })();
     },
     [patchCampaign]
   );
@@ -906,21 +1067,38 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
 
   const acceptInvite = useCallback(
     (token: string, userId: string, role: MemberRole = 'player'): Campaign | null => {
+      // Local optimistic join when the campaign is already in our list,
+      // plus a server-side join via the share-token endpoint to cover the
+      // case where the campaign isn't in our state yet.
       const target = campaigns.find((c) => c.shareToken === token);
-      if (!target) return null;
-      if (target.members.some((m) => m.userId === userId)) {
-        return target;
+      if (target && !target.members.some((m) => m.userId === userId)) {
+        patchCampaign(target.id, (c) => ({
+          ...c,
+          members: [
+            ...c.members,
+            { userId, role, joinedAt: new Date().toISOString() },
+          ],
+        }));
       }
-      const now = new Date().toISOString();
-      const updated: Campaign = {
-        ...target,
-        members: [...target.members, { userId, role, joinedAt: now }],
-        updatedAt: now,
-      };
-      setCampaigns((prev) => prev.map((c) => (c.id === target.id ? updated : c)));
-      return updated;
+      (async () => {
+        try {
+          const dto = await campaignsApi.acceptInvite(token);
+          const real = dtoToCampaign(dto);
+          setCampaigns((prev) => {
+            const idx = prev.findIndex((c) => c.id === real.id);
+            if (idx === -1) return [...prev, real];
+            const copy = [...prev];
+            copy[idx] = real;
+            return copy;
+          });
+          setSyncError(null);
+        } catch (err) {
+          setSyncError(err instanceof Error ? err.message : 'Could not accept invite');
+        }
+      })();
+      return target ?? null;
     },
-    [campaigns]
+    [campaigns, patchCampaign]
   );
 
   // ------------------------------------------------------------------
@@ -949,6 +1127,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const value = useMemo<CampaignContextValue>(
     () => ({
       campaigns,
+      loading,
+      syncing,
+      syncError,
       activeCampaignId,
       activeCampaign,
       setActiveCampaign,
@@ -986,6 +1167,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     }),
     [
       campaigns,
+      loading,
+      syncing,
+      syncError,
       activeCampaignId,
       activeCampaign,
       setActiveCampaign,
@@ -1054,7 +1238,6 @@ export function canSeeSpoilers(
   return isDungeonMaster(campaign, userId);
 }
 
-/** Hash determinista (djb2) usado para identificar spoilers por contenido. */
 export function spoilerHash(text: string): string {
   let hash = 5381;
   for (let i = 0; i < text.length; i++) {
@@ -1063,10 +1246,8 @@ export function spoilerHash(text: string): string {
   return (hash >>> 0).toString(36);
 }
 
-/** Sintaxis soportada: `||texto oculto||`. */
 export const SPOILER_REGEX = /\|\|([\s\S]+?)\|\|/g;
 
-/** Recorre todos los textos conocidos de la campaña y devuelve hashes únicos. */
 function collectSpoilerHashes(c: Campaign): string[] {
   const hashes = new Set<string>();
   const scan = (text: string | undefined) => {
@@ -1127,7 +1308,6 @@ export function createEmptyCharacter(
   };
 }
 
-/** Fórmula estándar de DnD 5e: `(score - 10) / 2` redondeado hacia abajo. */
 export function abilityModifier(score: number): number {
   return Math.floor((score - 10) / 2);
 }

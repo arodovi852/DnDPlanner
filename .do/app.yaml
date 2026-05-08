@@ -1,10 +1,31 @@
 name: dndplanner
 region: fra
 
+# ============================================================================
+# DigitalOcean App Platform spec.
+#
+# Architecture:
+#   - dndplanner-web : Vite static SPA (React + TypeScript, served from /dist)
+#   - dndplanner-api : Express + Socket.IO + Mongoose, talks to MongoDB Atlas
+#
+# Cross-references:
+#   - The frontend reads its API base URL at *build time* from VITE_API_URL,
+#     which here points at the API's PUBLIC_URL with the `/api` suffix the
+#     REST client expects. Socket.IO derives its endpoint by stripping that
+#     suffix, so a single env var configures both transports.
+#   - The backend's CORS_ORIGIN is wired to the static site's PUBLIC_URL so
+#     the browser doesn't reject pre-flighted requests.
+#
+# Secrets you MUST provide via the App Platform UI (Settings → App-Level
+# Variables) before the first deploy:
+#   - MONGO_URI
+#   - JWT_SECRET
+#   - JWT_REFRESH_SECRET
+#   - CLOUDINARY_* (optional — needed only for image uploads)
+# ============================================================================
+
 # ----------------------------------------------------------------------------
-# FRONTEND — sitio estático de React/Vite. Gratis en App Platform (cuenta
-# 3 sitios estáticos sin coste). Se construye con `npm run build` y se
-# sirve la carpeta `dist`.
+# FRONTEND — Vite SPA. Free on App Platform (3 static sites per account).
 # ----------------------------------------------------------------------------
 static_sites:
   - name: dndplanner-web
@@ -13,19 +34,23 @@ static_sites:
       repo: arodovi852/AROProyectoFinDeGrado2026
       branch: main
       deploy_on_push: true
+    # `npm ci && npm run build` includes devDependencies (vite, tsc) which
+    # are required for the build step. We can't use `--omit=dev` here.
     build_command: npm ci && npm run build
     output_dir: dist
-    # SPA: cualquier ruta no encontrada devuelve index.html para que
-    # React Router pueda manejarla en el cliente.
+    # SPA: any unknown path falls back to index.html so React Router can
+    # resolve client-side routes.
     catchall_document: index.html
     envs:
       - key: VITE_API_URL
         scope: BUILD_TIME
-        value: ${dndplanner-api.PUBLIC_URL}
+        # PUBLIC_URL → 'https://dndplanner-api-xxxxx.ondigitalocean.app';
+        # the client expects the `/api` suffix on the REST base URL.
+        value: ${dndplanner-api.PUBLIC_URL}/api
 
 # ----------------------------------------------------------------------------
-# BACKEND — servicio Node/Express. Tier Basic XXS = $5/mes (con los $200
-# de créditos del GitHub Student Pack llega para ~3 años).
+# BACKEND — Node/Express + Socket.IO. Tier Basic XXS = $5/mo
+# (Student Pack credits cover ~3 years).
 # ----------------------------------------------------------------------------
 services:
   - name: dndplanner-api
@@ -46,9 +71,11 @@ services:
         value: production
       - key: PORT
         value: "3000"
+      # Database -------------------------------------------------------------
       - key: MONGO_URI
         scope: RUN_TIME
         type: SECRET
+      # Auth -----------------------------------------------------------------
       - key: JWT_SECRET
         scope: RUN_TIME
         type: SECRET
@@ -56,9 +83,11 @@ services:
         scope: RUN_TIME
         type: SECRET
       - key: JWT_EXPIRES_IN
-        value: 7d
+        value: 15m
       - key: JWT_REFRESH_EXPIRES_IN
-        value: 30d
+        value: 7d
+      # Optional: Cloudinary (image uploads). Leave empty if unused — only
+      # the upload endpoints will fail; the rest of the API is unaffected.
       - key: CLOUDINARY_CLOUD_NAME
         scope: RUN_TIME
         type: SECRET
@@ -68,6 +97,13 @@ services:
       - key: CLOUDINARY_API_SECRET
         scope: RUN_TIME
         type: SECRET
+      # CORS — must match the static site origin exactly (with HTTPS).
+      # Socket.IO inherits this through the same option.
       - key: CORS_ORIGIN
         scope: RUN_TIME
         value: ${dndplanner-web.PUBLIC_URL}
+      # Rate limiting (defaults are usually fine but tunable here).
+      - key: RATE_LIMIT_WINDOW_MS
+        value: "900000"
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: "100"

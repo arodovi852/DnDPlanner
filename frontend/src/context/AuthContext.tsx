@@ -7,134 +7,188 @@ import {
   useState,
   type ReactNode,
 } from 'react';
+import {
+  authApi,
+  ApiError,
+  hasTokens,
+  clearTokens,
+  closeSocket,
+  type BackendUser,
+} from '../api';
 
 /**
- * Representación mínima de un usuario autenticado.
+ * AuthContext.
  *
- * El `id` es estable (persiste a través de logouts/logins del mismo usuario).
- * Mientras no haya backend, usamos una derivación determinista del username
- * para que dos usuarios con el mismo username (en este dispositivo) compartan id.
+ * Source of truth for the currently authenticated user. Talks to the
+ * backend via the `/auth/*` endpoints; the JWT pair is persisted in
+ * localStorage by the API client so that a page reload keeps the user
+ * signed in.
+ *
+ * The shape exposed to components keeps the *frontend* friendly fields
+ * (`id`, `description`, `avatar`, `isPrivate`) and translates the
+ * backend's `_id` into `id` so the rest of the app keeps working.
  */
 export interface AuthUser {
+  /** MongoDB ObjectId of the user (string form). */
   id: string;
   username: string;
   email?: string;
   description?: string;
   avatar?: string;
-  /** Si está activo, el perfil no aparece en búsquedas y la página
-   *  pública responde con "perfil privado" salvo para DMs que tengan
-   *  a este usuario como jugador en una de sus campañas. */
+  /**
+   * If `true`, the user does not appear in search and their public
+   * profile is gated. The DM-of-player exception is enforced on the
+   * server; the frontend just trusts the response.
+   */
   isPrivate?: boolean;
 }
 
+/** Status reported to consumers so they can render loading states. */
+export type AuthStatus = 'idle' | 'authenticating' | 'authenticated' | 'unauthenticated';
+
 interface AuthContextValue {
   user: AuthUser | null;
+  status: AuthStatus;
   isAuthenticated: boolean;
-  login: (input: { username: string; email?: string }) => void;
-  logout: () => void;
-  updateUser: (patch: Partial<Omit<AuthUser, 'id'>>) => void;
+  /** Last error from a login/register/update attempt (cleared on success). */
+  error: string | null;
+  login: (input: { identifier: string; password: string }) => Promise<void>;
+  register: (input: {
+    username: string;
+    email: string;
+    password: string;
+  }) => Promise<void>;
+  logout: () => Promise<void>;
+  /** Patch the authenticated user's profile (username/avatar/description/privacy). */
+  updateUser: (
+    patch: Partial<Omit<AuthUser, 'id'>> & { isPrivate?: boolean }
+  ) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
 
-const STORAGE_KEY = 'dndplanner:user';
-/** Diccionario id → datos editables del perfil (avatar, descripción,
- *  privacidad). Se conserva al cerrar sesión, así que cuando el mismo
- *  usuario vuelva a entrar recupera sus ajustes. */
-const PROFILES_KEY = 'dndplanner:profiles';
-
-type StoredProfile = Pick<AuthUser, 'avatar' | 'description' | 'isPrivate'>;
-
-function slugifyId(name: string): string {
-  return `user-${name
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, '-')
-    .replace(/^-+|-+$/g, '') || 'anon'}`;
+function toAuthUser(u: BackendUser): AuthUser {
+  return {
+    id: u._id,
+    username: u.username,
+    email: u.email,
+    avatar: u.avatar ?? undefined,
+    description: u.description ?? undefined,
+    isPrivate: u.isPrivate ?? false,
+  };
 }
 
-function readStoredProfiles(): Record<string, StoredProfile> {
-  if (typeof window === 'undefined') return {};
-  try {
-    const raw = window.localStorage.getItem(PROFILES_KEY);
-    if (!raw) return {};
-    const parsed = JSON.parse(raw);
-    if (!parsed || typeof parsed !== 'object') return {};
-    return parsed as Record<string, StoredProfile>;
-  } catch {
-    return {};
+/** Best-effort error → human-readable message. */
+function describeError(err: unknown): string {
+  if (err instanceof ApiError) {
+    if (err.body?.errors && err.body.errors.length > 0) {
+      return err.body.errors.map((e) => e.msg).filter(Boolean).join(', ');
+    }
+    return err.message;
   }
-}
-
-function writeStoredProfiles(profiles: Record<string, StoredProfile>) {
-  if (typeof window === 'undefined') return;
-  window.localStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
-}
-
-function readStoredUser(): AuthUser | null {
-  if (typeof window === 'undefined') return null;
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY);
-    if (!raw) return null;
-    const parsed = JSON.parse(raw) as Partial<AuthUser>;
-    if (!parsed.username) return null;
-    const id = parsed.id ?? slugifyId(parsed.username);
-    const stored = readStoredProfiles()[id];
-    return {
-      id,
-      username: parsed.username,
-      email: parsed.email,
-      description: parsed.description ?? stored?.description,
-      avatar: parsed.avatar ?? stored?.avatar,
-      isPrivate: parsed.isPrivate ?? stored?.isPrivate,
-    };
-  } catch {
-    return null;
-  }
+  if (err instanceof Error) return err.message;
+  return 'Unexpected error';
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => readStoredUser());
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [status, setStatus] = useState<AuthStatus>(
+    hasTokens() ? 'authenticating' : 'unauthenticated'
+  );
+  const [error, setError] = useState<string | null>(null);
 
+  // On mount, if we have a stored access token, fetch /auth/me to hydrate
+  // the user. If that fails (token expired, user deleted) we clear tokens
+  // and fall back to unauthenticated.
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    if (user) {
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
-    } else {
-      window.localStorage.removeItem(STORAGE_KEY);
+    let cancelled = false;
+    async function hydrate() {
+      if (!hasTokens()) {
+        setStatus('unauthenticated');
+        return;
+      }
+      try {
+        const u = await authApi.me();
+        if (cancelled) return;
+        setUser(toAuthUser(u));
+        setStatus('authenticated');
+      } catch {
+        if (cancelled) return;
+        clearTokens();
+        setStatus('unauthenticated');
+      }
     }
-  }, [user]);
-
-  const login = useCallback((input: { username: string; email?: string }) => {
-    const id = slugifyId(input.username);
-    const stored = readStoredProfiles()[id];
-    setUser({
-      id,
-      username: input.username,
-      email: input.email,
-      avatar: stored?.avatar,
-      description: stored?.description,
-      isPrivate: stored?.isPrivate,
-    });
+    hydrate();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
-  const logout = useCallback(() => {
+  const login = useCallback(
+    async (input: { identifier: string; password: string }) => {
+      setError(null);
+      setStatus('authenticating');
+      try {
+        const u = await authApi.login(input);
+        setUser(toAuthUser(u));
+        setStatus('authenticated');
+      } catch (err) {
+        setStatus('unauthenticated');
+        const msg = describeError(err);
+        setError(msg);
+        throw err;
+      }
+    },
+    []
+  );
+
+  const register = useCallback(
+    async (input: { username: string; email: string; password: string }) => {
+      setError(null);
+      setStatus('authenticating');
+      try {
+        const u = await authApi.register(input);
+        setUser(toAuthUser(u));
+        setStatus('authenticated');
+      } catch (err) {
+        setStatus('unauthenticated');
+        const msg = describeError(err);
+        setError(msg);
+        throw err;
+      }
+    },
+    []
+  );
+
+  const logout = useCallback(async () => {
+    try {
+      await authApi.logout();
+    } catch {
+      // Even if the server call fails (offline, expired token), drop the
+      // client-side session. The user clicked "log out" — respect that.
+    }
+    // Tear the socket down so the next login gets a fresh connection
+    // (and stops receiving events from rooms the previous user was in).
+    closeSocket();
     setUser(null);
+    setStatus('unauthenticated');
   }, []);
 
   const updateUser = useCallback(
-    (patch: Partial<Omit<AuthUser, 'id'>>) => {
-      setUser((prev) => {
-        if (!prev) return prev;
-        const next = { ...prev, ...patch };
-        const all = readStoredProfiles();
-        all[next.id] = {
-          avatar: next.avatar,
-          description: next.description,
-          isPrivate: next.isPrivate,
-        };
-        writeStoredProfiles(all);
-        return next;
-      });
+    async (patch: Partial<Omit<AuthUser, 'id'>>) => {
+      setError(null);
+      try {
+        const u = await authApi.updateProfile({
+          username: patch.username,
+          avatar: patch.avatar ?? undefined,
+          description: patch.description,
+          isPrivate: patch.isPrivate,
+        });
+        setUser(toAuthUser(u));
+      } catch (err) {
+        setError(describeError(err));
+        throw err;
+      }
     },
     []
   );
@@ -142,12 +196,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const value = useMemo<AuthContextValue>(
     () => ({
       user,
-      isAuthenticated: user !== null,
+      status,
+      isAuthenticated: status === 'authenticated' && user !== null,
+      error,
       login,
+      register,
       logout,
       updateUser,
     }),
-    [user, login, logout, updateUser]
+    [user, status, error, login, register, logout, updateUser]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

@@ -1,15 +1,17 @@
+/**
+ * Model registry.
+ *
+ * NOTE: Chapters, Characters, Maps and Events live *embedded* inside the
+ * `Campaign` document — they don't have their own collection. Importing
+ * them here is intentional (their schemas are still referenced by tests
+ * and migrations) but they're not exported as part of the public API.
+ */
 const User = require('./User');
 const Campaign = require('./Campaign');
-const Chapter = require('./Chapter');
-const Event = require('./Event');
-const Map = require('./Map');
-const Character = require('./Character');
+const Follow = require('./Follow');
 
 module.exports = {
   User,
   Campaign,
-  Chapter,
-  Event,
-  Map,
-  Character,
+  Follow,
 };

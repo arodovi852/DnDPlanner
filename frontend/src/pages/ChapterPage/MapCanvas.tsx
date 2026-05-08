@@ -11,6 +11,8 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUndoableState } from '../../hooks/useUndoableState';
+import { useCampaignSocket } from '../../hooks/useCampaignSocket';
+import { getSocket, SocketEvents } from '../../api';
 import {
   useCampaigns,
   type Character,
@@ -159,6 +161,19 @@ export function MapCanvas() {
   });
   const { cells, cols, rows } = state;
 
+  // Identificador único de esta pestaña — se incluye en cada `map:update`
+  // emitido para que el receptor pueda descartar sus propios ecos.
+  const originRef = useRef(
+    typeof crypto !== 'undefined' && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `tab-${Math.random().toString(36).slice(2)}`
+  );
+  // Bandera que se activa mientras aplicamos un cambio recibido por
+  // socket. El autoguardado la lee y, si está activa, evita re-emitir el
+  // evento (sería un loop) y evita una escritura redundante a la API
+  // (la persistencia ya la hizo el emisor original).
+  const isApplyingRemoteRef = useRef(false);
+
   // Reset cuando cambia el capítulo o la campaña activa.
   useEffect(() => {
     history.reset({
@@ -169,11 +184,18 @@ export function MapCanvas() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [chapterId, activeCampaign?.id]);
 
-  // Autoguardado: cualquier cambio en cells/cols/rows se persiste en el
-  // capítulo. Evitamos escrituras redundantes cuando el estado coincide
-  // con lo que ya hay guardado (típicamente justo después de un reset).
+  // Autoguardado + broadcast en vivo. Si el cambio se originó localmente
+  // persistimos vía el contexto y emitimos `map:update` al room de la
+  // campaña; si el cambio viene de un peer (flag activa) no hacemos
+  // nada — ya está persistido por el emisor.
   useEffect(() => {
     if (!activeCampaign || !chapterId || !currentChapter) return;
+    if (isApplyingRemoteRef.current) {
+      // Liberamos la bandera tras este tick para que las siguientes
+      // ediciones locales emitan con normalidad.
+      isApplyingRemoteRef.current = false;
+      return;
+    }
     const persisted = currentChapter.map;
     if (
       persisted.cells === cells &&
@@ -183,8 +205,40 @@ export function MapCanvas() {
       return;
     }
     updateChapterMap(activeCampaign.id, chapterId, { cells, cols, rows });
+    // Broadcast al room — el backend reenvía solo a los demás miembros.
+    try {
+      getSocket().emit(SocketEvents.mapUpdate, {
+        campaignId: activeCampaign.id,
+        chapterId,
+        map: { cells, cols, rows },
+        origin: originRef.current,
+      });
+    } catch {
+      // Si el socket no conecta, el cambio queda persistido por la API
+      // de todas formas; los peers verán el cambio al refrescar.
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [cells, cols, rows]);
+
+  // Suscripción a updates en vivo del mapa.
+  useCampaignSocket(activeCampaign?.id ?? null, {
+    onMapUpdated: (payload) => {
+      if (!activeCampaign || payload.campaignId !== activeCampaign.id) return;
+      if (payload.chapterId !== chapterId) return;
+      if (payload.origin === originRef.current) return; // eco propio
+      isApplyingRemoteRef.current = true;
+      setState({
+        cells: (payload.map.cells as Record<string, Entity>) ?? {},
+        cols: payload.map.cols ?? 15,
+        rows: payload.map.rows ?? 15,
+      });
+      updateChapterMap(activeCampaign.id, payload.chapterId, {
+        cells: payload.map.cells as Record<string, Entity>,
+        cols: payload.map.cols,
+        rows: payload.map.rows,
+      });
+    },
+  });
 
   const characterOptions = useMemo<EntityOption[]>(() => {
     return (activeCampaign?.characters ?? [])

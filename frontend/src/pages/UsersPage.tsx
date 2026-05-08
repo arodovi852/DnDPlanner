@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Profile } from '../components/shared/Profile';
@@ -57,6 +57,26 @@ export function UsersPage() {
     return 3;
   };
 
+  // Resultados de búsqueda en estado: searchUsers ahora es async y pega
+  // al backend. Debounce 300ms para no saturar la API mientras se escribe.
+  const [searchResults, setSearchResults] = useState<PublicUser[] | null>(null);
+  useEffect(() => {
+    if (!query.trim()) {
+      setSearchResults(null);
+      return;
+    }
+    let cancelled = false;
+    const timer = setTimeout(() => {
+      void searchUsers(query).then((r) => {
+        if (!cancelled) setSearchResults(r);
+      });
+    }, 300);
+    return () => {
+      cancelled = true;
+      clearTimeout(timer);
+    };
+  }, [query, searchUsers]);
+
   const visible = useMemo(() => {
     const base =
       tab === 'following' && user
@@ -64,8 +84,7 @@ export function UsersPage() {
         : tab === 'followers' && user
           ? getFollowers(user.id)
           : users;
-    const filtered = query ? searchUsers(query) : base;
-    const source = query ? filtered : base;
+    const source = query && searchResults ? searchResults : base;
 
     const visibleUsers = source.filter((u) => {
       if (u.id === user?.id) return false;
@@ -82,7 +101,7 @@ export function UsersPage() {
     }
     return visibleUsers;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tab, query, user, users, campaigns, searchUsers, getFollowing, getFollowers, isFollowing]);
+  }, [tab, query, searchResults, user, users, campaigns, getFollowing, getFollowers, isFollowing]);
 
   return (
     <section className="users-page" aria-labelledby="users-heading">

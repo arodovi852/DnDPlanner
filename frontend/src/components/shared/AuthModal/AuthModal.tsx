@@ -19,27 +19,35 @@ export interface AuthModalProps {
 
 /**
  * Modal de autenticación. Gestiona dos modos:
- * - login: campos Username/Email + Password.
- * - register: Username, Email, Password, Confirm password.
+ * - login: campos username/email + password.
+ * - register: username, email, password, confirm password.
+ *
+ * Llama a `authApi.login` / `authApi.register` a través de `useAuth()`.
+ * Mantiene estado local de loading y muestra los errores que devuelve la
+ * API (validación o credenciales inválidas).
  */
 export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalProps) {
   const { t } = useTranslation();
-  const { login } = useAuth();
+  const { login, register } = useAuth();
   const [mode, setMode] = useState<AuthMode>(initialMode);
+  const [identifier, setIdentifier] = useState('');
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (open) {
       setMode(initialMode);
+      setIdentifier('');
       setUsername('');
       setEmail('');
       setPassword('');
       setConfirmPassword('');
       setError(null);
+      setSubmitting(false);
     }
   }, [open, initialMode]);
 
@@ -54,7 +62,7 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
 
   if (!open) return null;
 
-  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
 
@@ -63,12 +71,27 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
         setError(t('auth.passwordsDontMatch'));
         return;
       }
-      login({ username, email });
-    } else {
-      login({ username });
     }
 
-    onClose();
+    setSubmitting(true);
+    try {
+      if (mode === 'register') {
+        await register({ username, email, password });
+      } else {
+        await login({ identifier, password });
+      }
+      onClose();
+    } catch (err) {
+      const message =
+        err instanceof Error
+          ? err.message
+          : typeof err === 'string'
+            ? err
+            : t('auth.unexpectedError');
+      setError(message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const isLogin = mode === 'login';
@@ -102,28 +125,47 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
         </h2>
 
         <form className="auth-modal__form" onSubmit={handleSubmit}>
-          <input
-            className="auth-modal__field"
-            type="text"
-            placeholder={isLogin ? t('auth.usernameEmail') : t('auth.username')}
-            aria-label={isLogin ? t('auth.usernameEmail') : t('auth.username')}
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            required
-            autoComplete="username"
-          />
-
-          {!isLogin && (
+          {isLogin ? (
             <input
               className="auth-modal__field"
-              type="email"
-              placeholder={t('auth.email')}
-              aria-label={t('auth.email')}
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              type="text"
+              placeholder={t('auth.usernameEmail')}
+              aria-label={t('auth.usernameEmail')}
+              value={identifier}
+              onChange={(e) => setIdentifier(e.target.value)}
               required
-              autoComplete="email"
+              autoComplete="username"
+              disabled={submitting}
             />
+          ) : (
+            <>
+              <input
+                className="auth-modal__field"
+                type="text"
+                placeholder={t('auth.username')}
+                aria-label={t('auth.username')}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                required
+                autoComplete="username"
+                minLength={3}
+                maxLength={30}
+                pattern="[a-zA-Z0-9_]+"
+                title={t('auth.usernameRules') ?? undefined}
+                disabled={submitting}
+              />
+              <input
+                className="auth-modal__field"
+                type="email"
+                placeholder={t('auth.email')}
+                aria-label={t('auth.email')}
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                autoComplete="email"
+                disabled={submitting}
+              />
+            </>
           )}
 
           <input
@@ -135,6 +177,8 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
             onChange={(e) => setPassword(e.target.value)}
             required
             autoComplete={isLogin ? 'current-password' : 'new-password'}
+            minLength={6}
+            disabled={submitting}
           />
 
           {!isLogin && (
@@ -147,6 +191,8 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
               onChange={(e) => setConfirmPassword(e.target.value)}
               required
               autoComplete="new-password"
+              minLength={6}
+              disabled={submitting}
             />
           )}
 
@@ -157,8 +203,12 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
           )}
 
           <div className="auth-modal__actions">
-            <Button type="submit" size="small">
-              {isLogin ? t('auth.logIn') : t('auth.createAccountAction')}
+            <Button type="submit" size="small" disabled={submitting}>
+              {submitting
+                ? t('auth.submitting')
+                : isLogin
+                  ? t('auth.logIn')
+                  : t('auth.createAccountAction')}
             </Button>
           </div>
         </form>
@@ -167,6 +217,7 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
           type="button"
           className="auth-modal__switch"
           onClick={() => setMode(isLogin ? 'register' : 'login')}
+          disabled={submitting}
         >
           {isLogin ? t('auth.newHere') : t('auth.alreadyHave')}
         </button>

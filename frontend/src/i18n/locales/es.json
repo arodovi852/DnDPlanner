@@ -14,7 +14,8 @@
     "untitled": "Sin título",
     "language": "Idioma",
     "english": "Inglés",
-    "spanish": "Español"
+    "spanish": "Español",
+    "loading": "Cargando…"
   },
   "header": {
     "logIn": "Iniciar sesión",
@@ -52,7 +53,10 @@
     "createAccountAction": "Crear cuenta",
     "newHere": "¿Eres nuevo? ¡Crea una cuenta!",
     "alreadyHave": "¿Ya tienes cuenta? Inicia sesión",
-    "passwordsDontMatch": "Las contraseñas no coinciden"
+    "passwordsDontMatch": "Las contraseñas no coinciden",
+    "submitting": "Cargando…",
+    "unexpectedError": "Error inesperado. Por favor, inténtalo de nuevo.",
+    "usernameRules": "Solo letras, números y guiones bajos (3-30 caracteres)."
   },
   "newCampaign": {
     "title": "Nueva campaña",
@@ -112,6 +116,7 @@
     "join": "Unirse como jugador",
     "joined": "Ya eres miembro",
     "loginToInteract": "Inicia sesión para clonar o unirte",
+    "loginToBrowse": "Inicia sesión para ver campañas públicas de otros usuarios.",
     "empty": "Aún no hay campañas públicas. ¡Sé el primero en compartir una!",
     "publishHint": "Para publicar una campaña tuya, abre tu perfil → editar → pulsa el icono 🔒 de la tarjeta para alternar a 🌐."
   },
@@ -335,7 +340,7 @@
           "body": [
             "Correo: hola@dndplanner.example",
             "Discord: dndplanner#0001",
-            "Issues en GitHub: github.com/USUARIO/AROProyectoFinDeGrado2026"
+            "Issues en GitHub: github.com/arodovi852/AROProyectoFinDeGrado2026"
           ]
         },
         {

@@ -4,29 +4,34 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from 'react';
 import { useAuth } from './AuthContext';
+import { authApi, followsApi, type BackendUser } from '../api';
 
 /**
- * Directorio público de usuarios y relaciones de "seguir / dejar de seguir".
+ * UsersContext.
  *
- * Mientras no haya backend, el directorio se rellena con una lista mock
- * y además se añade automáticamente al usuario autenticado cuando inicia
- * sesión, para que los invite-flows y las membresías puedan referenciarlo.
- * Las relaciones de seguimiento se persisten en `localStorage`.
+ * Backed by the API:
+ *   - The current user's followers + following are fetched on login and
+ *     kept in local state (`follows`).
+ *   - `searchUsers` hits `/api/auth/users/search` (debounced by callers).
+ *   - `findById` is cached locally; misses trigger a public-profile fetch.
+ *
+ * This context is intentionally chatty *only on demand* — for example,
+ * the People page calls `searchUsers('')` to bulk-load, while
+ * `MembersPanel` only resolves IDs it actually displays. The result is a
+ * small in-memory directory keyed by id.
  */
+
 export interface PublicUser {
   id: string;
   username: string;
   email?: string;
   avatar?: string;
   description?: string;
-  /** Si está activo, este usuario no aparece en búsquedas
-   *  generales ni se puede visitar su perfil público
-   *  (excepto desde un DM cuya campaña tenga al usuario
-   *  como jugador). */
   isPrivate?: boolean;
 }
 
@@ -40,79 +45,88 @@ interface UsersContextValue {
   follows: FollowEdge[];
   findById: (id: string) => PublicUser | null;
   findByUsername: (username: string) => PublicUser | null;
-  searchUsers: (query: string) => PublicUser[];
-  followUser: (followedId: string) => void;
-  unfollowUser: (followedId: string) => void;
+  /** Async search; results are also merged into the local directory. */
+  searchUsers: (query: string) => Promise<PublicUser[]>;
+  followUser: (followedId: string) => Promise<void>;
+  unfollowUser: (followedId: string) => Promise<void>;
   isFollowing: (followedId: string, followerId?: string) => boolean;
   getFollowing: (userId: string) => PublicUser[];
   getFollowers: (userId: string) => PublicUser[];
-  ensureUser: (input: { id: string; username: string; email?: string }) => void;
+  /** Ensure a user with this id is in the local directory (fetches if missing). */
+  ensureUser: (input: { id: string; username?: string; email?: string }) => void;
 }
 
 const UsersContext = createContext<UsersContextValue | undefined>(undefined);
 
-const USERS_KEY = 'dndplanner:users';
-const FOLLOWS_KEY = 'dndplanner:follows';
-
-// Lista inicial de usuarios mock para que la UI nunca salga vacía.
-const SEED_USERS: PublicUser[] = [
-  { id: 'user-alba', username: 'Alba' },
-  { id: 'user-diego', username: 'Diego' },
-  { id: 'user-marta', username: 'Marta' },
-  { id: 'user-lucia', username: 'Lucía' },
-  { id: 'user-hugo', username: 'Hugo' },
-  { id: 'user-sofia', username: 'Sofía' },
-];
-
-function readStoredUsers(): PublicUser[] {
-  if (typeof window === 'undefined') return SEED_USERS;
-  try {
-    const raw = window.localStorage.getItem(USERS_KEY);
-    if (!raw) return SEED_USERS;
-    const parsed = JSON.parse(raw);
-    if (!Array.isArray(parsed)) return SEED_USERS;
-    // Merge con seed para no perder usuarios mock si localStorage fue truncado.
-    const map = new Map<string, PublicUser>();
-    for (const u of SEED_USERS) map.set(u.id, u);
-    for (const u of parsed as PublicUser[]) {
-      if (u?.id && u?.username) map.set(u.id, u);
-    }
-    return Array.from(map.values());
-  } catch {
-    return SEED_USERS;
-  }
-}
-
-function readStoredFollows(): FollowEdge[] {
-  if (typeof window === 'undefined') return [];
-  try {
-    const raw = window.localStorage.getItem(FOLLOWS_KEY);
-    if (!raw) return [];
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed) ? (parsed as FollowEdge[]) : [];
-  } catch {
-    return [];
-  }
+function toPublicUser(u: BackendUser): PublicUser {
+  return {
+    id: u._id,
+    username: u.username,
+    email: u.email,
+    avatar: u.avatar ?? undefined,
+    description: u.description ?? undefined,
+    isPrivate: u.isPrivate ?? false,
+  };
 }
 
 export function UsersProvider({ children }: { children: ReactNode }) {
-  const { user } = useAuth();
-  const [users, setUsers] = useState<PublicUser[]>(() => readStoredUsers());
-  const [follows, setFollows] = useState<FollowEdge[]>(() => readStoredFollows());
+  const { user, isAuthenticated, status } = useAuth();
+  const [users, setUsers] = useState<PublicUser[]>([]);
+  const [follows, setFollows] = useState<FollowEdge[]>([]);
+  // Track ids we've already requested a public-profile lookup for so
+  // ensureUser doesn't issue duplicate requests during a render burst.
+  const inflightLookups = useRef<Set<string>>(new Set());
 
+  // ------------------------------------------------------------------
+  // Hydrate the directory + follows graph after login.
+  // ------------------------------------------------------------------
   useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(USERS_KEY, JSON.stringify(users));
-  }, [users]);
+    if (status !== 'authenticated' || !isAuthenticated || !user) {
+      setUsers([]);
+      setFollows([]);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        // Bring my own profile into the directory so consumers can resolve
+        // `user.id` even before any search.
+        const meAsPublic: PublicUser = {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar,
+          description: user.description,
+          isPrivate: user.isPrivate,
+        };
 
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    window.localStorage.setItem(FOLLOWS_KEY, JSON.stringify(follows));
-  }, [follows]);
+        const [following, followers] = await Promise.all([
+          followsApi.getFollowing(),
+          followsApi.getFollowers(),
+        ]);
+        if (cancelled) return;
 
-  // Cada vez que cambia el usuario autenticado sincronizamos sus datos
-  // públicos en el directorio (avatar, descripción, privacidad incluidos)
-  // para que las búsquedas y MembersPanel los vean al instante.
+        const all = new Map<string, PublicUser>();
+        all.set(meAsPublic.id, meAsPublic);
+        for (const u of following.map(toPublicUser)) all.set(u.id, u);
+        for (const u of followers.map(toPublicUser)) all.set(u.id, u);
+
+        setUsers(Array.from(all.values()));
+        setFollows([
+          ...following.map((u) => ({ followerId: user.id, followedId: u._id })),
+          ...followers.map((u) => ({ followerId: u._id, followedId: user.id })),
+        ]);
+      } catch {
+        // Silent — UI works fine without the social graph; failures show
+        // up via the auth context's error if relevant.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [status, isAuthenticated, user]);
+
+  // Keep my own entry in the directory in sync with my profile edits.
   useEffect(() => {
     if (!user) return;
     setUsers((prev) => {
@@ -127,7 +141,6 @@ export function UsersProvider({ children }: { children: ReactNode }) {
       };
       if (idx === -1) return [...prev, next];
       const existing = prev[idx];
-      // Evita re-renders cuando nada relevante cambió.
       if (
         existing.username === next.username &&
         existing.email === next.email &&
@@ -143,15 +156,14 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     });
   }, [user]);
 
-  const ensureUser = useCallback(
-    (input: { id: string; username: string; email?: string }) => {
-      setUsers((prev) => {
-        if (prev.some((u) => u.id === input.id)) return prev;
-        return [...prev, { ...input }];
-      });
-    },
-    []
-  );
+  const upsertMany = useCallback((incoming: PublicUser[]) => {
+    if (incoming.length === 0) return;
+    setUsers((prev) => {
+      const map = new Map(prev.map((u) => [u.id, u] as const));
+      for (const u of incoming) map.set(u.id, { ...map.get(u.id), ...u });
+      return Array.from(map.values());
+    });
+  }, []);
 
   const findById = useCallback(
     (id: string) => users.find((u) => u.id === id) ?? null,
@@ -167,22 +179,55 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   );
 
   const searchUsers = useCallback(
-    (query: string) => {
-      const q = query.trim().toLowerCase();
-      if (!q) return users;
-      return users.filter(
-        (u) =>
-          u.username.toLowerCase().includes(q) ||
-          (u.email ?? '').toLowerCase().includes(q)
-      );
+    async (query: string): Promise<PublicUser[]> => {
+      const trimmed = query.trim();
+      if (trimmed.length < 2) return [];
+      try {
+        const results = await authApi.searchUsers(trimmed);
+        const mapped = results.map(toPublicUser);
+        upsertMany(mapped);
+        return mapped;
+      } catch {
+        return [];
+      }
     },
-    [users]
+    [upsertMany]
+  );
+
+  const ensureUser = useCallback(
+    ({ id, username, email }: { id: string; username?: string; email?: string }) => {
+      if (!id) return;
+      // If we already know this id locally, don't call the API.
+      let alreadyKnown = false;
+      setUsers((prev) => {
+        if (prev.some((u) => u.id === id)) {
+          alreadyKnown = true;
+          return prev;
+        }
+        // Insert a placeholder so consumers can render something while we fetch.
+        return [...prev, { id, username: username ?? 'user', email }];
+      });
+      if (alreadyKnown) return;
+      if (inflightLookups.current.has(id)) return;
+      inflightLookups.current.add(id);
+      (async () => {
+        try {
+          const u = await authApi.getPublicProfile(id);
+          upsertMany([toPublicUser(u)]);
+        } catch {
+          // Profile is private or doesn't exist — keep the placeholder.
+        } finally {
+          inflightLookups.current.delete(id);
+        }
+      })();
+    },
+    [upsertMany]
   );
 
   const followUser = useCallback(
-    (followedId: string) => {
-      if (!user) return;
-      if (user.id === followedId) return;
+    async (followedId: string) => {
+      if (!user || user.id === followedId) return;
+      // Optimistic edge insertion.
       setFollows((prev) => {
         if (
           prev.some(
@@ -193,20 +238,37 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         }
         return [...prev, { followerId: user.id, followedId }];
       });
+      try {
+        await followsApi.follow(followedId);
+      } catch {
+        // Roll back on failure.
+        setFollows((prev) =>
+          prev.filter(
+            (e) => !(e.followerId === user.id && e.followedId === followedId)
+          )
+        );
+      }
     },
     [user]
   );
 
   const unfollowUser = useCallback(
-    (followedId: string) => {
+    async (followedId: string) => {
       if (!user) return;
+      const before = follows;
       setFollows((prev) =>
         prev.filter(
           (e) => !(e.followerId === user.id && e.followedId === followedId)
         )
       );
+      try {
+        await followsApi.unfollow(followedId);
+      } catch {
+        // Roll back if the unfollow call failed.
+        setFollows(before);
+      }
     },
-    [user]
+    [user, follows]
   );
 
   const isFollowing = useCallback(

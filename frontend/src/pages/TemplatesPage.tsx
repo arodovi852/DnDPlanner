@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
@@ -8,6 +8,7 @@ import {
   type Campaign,
 } from '../context/CampaignContext';
 import { useUsers } from '../context/UsersContext';
+import { campaignsApi } from '../api';
 import { CampaignCard } from '../components/shared/CampaignCard';
 import { Button } from '../components/shared/Button';
 
@@ -42,53 +43,77 @@ function imagesForCampaign(campaign: Campaign) {
 /**
  * /templates — explorador de campañas públicas.
  *
- * Lista todas las campañas con `visibility === 'public'` (de cualquier
- * usuario que las haya marcado como públicas) y permite:
- *   · Clonarlas como punto de partida de una campaña propia.
- *   · Pedir unirse como jugador (se añade el usuario al `members` con
- *     rol `player`).
+ * Lista las campañas con `visibility === 'public'` de **cualquier
+ * usuario** del backend (no solo las del usuario actual). Las recibe
+ * a través del endpoint `GET /api/campaigns/public`, que ya popula el
+ * perfil del owner para que el listado pueda mostrar su nombre sin
+ * resolver IDs uno por uno desde el `UsersContext`.
  *
- * Mientras no haya backend conectado, "online" significa todas las
- * campañas presentes en el `localStorage` del navegador. Cuando el
- * backend esté operativo el listado vendrá del servidor sin cambios en
- * la UI.
+ * Acciones disponibles para usuarios logueados:
+ *   · Clonar la campaña (deep copy, owner = usuario actual).
+ *   · Unirse como `player`.
  */
 export function TemplatesPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { campaigns, cloneCampaign, requestJoin, setActiveCampaign } =
-    useCampaigns();
+  const { cloneCampaign, requestJoin, setActiveCampaign } = useCampaigns();
   const { findById } = useUsers();
   const [query, setQuery] = useState('');
+  const [publicList, setPublicList] = useState<Campaign[] | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const publicCampaigns = useMemo(() => {
+  // Fetch the public listing once on mount and whenever the user logs
+  // in/out (the backend gates the endpoint behind auth).
+  useEffect(() => {
+    let cancelled = false;
+    if (!user) {
+      setPublicList(null);
+      return;
+    }
+    setLoading(true);
+    (async () => {
+      try {
+        const list = await campaignsApi.listPublic();
+        if (cancelled) return;
+        // The DTO matches the local `Campaign` type 1:1 (we just trust
+        // the backend's normalisation).
+        setPublicList(list as unknown as Campaign[]);
+        setError(null);
+      } catch (err) {
+        if (cancelled) return;
+        setError(err instanceof Error ? err.message : 'Could not load templates');
+        setPublicList([]);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
+  const filtered = useMemo(() => {
+    const list = publicList ?? [];
     const q = query.trim().toLowerCase();
-    return campaigns
-      .filter((c) => c.visibility === 'public')
-      .filter((c) => {
-        if (!q) return true;
-        const dms = c.members
-          .filter((m) => m.role === 'dm' || m.role === 'co-dm')
-          .map((m) => findById(m.userId)?.username ?? '')
-          .join(' ');
-        return (
-          c.name.toLowerCase().includes(q) ||
-          dms.toLowerCase().includes(q)
-        );
-      });
-  }, [campaigns, query, findById]);
+    if (!q) return list;
+    return list.filter((c) => {
+      const owner = c.ownerProfile?.username ?? findById(c.ownerId)?.username ?? '';
+      return (
+        c.name.toLowerCase().includes(q) ||
+        owner.toLowerCase().includes(q)
+      );
+    });
+  }, [publicList, query, findById]);
 
-  /** Solo los nombres de DM y Co-DMs (no exponemos jugadores). */
-  const creatorsOf = (campaign: Campaign): string => {
-    const names = campaign.members
-      .filter((m) => m.role === 'dm' || m.role === 'co-dm')
-      .map((m) => findById(m.userId)?.username)
-      .filter((n): n is string => Boolean(n));
-    return names.join(', ') || '—';
+  /** Owner = creator. The backend pre-populates `ownerProfile`; we fall
+   *  back to the local users directory if needed (e.g. tests). */
+  const creatorOf = (campaign: Campaign): string => {
+    if (campaign.ownerProfile?.username) return campaign.ownerProfile.username;
+    return findById(campaign.ownerId)?.username ?? '—';
   };
 
-  /** Nombre legible de la plantilla original si la campaña fue clonada. */
   const sourceTemplateOf = (campaign: Campaign): string | null => {
     if (!campaign.templateId) return null;
     const tpl = CAMPAIGN_TEMPLATES.find((tpl) => tpl.id === campaign.templateId);
@@ -98,9 +123,7 @@ export function TemplatesPage() {
   const handleClone = (campaign: Campaign) => {
     if (!user) return;
     const clone = cloneCampaign(campaign.id, user.id);
-    if (clone) {
-      navigate('/profile');
-    }
+    if (clone) navigate('/profile');
   };
 
   const handleJoin = (campaign: Campaign) => {
@@ -132,7 +155,19 @@ export function TemplatesPage() {
         />
       </div>
 
-      {publicCampaigns.length === 0 ? (
+      {!user ? (
+        <div className="templates-page__empty">
+          <p>{t('templates.loginToBrowse')}</p>
+        </div>
+      ) : loading ? (
+        <div className="templates-page__empty">
+          <p>{t('common.loading')}</p>
+        </div>
+      ) : error ? (
+        <div className="templates-page__empty">
+          <p role="alert">{error}</p>
+        </div>
+      ) : filtered.length === 0 ? (
         <div className="templates-page__empty">
           <p>{t('templates.empty')}</p>
           <p className="templates-page__empty-hint">
@@ -141,9 +176,9 @@ export function TemplatesPage() {
         </div>
       ) : (
         <ul className="templates-page__grid">
-          {publicCampaigns.map((campaign) => {
+          {filtered.map((campaign) => {
             const images = imagesForCampaign(campaign);
-            const creators = creatorsOf(campaign);
+            const creator = creatorOf(campaign);
             const sourceTpl = sourceTemplateOf(campaign);
             const alreadyMember =
               user && campaign.members.some((m) => m.userId === user.id);
@@ -159,7 +194,7 @@ export function TemplatesPage() {
                     {campaign.name}
                   </span>
                   <span className="templates-page__item-author">
-                    {t('templates.creators')} {creators}
+                    {t('templates.creators')} {creator}
                   </span>
                   {sourceTpl && (
                     <span className="templates-page__item-source">
@@ -168,26 +203,18 @@ export function TemplatesPage() {
                   )}
                 </div>
                 <div className="templates-page__item-actions">
-                  {!user ? (
-                    <span className="templates-page__login-hint">
-                      {t('templates.loginToInteract')}
-                    </span>
-                  ) : (
-                    <>
-                      <Button size="small" onClick={() => handleClone(campaign)}>
-                        {t('templates.clone')}
-                      </Button>
-                      <Button
-                        size="small"
-                        disabled={!!alreadyMember}
-                        onClick={() => handleJoin(campaign)}
-                      >
-                        {alreadyMember
-                          ? t('templates.joined')
-                          : t('templates.join')}
-                      </Button>
-                    </>
-                  )}
+                  <Button size="small" onClick={() => handleClone(campaign)}>
+                    {t('templates.clone')}
+                  </Button>
+                  <Button
+                    size="small"
+                    disabled={!!alreadyMember}
+                    onClick={() => handleJoin(campaign)}
+                  >
+                    {alreadyMember
+                      ? t('templates.joined')
+                      : t('templates.join')}
+                  </Button>
                 </div>
               </li>
             );
