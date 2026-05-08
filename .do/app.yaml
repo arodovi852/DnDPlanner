@@ -8,13 +8,17 @@ region: fra
 #   - dndplanner-web : Vite static SPA (React + TypeScript, served from /dist)
 #   - dndplanner-api : Express + Socket.IO + Mongoose, talks to MongoDB Atlas
 #
+# Both components live behind a single public URL, separated by path:
+#   /api/*  → backend  (Express mounts its routes under /api, so we keep
+#             the prefix when forwarding via `preserve_path_prefix: true`)
+#   /*      → frontend (SPA, falls back to index.html for client routes)
+#
 # Cross-references:
-#   - The frontend reads its API base URL at *build time* from VITE_API_URL,
-#     which here points at the API's PUBLIC_URL with the `/api` suffix the
-#     REST client expects. Socket.IO derives its endpoint by stripping that
-#     suffix, so a single env var configures both transports.
-#   - The backend's CORS_ORIGIN is wired to the static site's PUBLIC_URL so
-#     the browser doesn't reject pre-flighted requests.
+#   - VITE_API_URL is `/api` (relative) because frontend and backend share
+#     the same origin under ingress. Socket.IO derives its endpoint by
+#     stripping that suffix, so it connects to the same origin.
+#   - CORS_ORIGIN can stay tied to the app URL — same-origin requests don't
+#     need CORS, but other origins (custom domains) would.
 #
 # Secrets you MUST provide via the App Platform UI (Settings → App-Level
 # Variables) before the first deploy:
@@ -23,6 +27,22 @@ region: fra
 #   - JWT_REFRESH_SECRET
 #   - CLOUDINARY_* (optional — needed only for image uploads)
 # ============================================================================
+
+# Path-based routing. The order matters: `/api` must come before `/` so the
+# backend wins for API requests; the static site catches everything else.
+ingress:
+  rules:
+    - match:
+        path:
+          prefix: /api
+      component:
+        name: dndplanner-api
+        preserve_path_prefix: true
+    - match:
+        path:
+          prefix: /
+      component:
+        name: dndplanner-web
 
 # ----------------------------------------------------------------------------
 # FRONTEND — Vite SPA. Free on App Platform (3 static sites per account).
@@ -44,9 +64,10 @@ static_sites:
     envs:
       - key: VITE_API_URL
         scope: BUILD_TIME
-        # PUBLIC_URL → 'https://dndplanner-api-xxxxx.ondigitalocean.app';
-        # the client expects the `/api` suffix on the REST base URL.
-        value: ${dndplanner-api.PUBLIC_URL}/api
+        # Same-origin: ingress routes `/api/*` to the backend, so a relative
+        # URL is enough. Socket.IO strips the `/api` suffix and connects to
+        # the same origin (window.location), which "just works".
+        value: /api
 
 # ----------------------------------------------------------------------------
 # BACKEND — Node/Express + Socket.IO. Tier Basic XXS = $5/mo

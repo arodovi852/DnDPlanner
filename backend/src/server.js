@@ -5,7 +5,6 @@ const { Server } = require('socket.io');
 
 const config = require('./config');
 const buildApp = require('./app');
-const runSeed = require('./scripts/seed');
 
 /**
  * Production entry point.
@@ -62,7 +61,6 @@ app.set('io', io);
 const startServer = async () => {
   try {
     await config.connectDB();
-    await runSeed();
     httpServer.listen(config.port, () => {
       console.log(`
 ========================================

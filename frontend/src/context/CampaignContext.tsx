@@ -336,10 +336,48 @@ interface CampaignContextValue {
 const CampaignContext = createContext<CampaignContextValue | undefined>(undefined);
 
 const ACTIVE_KEY = 'dndplanner:activeCampaign';
+const DEMO_CAMPAIGNS_KEY = 'dndplanner:demo:campaigns';
 
 function readActiveCampaignId(): string | null {
   if (typeof window === 'undefined') return null;
   return window.localStorage.getItem(ACTIVE_KEY);
+}
+
+// ---------------------------------------------------------------------------
+// Demo persistence — only used when the active session is the offline demo
+// account (see AuthContext.DEMO_USER_ID). Everything is stored under the
+// `dndplanner:demo:*` namespace so it never collides with real user data.
+// ---------------------------------------------------------------------------
+
+function readDemoCampaigns(): Campaign[] {
+  if (typeof window === 'undefined') return [];
+  try {
+    const raw = window.localStorage.getItem(DEMO_CAMPAIGNS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    return parsed.map((c) => ({
+      ...c,
+      chapters: (c.chapters ?? []).map((ch: Partial<Chapter>) => normalizeChapter(ch)),
+      characters: (c.characters ?? []).map((ch: Partial<Character>) =>
+        normalizeCharacter(ch)
+      ),
+      members: c.members ?? [],
+      annotations: c.annotations ?? [],
+      revealedSpoilers: c.revealedSpoilers ?? [],
+    }));
+  } catch {
+    return [];
+  }
+}
+
+function writeDemoCampaigns(campaigns: Campaign[]): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(DEMO_CAMPAIGNS_KEY, JSON.stringify(campaigns));
+  } catch {
+    // Quota / privacy mode — no actionable recovery.
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -416,7 +454,7 @@ function dtoToCampaign(dto: CampaignDTO): Campaign {
 const SYNC_DEBOUNCE_MS = 600;
 
 export function CampaignProvider({ children }: { children: ReactNode }) {
-  const { isAuthenticated, status } = useAuth();
+  const { isAuthenticated, status, isDemo } = useAuth();
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [activeCampaignId, setActiveCampaignIdState] = useState<string | null>(
     () => readActiveCampaignId()
@@ -431,14 +469,29 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const syncTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
   const inFlight = useRef<Set<string>>(new Set());
 
+  // `isDemo` is read inside callbacks via this ref so we don't need to
+  // re-create every memoised callback when the flag changes.
+  const isDemoRef = useRef(isDemo);
+  useEffect(() => {
+    isDemoRef.current = isDemo;
+  }, [isDemo]);
+
   // ------------------------------------------------------------------
-  // Initial load: fetch all campaigns from the API once authenticated.
+  // Initial load.
+  //   • Real session: fetch from the API.
+  //   • Demo session: read from localStorage (no network at all).
+  //   • Logged out: drop in-memory state.
   // ------------------------------------------------------------------
   useEffect(() => {
     if (status !== 'authenticated' || !isAuthenticated) {
-      // Logged out → drop in-memory state. Don't make API calls.
       setCampaigns([]);
       setActiveCampaignIdState(null);
+      return;
+    }
+    if (isDemo) {
+      setCampaigns(readDemoCampaigns());
+      setLoading(false);
+      setSyncError(null);
       return;
     }
     let cancelled = false;
@@ -459,7 +512,15 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, status]);
+  }, [isAuthenticated, status, isDemo]);
+
+  // Demo persistence: mirror in-memory state into localStorage on every
+  // change while the demo session is active. The guard prevents real users
+  // from ever writing into the demo bucket.
+  useEffect(() => {
+    if (!isDemo) return;
+    writeDemoCampaigns(campaigns);
+  }, [campaigns, isDemo]);
 
   // Persist active campaign id locally so a refresh keeps the same workspace.
   useEffect(() => {
@@ -482,6 +543,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
    * forget — we don't await callers; UI errors surface via `syncError`.
    */
   const scheduleSync = useCallback((campaignId: string) => {
+    // Demo session: there's nothing to sync. The campaigns useEffect
+    // already mirrors state into localStorage on every change.
+    if (isDemoRef.current) return;
     const timers = syncTimers.current;
     const existing = timers.get(campaignId);
     if (existing) clearTimeout(existing);
@@ -577,6 +641,27 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
         : undefined;
       const base = template ? template.build() : { chapters: [], characters: [] };
 
+      // Demo session: create with a final id directly, no server round-trip.
+      if (isDemoRef.current) {
+        const id = generateId('camp');
+        const local: Campaign = {
+          id,
+          name: finalName,
+          templateId: template?.id,
+          createdAt: now,
+          updatedAt: now,
+          ownerId,
+          chapters: base.chapters,
+          characters: base.characters,
+          members: [{ userId: ownerId, role: 'dm', joinedAt: now }],
+          annotations: [],
+          revealedSpoilers: [],
+        };
+        setCampaigns((prev) => [...prev, local]);
+        setActiveCampaignIdState(id);
+        return local;
+      }
+
       const tempId = generateId('camp-tmp');
       const local: Campaign = {
         id: tempId,
@@ -634,6 +719,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     // Optimistic: remove locally, then DELETE on the server.
     setCampaigns((prev) => prev.filter((c) => c.id !== id));
     setActiveCampaignIdState((curr) => (curr === id ? null : curr));
+    if (isDemoRef.current) return; // local-only session
     if (id.startsWith('camp-tmp-')) return; // never reached the server
     (async () => {
       try {
@@ -650,9 +736,9 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       const source = campaigns.find((c) => c.id === sourceId);
       if (!source) return null;
       const now = new Date().toISOString();
-      const tempId = generateId('camp-tmp');
+      const id = generateId(isDemoRef.current ? 'camp' : 'camp-tmp');
       const optimistic: Campaign = JSON.parse(JSON.stringify(source));
-      optimistic.id = tempId;
+      optimistic.id = id;
       optimistic.name = `${source.name} (clone)`;
       optimistic.ownerId = newOwnerId;
       optimistic.createdAt = now;
@@ -665,20 +751,23 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       optimistic.revealedSpoilers = [];
 
       setCampaigns((prev) => [...prev, optimistic]);
-      setActiveCampaignIdState(tempId);
+      setActiveCampaignIdState(id);
+
+      // Demo session: deep copy already in state, nothing more to do.
+      if (isDemoRef.current) return optimistic;
 
       (async () => {
         try {
           const dto = await campaignsApi.clone(sourceId);
           const real = dtoToCampaign(dto);
           setCampaigns((prev) =>
-            prev.map((c) => (c.id === tempId ? real : c))
+            prev.map((c) => (c.id === id ? real : c))
           );
-          setActiveCampaignIdState((curr) => (curr === tempId ? real.id : curr));
+          setActiveCampaignIdState((curr) => (curr === id ? real.id : curr));
           setSyncError(null);
         } catch (err) {
           setSyncError(err instanceof Error ? err.message : 'Could not clone campaign');
-          setCampaigns((prev) => prev.filter((c) => c.id !== tempId));
+          setCampaigns((prev) => prev.filter((c) => c.id !== id));
         }
       })();
 
@@ -973,6 +1062,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
       // with the real token when the API answers.
       const placeholder = generateId('inv').replace(/[^a-z0-9-]/gi, '');
       patchCampaign(campaignId, (c) => ({ ...c, shareToken: placeholder }));
+      // Demo session: the placeholder *is* the token (purely local).
+      if (isDemoRef.current) return placeholder;
       (async () => {
         try {
           const real = await campaignsApi.generateShareToken(campaignId);
@@ -997,6 +1088,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const revokeShareToken = useCallback(
     (campaignId: string) => {
       patchCampaign(campaignId, (c) => ({ ...c, shareToken: undefined }));
+      if (isDemoRef.current) return;
       (async () => {
         try {
           await campaignsApi.revokeShareToken(campaignId);
@@ -1013,6 +1105,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
     (campaignId: string): string => {
       const placeholder = generateId('view').replace(/[^a-z0-9-]/gi, '');
       patchCampaign(campaignId, (c) => ({ ...c, viewToken: placeholder }));
+      if (isDemoRef.current) return placeholder;
       (async () => {
         try {
           const real = await campaignsApi.generateViewToken(campaignId);
@@ -1037,6 +1130,7 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const revokeViewToken = useCallback(
     (campaignId: string) => {
       patchCampaign(campaignId, (c) => ({ ...c, viewToken: undefined }));
+      if (isDemoRef.current) return;
       (async () => {
         try {
           await campaignsApi.revokeViewToken(campaignId);
@@ -1080,6 +1174,8 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
           ],
         }));
       }
+      // Demo session: tokens are local; whatever was found in state is final.
+      if (isDemoRef.current) return target ?? null;
       (async () => {
         try {
           const dto = await campaignsApi.acceptInvite(token);

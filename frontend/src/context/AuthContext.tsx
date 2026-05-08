@@ -50,6 +50,12 @@ interface AuthContextValue {
   user: AuthUser | null;
   status: AuthStatus;
   isAuthenticated: boolean;
+  /**
+   * True when the active session is the offline demo account. Consumers
+   * use this to bypass network calls and persist state to localStorage
+   * instead — see CampaignContext for the concrete fallback paths.
+   */
+  isDemo: boolean;
   /** Last error from a login/register/update attempt (cleared on success). */
   error: string | null;
   login: (input: { identifier: string; password: string }) => Promise<void>;
@@ -65,7 +71,43 @@ interface AuthContextValue {
   ) => Promise<void>;
 }
 
+/** Stable id of the offline demo account — used by other contexts to gate API calls. */
+export const DEMO_USER_ID = 'demo-testing-user';
+
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
+
+// Hardcoded demo user — logs in locally even if the backend is unreachable.
+// Credentials: username=Testing  password=1234QWer
+const DEMO_CREDENTIALS = { identifier: 'Testing', password: '1234QWer' };
+const DEMO_USER: AuthUser = {
+  id: DEMO_USER_ID,
+  username: 'Testing',
+  email: 'testing@dndplanner.local',
+  description: 'Cuenta de prueba para presentaciones.',
+  isPrivate: false,
+};
+const DEMO_PROFILE_KEY = 'dndplanner:demo:profile';
+
+function readDemoProfile(): AuthUser {
+  if (typeof window === 'undefined') return DEMO_USER;
+  try {
+    const raw = window.localStorage.getItem(DEMO_PROFILE_KEY);
+    if (!raw) return DEMO_USER;
+    const parsed = JSON.parse(raw) as Partial<AuthUser>;
+    return { ...DEMO_USER, ...parsed, id: DEMO_USER_ID };
+  } catch {
+    return DEMO_USER;
+  }
+}
+
+function writeDemoProfile(u: AuthUser): void {
+  if (typeof window === 'undefined') return;
+  try {
+    window.localStorage.setItem(DEMO_PROFILE_KEY, JSON.stringify(u));
+  } catch {
+    // Quota errors are not actionable for the user; fall through.
+  }
+}
 
 function toAuthUser(u: BackendUser): AuthUser {
   return {
@@ -128,6 +170,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     async (input: { identifier: string; password: string }) => {
       setError(null);
       setStatus('authenticating');
+
+      // Demo fallback: works even when the backend is unreachable.
+      // Profile persists in localStorage so refresh + edits survive.
+      if (
+        input.identifier === DEMO_CREDENTIALS.identifier &&
+        input.password === DEMO_CREDENTIALS.password
+      ) {
+        setUser(readDemoProfile());
+        setStatus('authenticated');
+        return;
+      }
+
       try {
         const u = await authApi.login(input);
         setUser(toAuthUser(u));
@@ -161,22 +215,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 
   const logout = useCallback(async () => {
-    try {
-      await authApi.logout();
-    } catch {
-      // Even if the server call fails (offline, expired token), drop the
-      // client-side session. The user clicked "log out" — respect that.
+    // Demo session has no server-side state to revoke. We also leave the
+    // localStorage demo data (campaigns + profile) intact so the next
+    // demo login picks up exactly where this one left off.
+    if (user?.id !== DEMO_USER_ID) {
+      try {
+        await authApi.logout();
+      } catch {
+        // Even if the server call fails (offline, expired token), drop the
+        // client-side session. The user clicked "log out" — respect that.
+      }
     }
     // Tear the socket down so the next login gets a fresh connection
     // (and stops receiving events from rooms the previous user was in).
     closeSocket();
     setUser(null);
     setStatus('unauthenticated');
-  }, []);
+  }, [user]);
 
   const updateUser = useCallback(
     async (patch: Partial<Omit<AuthUser, 'id'>>) => {
       setError(null);
+      // Demo session: edits stay local (no API call).
+      if (user?.id === DEMO_USER_ID) {
+        const next: AuthUser = { ...user, ...patch, id: DEMO_USER_ID };
+        setUser(next);
+        writeDemoProfile(next);
+        return;
+      }
       try {
         const u = await authApi.updateProfile({
           username: patch.username,
@@ -190,7 +256,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         throw err;
       }
     },
-    []
+    [user]
   );
 
   const value = useMemo<AuthContextValue>(
@@ -198,6 +264,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user,
       status,
       isAuthenticated: status === 'authenticated' && user !== null,
+      isDemo: user?.id === DEMO_USER_ID,
       error,
       login,
       register,

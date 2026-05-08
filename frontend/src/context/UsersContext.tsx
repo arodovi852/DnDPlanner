@@ -70,19 +70,41 @@ function toPublicUser(u: BackendUser): PublicUser {
 }
 
 export function UsersProvider({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, status } = useAuth();
+  const { user, isAuthenticated, status, isDemo } = useAuth();
   const [users, setUsers] = useState<PublicUser[]>([]);
   const [follows, setFollows] = useState<FollowEdge[]>([]);
   // Track ids we've already requested a public-profile lookup for so
   // ensureUser doesn't issue duplicate requests during a render burst.
   const inflightLookups = useRef<Set<string>>(new Set());
 
+  const isDemoRef = useRef(isDemo);
+  useEffect(() => {
+    isDemoRef.current = isDemo;
+  }, [isDemo]);
+
   // ------------------------------------------------------------------
   // Hydrate the directory + follows graph after login.
+  //   • Real session: fetch follow lists from the API.
+  //   • Demo session: skip the network entirely. The directory will
+  //     contain just the demo user; search returns empty.
   // ------------------------------------------------------------------
   useEffect(() => {
     if (status !== 'authenticated' || !isAuthenticated || !user) {
       setUsers([]);
+      setFollows([]);
+      return;
+    }
+    if (isDemo) {
+      setUsers([
+        {
+          id: user.id,
+          username: user.username,
+          email: user.email,
+          avatar: user.avatar,
+          description: user.description,
+          isPrivate: user.isPrivate,
+        },
+      ]);
       setFollows([]);
       return;
     }
@@ -124,7 +146,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     return () => {
       cancelled = true;
     };
-  }, [status, isAuthenticated, user]);
+  }, [status, isAuthenticated, user, isDemo]);
 
   // Keep my own entry in the directory in sync with my profile edits.
   useEffect(() => {
@@ -182,6 +204,8 @@ export function UsersProvider({ children }: { children: ReactNode }) {
     async (query: string): Promise<PublicUser[]> => {
       const trimmed = query.trim();
       if (trimmed.length < 2) return [];
+      // Demo session: no remote directory available.
+      if (isDemoRef.current) return [];
       try {
         const results = await authApi.searchUsers(trimmed);
         const mapped = results.map(toPublicUser);
@@ -208,6 +232,8 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         return [...prev, { id, username: username ?? 'user', email }];
       });
       if (alreadyKnown) return;
+      // Demo session: keep the placeholder; no API to call.
+      if (isDemoRef.current) return;
       if (inflightLookups.current.has(id)) return;
       inflightLookups.current.add(id);
       (async () => {
@@ -238,6 +264,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
         }
         return [...prev, { followerId: user.id, followedId }];
       });
+      if (isDemoRef.current) return; // local-only edge
       try {
         await followsApi.follow(followedId);
       } catch {
@@ -261,6 +288,7 @@ export function UsersProvider({ children }: { children: ReactNode }) {
           (e) => !(e.followerId === user.id && e.followedId === followedId)
         )
       );
+      if (isDemoRef.current) return;
       try {
         await followsApi.unfollow(followedId);
       } catch {
