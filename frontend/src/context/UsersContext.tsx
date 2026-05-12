@@ -203,7 +203,8 @@ export function UsersProvider({ children }: { children: ReactNode }) {
   const searchUsers = useCallback(
     async (query: string): Promise<PublicUser[]> => {
       const trimmed = query.trim();
-      if (trimmed.length < 2) return [];
+      // 1-char queries blocked; empty string loads all public users.
+      if (trimmed.length === 1) return [];
       // Demo session: no remote directory available.
       if (isDemoRef.current) return [];
       try {

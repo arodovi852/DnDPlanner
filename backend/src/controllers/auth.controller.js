@@ -224,7 +224,8 @@ const deleteAccount = async (req, res, next) => {
 const searchUsers = async (req, res, next) => {
   try {
     const { q } = req.query;
-    if (!q || q.length < 2) {
+    // 1-char queries are too short — return empty immediately.
+    if (q && q.length === 1) {
       return res.json({ success: true, data: { users: [] } });
     }
 
@@ -250,25 +251,34 @@ const searchUsers = async (req, res, next) => {
     }
     const myPlayerIds = Array.from(myPlayersSet);
 
-    const users = await User.find({
-      _id: { $ne: req.user.id },
-      $and: [
-        {
-          $or: [
-            { username: { $regex: q, $options: 'i' } },
-            { email: { $regex: q, $options: 'i' } },
-          ],
-        },
-        {
-          $or: [
-            { isPrivate: { $ne: true } },
-            { _id: { $in: myPlayerIds } },
-          ],
-        },
+    const privacyFilter = {
+      $or: [
+        { isPrivate: { $ne: true } },
+        { _id: { $in: myPlayerIds } },
       ],
-    })
+    };
+
+    // When q is absent or empty, return all visible users (up to 100).
+    // When q has 2+ chars, filter by username/email regex.
+    const userFilter =
+      q && q.length >= 2
+        ? {
+            _id: { $ne: req.user.id },
+            $and: [
+              {
+                $or: [
+                  { username: { $regex: q, $options: 'i' } },
+                  { email: { $regex: q, $options: 'i' } },
+                ],
+              },
+              privacyFilter,
+            ],
+          }
+        : { _id: { $ne: req.user.id }, ...privacyFilter };
+
+    const users = await User.find(userFilter)
       .select('username email avatar description isPrivate')
-      .limit(20);
+      .limit(q && q.length >= 2 ? 20 : 100);
 
     res.json({ success: true, data: { users } });
   } catch (error) {
@@ -325,6 +335,28 @@ const getPublicProfile = async (req, res, next) => {
   }
 };
 
+/**
+ * Check username / email availability (no auth required).
+ * Returns { available: { username?: boolean, email?: boolean } }.
+ */
+const checkAvailability = async (req, res, next) => {
+  try {
+    const { username, email } = req.query;
+    const result = {};
+    if (username) {
+      const exists = await User.findOne({ username }).lean();
+      result.username = !exists;
+    }
+    if (email) {
+      const exists = await User.findOne({ email: email.toLowerCase() }).lean();
+      result.email = !exists;
+    }
+    res.json({ success: true, data: result });
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   register,
   login,
@@ -336,4 +368,5 @@ module.exports = {
   deleteAccount,
   searchUsers,
   getPublicProfile,
+  checkAvailability,
 };

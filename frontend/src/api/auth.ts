@@ -104,12 +104,24 @@ export const authApi = {
   },
 
   async searchUsers(query: string): Promise<BackendUser[]> {
-    if (!query || query.length < 2) return [];
+    // 1-char queries are blocked; empty string fetches all public users.
+    if (query.length === 1) return [];
     const data = await apiClient.get<{ users: BackendUser[] }>(
       '/auth/users/search',
-      { query: { q: query } }
+      { query: query.trim() ? { q: query } : undefined }
     );
     return data.users;
+  },
+
+  async checkAvailability(params: {
+    username?: string;
+    email?: string;
+  }): Promise<{ username?: boolean; email?: boolean }> {
+    const data = await apiClient.get<{ username?: boolean; email?: boolean }>(
+      '/auth/check',
+      { query: params as Record<string, string>, auth: false }
+    );
+    return data;
   },
 
   async getPublicProfile(id: string): Promise<BackendUser> {

@@ -33,6 +33,14 @@ export function UsersPage() {
   const [tab, setTab] = useState<Tab>('all');
   const [query, setQuery] = useState('');
 
+  // Load all public users once when the page mounts so the "All" tab is
+  // populated even before the user types anything.
+  const { status } = useAuth();
+  useEffect(() => {
+    if (status !== 'authenticated') return;
+    void searchUsers('');
+  }, [status, searchUsers]);
+
   /** ¿El usuario actual es DM/co-DM de alguna campaña donde `targetId`
    *  está como jugador? Si sí, ignoramos su flag de privacidad. */
   const isMyPlayer = (targetId: string): boolean => {

@@ -84,19 +84,22 @@ router.post('/login', loginValidation, validate, authController.login);
  */
 router.post('/refresh', authController.refreshToken);
 
+// Availability check — no auth required (called before registration).
+router.get('/check', authController.checkAvailability);
+
 // User search MUST be declared before the parametric `/users/:id` route
 // so that "search" isn't captured as an id.
 /**
  * @openapi
  * /auth/users/search:
  *   get:
- *     summary: Search users by username or email
+ *     summary: Search users by username or email (empty q returns all public users)
  *     tags: [Auth]
  *     security: [{ bearerAuth: [] }]
  *     parameters:
  *       - in: query
  *         name: q
- *         schema: { type: string, minLength: 2 }
+ *         schema: { type: string }
  */
 router.get('/users/search', authMiddleware, authController.searchUsers);
 
