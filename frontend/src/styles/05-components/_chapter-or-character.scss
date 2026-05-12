@@ -27,6 +27,63 @@
     z-index: 2;
   }
 
+  &__toolbar-left {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 0;
+    flex: 1;
+  }
+
+  &__visibility-toggle {
+    width: 2.2rem;
+    height: 2.2rem;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background-color: var(--color-textbox-dark);
+    color: var(--color-text-inverse);
+    font-size: 1rem;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+
+    &:hover {
+      transform: scale(1.08);
+    }
+
+    &--public {
+      background-color: var(--color-primary);
+    }
+  }
+
+  // Delete-campaign action fixed to the bottom right of the hub.
+  &__delete-campaign {
+    position: absolute;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    padding: 0.5rem 1rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-textbox-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    cursor: pointer;
+    z-index: 2;
+    transition: background-color var(--transition-fast), color var(--transition-fast);
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+
+    &:hover {
+      background-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+  }
+
   &__campaign-title {
     flex: 1;
     min-width: 0;

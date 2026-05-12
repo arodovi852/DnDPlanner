@@ -91,6 +91,59 @@
     padding: var(--space-md) 0;
   }
 
+  // Single horizontal row of campaign cards with right-side scroll. Used for
+  // the "Your campaigns" section on /main — the full list lives at /campaigns.
+  &__row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: clamp(1.5rem, 4vw, 3rem);
+    padding: var(--space-md) var(--space-xs);
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x proximity;
+    scrollbar-gutter: stable;
+
+    > * {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+    }
+
+    // Accessibility: ensure the scroll container can take focus.
+    &:focus-visible {
+      outline: 3px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
+  // Visibility toggle (🌐 / 🔒) on owner/DM cards in the campaigns row.
+  &__card-visibility-toggle {
+    position: absolute;
+    top: -0.5rem;
+    right: -0.5rem;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 50%;
+    border: 2px solid var(--color-border);
+    background-color: var(--color-textbox-light);
+    color: var(--color-text);
+    font-size: 0.85rem;
+    cursor: pointer;
+    z-index: 3;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform var(--transition-fast), background-color var(--transition-fast);
+
+    &:hover {
+      transform: scale(1.1);
+    }
+
+    &--public {
+      background-color: var(--color-primary);
+      color: var(--color-text-inverse);
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Tarjetas con badge de rol y nombre debajo (idéntico a /profile)
   // --------------------------------------------------------------------------

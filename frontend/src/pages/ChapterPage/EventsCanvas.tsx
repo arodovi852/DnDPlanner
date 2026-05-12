@@ -49,7 +49,12 @@ const DRAG_THRESHOLD = 5;
 // Componente principal
 // ---------------------------------------------------------------------------
 
-export function EventsCanvas() {
+interface EventsCanvasProps {
+  /** If true, hides all editing tools and disables mutations (player view). */
+  readOnly?: boolean;
+}
+
+export function EventsCanvas({ readOnly = false }: EventsCanvasProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { chapterId } = useParams<{ chapterId: string }>();
@@ -146,9 +151,10 @@ export function EventsCanvas() {
 
   const mutate = useCallback(
     (updater: (prev: CanvasState) => CanvasState) => {
+      if (readOnly) return;
       setState(updater);
     },
-    [setState]
+    [setState, readOnly]
   );
 
   const bringToFront = (blockId: string) => {
@@ -707,39 +713,43 @@ export function EventsCanvas() {
         <ToolButton current={tool} value="pan" label={t('chapter.tools.pan')} onSelect={setTool}>
           <MoveIcon />
         </ToolButton>
-        <ToolButton current={tool} value="text" label={t('chapter.tools.text')} onSelect={setTool}>
-          <TextIcon />
-        </ToolButton>
-        <div className="events-canvas__create-wrapper">
-          <ToolButton
-            current={tool}
-            value="create"
-            label={t('chapter.tools.create')}
-            onSelect={setTool}
-          >
-            <SquareIcon />
-          </ToolButton>
-          {tool === 'create' && (
-            <select
-              className="events-canvas__create-select"
-              aria-label={t('chapter.tools.create')}
-              value={eventType}
-              onChange={(e) => setEventType(e.target.value as EventType)}
-            >
-              {EVENT_TYPES.map((key) => (
-                <option key={key} value={key}>
-                  {t(`chapter.eventTypes.${key}`)}
-                </option>
-              ))}
-            </select>
-          )}
-        </div>
-        <ToolButton current={tool} value="connect" label={t('chapter.tools.connect')} onSelect={setTool}>
-          <LineIcon />
-        </ToolButton>
-        <ToolButton current={tool} value="redact" label={t('chapter.tools.redact')} onSelect={setTool}>
-          <RedactIcon />
-        </ToolButton>
+        {!readOnly && (
+          <>
+            <ToolButton current={tool} value="text" label={t('chapter.tools.text')} onSelect={setTool}>
+              <TextIcon />
+            </ToolButton>
+            <div className="events-canvas__create-wrapper">
+              <ToolButton
+                current={tool}
+                value="create"
+                label={t('chapter.tools.create')}
+                onSelect={setTool}
+              >
+                <SquareIcon />
+              </ToolButton>
+              {tool === 'create' && (
+                <select
+                  className="events-canvas__create-select"
+                  aria-label={t('chapter.tools.create')}
+                  value={eventType}
+                  onChange={(e) => setEventType(e.target.value as EventType)}
+                >
+                  {EVENT_TYPES.map((key) => (
+                    <option key={key} value={key}>
+                      {t(`chapter.eventTypes.${key}`)}
+                    </option>
+                  ))}
+                </select>
+              )}
+            </div>
+            <ToolButton current={tool} value="connect" label={t('chapter.tools.connect')} onSelect={setTool}>
+              <LineIcon />
+            </ToolButton>
+            <ToolButton current={tool} value="redact" label={t('chapter.tools.redact')} onSelect={setTool}>
+              <RedactIcon />
+            </ToolButton>
+          </>
+        )}
         <ToolButton current={tool} value="zoom" label={t('chapter.tools.zoom')} onSelect={setTool}>
           <ZoomIcon />
         </ToolButton>

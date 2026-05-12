@@ -32,6 +32,7 @@ export function ChapterPage() {
   const folderRef = useRef<HTMLDivElement>(null);
 
   const role = activeCampaign && user ? getRole(activeCampaign.id, user.id) : null;
+  const canEdit = role === 'dm' || role === 'co-dm';
 
   useEffect(() => {
     const handleChange = () => {
@@ -124,7 +125,7 @@ export function ChapterPage() {
         </button>
 
         <div className="chapter-page__canvas">
-          {tab === 'events' ? <EventsCanvas /> : <MapCanvas />}
+          {tab === 'events' ? <EventsCanvas readOnly={!canEdit} /> : <MapCanvas readOnly={!canEdit} />}
         </div>
       </div>
 

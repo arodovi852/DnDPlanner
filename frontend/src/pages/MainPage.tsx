@@ -6,8 +6,9 @@ import { Button } from '../components/shared/Button';
 import { AuthModal } from '../components/shared/AuthModal';
 import { NewCampaignModal } from '../components/shared/NewCampaignModal';
 import { CampaignCard, CreateCampaignCard } from '../components/shared/CampaignCard';
+import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
-import { useCampaigns, CAMPAIGN_TEMPLATES } from '../context/CampaignContext';
+import { useCampaigns, CAMPAIGN_TEMPLATES, type Campaign } from '../context/CampaignContext';
 
 // Campañas de ejemplo (templates oficiales).
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
@@ -141,7 +142,8 @@ function LoggedInView() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { campaigns, setActiveCampaign, createCampaign, getRole } = useCampaigns();
+  const { campaigns, setActiveCampaign, createCampaign, updateCampaign, getRole } =
+    useCampaigns();
 
   const myCampaigns = campaigns.filter(
     (c) => c.ownerId === user?.id || c.members.some((m) => m.userId === user?.id)
@@ -150,6 +152,7 @@ function LoggedInView() {
   const [search, setSearch] = useState('');
   const [newCampaignOpen, setNewCampaignOpen] = useState(false);
   const [initialTemplateId, setInitialTemplateId] = useState<string | undefined>();
+  const [togglingVisibility, setTogglingVisibility] = useState<Campaign | null>(null);
 
   const filteredTemplates = TEMPLATES.filter((t) =>
     t.name.toLowerCase().includes(search.toLowerCase())
@@ -199,9 +202,14 @@ function LoggedInView() {
           <h2 id="your-campaigns-heading" className="main-page__section-title">
             {t('main.yourCampaigns')}
           </h2>
+          {myCampaigns.length > 0 && (
+            <Link to="/campaigns" className="main-page__see-more">
+              {t('common.seeMore')}
+            </Link>
+          )}
         </div>
 
-        <div className="main-page__grid">
+        <div className="main-page__row" role="list">
           <CreateCampaignCard onCreate={handleCreateCampaign} />
           {myCampaigns.map((campaign) => {
             const role = user ? getRole(campaign.id, user.id) : null;
@@ -213,8 +221,9 @@ function LoggedInView() {
             const images = campaign.image
               ? { image: campaign.image, hoverImage: campaign.image }
               : pickPreviewImage(campaign.templateId);
+            const isOwnerOrDm = role === 'dm' || role === 'co-dm';
             return (
-              <div className="main-page__card-wrapper" key={campaign.id}>
+              <div className="main-page__card-wrapper" key={campaign.id} role="listitem">
                 <CampaignCard
                   name={campaign.name}
                   image={images.image}
@@ -225,6 +234,35 @@ function LoggedInView() {
                   <span className={roleClass}>
                     {t(`members.role${roleKey}`)}
                   </span>
+                )}
+                {isOwnerOrDm && (
+                  <button
+                    type="button"
+                    className={
+                      'main-page__card-visibility-toggle' +
+                      (campaign.visibility === 'public'
+                        ? ' main-page__card-visibility-toggle--public'
+                        : '')
+                    }
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      setTogglingVisibility(campaign);
+                    }}
+                    aria-pressed={campaign.visibility === 'public'}
+                    aria-label={
+                      campaign.visibility === 'public'
+                        ? t('profile.makePrivate')
+                        : t('profile.makePublic')
+                    }
+                    title={
+                      campaign.visibility === 'public'
+                        ? t('profile.public')
+                        : t('profile.private')
+                    }
+                  >
+                    {campaign.visibility === 'public' ? '🌐' : '🔒'}
+                  </button>
                 )}
                 <span className="main-page__card-name">{campaign.name}</span>
               </div>
@@ -272,6 +310,37 @@ function LoggedInView() {
         initialTemplateId={initialTemplateId}
         onClose={() => setNewCampaignOpen(false)}
         onCreated={handleCampaignCreated}
+      />
+
+      <ConfirmModal
+        open={togglingVisibility !== null}
+        title={
+          togglingVisibility?.visibility === 'public'
+            ? t('profile.confirmMakePrivateTitle')
+            : t('profile.confirmMakePublicTitle')
+        }
+        description={
+          togglingVisibility
+            ? t(
+                togglingVisibility.visibility === 'public'
+                  ? 'profile.confirmMakePrivateDescription'
+                  : 'profile.confirmMakePublicDescription',
+                { name: togglingVisibility.name }
+              )
+            : ''
+        }
+        confirmLabel={t('common.confirm')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={() => {
+          if (togglingVisibility) {
+            updateCampaign(togglingVisibility.id, {
+              visibility:
+                togglingVisibility.visibility === 'public' ? 'private' : 'public',
+            });
+          }
+          setTogglingVisibility(null);
+        }}
+        onClose={() => setTogglingVisibility(null)}
       />
     </div>
   );

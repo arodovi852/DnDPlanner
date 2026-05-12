@@ -323,6 +323,29 @@
     justify-content: flex-start;
   }
 
+  // Horizontal scrollable row (top 8 of profile). Matches /main behaviour:
+  // a single row scrollable to the right; the full list lives at /campaigns.
+  &__row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: var(--space-xl);
+    padding: var(--space-sm) var(--space-xs);
+    overflow-x: auto;
+    overflow-y: visible;
+    scroll-snap-type: x proximity;
+    scrollbar-gutter: stable;
+
+    > * {
+      flex: 0 0 auto;
+      scroll-snap-align: start;
+    }
+
+    &:focus-visible {
+      outline: 3px solid var(--color-focus-ring);
+      outline-offset: 2px;
+    }
+  }
+
   // --------------------------------------------------------------------------
   // Tabs DM / Jugador / Todas
   // --------------------------------------------------------------------------

@@ -140,7 +140,12 @@ function resolveEntity(
 // Componente
 // ---------------------------------------------------------------------------
 
-export function MapCanvas() {
+interface MapCanvasProps {
+  /** If true, hides placement/edit tools and disables cell mutations (player view). */
+  readOnly?: boolean;
+}
+
+export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { chapterId } = useParams<{ chapterId: string }>();
@@ -299,7 +304,10 @@ export function MapCanvas() {
 
   // ------------------------------------------------------------------
 
-  const mutate = (updater: (prev: MapState) => MapState) => setState(updater);
+  const mutate = (updater: (prev: MapState) => MapState) => {
+    if (readOnly) return;
+    setState(updater);
+  };
 
   const setCells = (next: Record<string, Entity>) => {
     mutate((prev) => ({ ...prev, cells: next }));
@@ -735,21 +743,27 @@ export function MapCanvas() {
         <MapToolButton current={tool} value="pan" label={t('chapter.tools.pan')} onSelect={handleToolChange}>
           <MoveIcon />
         </MapToolButton>
-        <MapToolButton current={tool} value="character" label={t('chapter.tools.character')} onSelect={handleToolChange}>
-          <PersonIcon />
-        </MapToolButton>
-        <MapToolButton current={tool} value="terrain" label={t('chapter.tools.terrain')} onSelect={handleToolChange}>
-          <CubeIcon />
-        </MapToolButton>
-        <MapToolButton current={tool} value="enemy" label={t('chapter.tools.enemy')} onSelect={handleToolChange}>
-          <EnemyIcon />
-        </MapToolButton>
+        {!readOnly && (
+          <>
+            <MapToolButton current={tool} value="character" label={t('chapter.tools.character')} onSelect={handleToolChange}>
+              <PersonIcon />
+            </MapToolButton>
+            <MapToolButton current={tool} value="terrain" label={t('chapter.tools.terrain')} onSelect={handleToolChange}>
+              <CubeIcon />
+            </MapToolButton>
+            <MapToolButton current={tool} value="enemy" label={t('chapter.tools.enemy')} onSelect={handleToolChange}>
+              <EnemyIcon />
+            </MapToolButton>
+          </>
+        )}
         <MapToolButton current={tool} value="zoom" label={t('chapter.tools.zoom')} onSelect={handleToolChange}>
           <ZoomIcon />
         </MapToolButton>
-        <MapToolButton current={tool} value="simplify" label={t('chapter.tools.simplify')} onSelect={handleToolChange}>
-          <NotesIcon />
-        </MapToolButton>
+        {!readOnly && (
+          <MapToolButton current={tool} value="simplify" label={t('chapter.tools.simplify')} onSelect={handleToolChange}>
+            <NotesIcon />
+          </MapToolButton>
+        )}
       </div>
     </div>
   );

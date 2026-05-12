@@ -151,7 +151,8 @@
   "characterSelector": {
     "playable": "Jugables",
     "enemies": "Enemigos",
-    "searchCharacter": "O busca un personaje…"
+    "searchCharacter": "O busca un personaje…",
+    "confirmDeleteDescription": "Esta acción no se puede deshacer. Se eliminará \"{{name}}\"."
   },
   "characterSheet": {
     "character": "Personaje",

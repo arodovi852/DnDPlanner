@@ -2,7 +2,9 @@ import { useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCampaigns, type Character } from '../context/CampaignContext';
+import { useAuth } from '../context/AuthContext';
 import { CampaignCard, CreateCampaignCard } from '../components/shared/CampaignCard';
+import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useDndMonsters } from '../hooks/useDndMonsters';
 
 type TabKey = 'playable' | 'enemy';
@@ -33,14 +35,30 @@ const ASSET_BASE = 'https://www.dnd5eapi.co';
 export function CharacterSelectorPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeCampaign, addCharacter, updateCharacter } = useCampaigns();
+  const { activeCampaign, addCharacter, updateCharacter, deleteCharacter, getRole } =
+    useCampaigns();
+  const { user } = useAuth();
   const { monsters, fetchMonsterDetail } = useDndMonsters();
   const [searchParams] = useSearchParams();
 
+  const role =
+    activeCampaign && user ? getRole(activeCampaign.id, user.id) : null;
+  const canEdit = role === 'dm' || role === 'co-dm';
+  const isPlayer = role === 'player';
+
+  // Find the player's assigned character id (if any) — players can only see
+  // their own playable character and have no access to the enemy tab.
+  const playerCharacterId = useMemo(() => {
+    if (!isPlayer || !activeCampaign || !user) return null;
+    const me = activeCampaign.members.find((m) => m.userId === user.id);
+    return me?.characterId ?? null;
+  }, [isPlayer, activeCampaign, user]);
+
   const initialTab: TabKey =
-    searchParams.get('tab') === 'enemy' ? 'enemy' : 'playable';
+    searchParams.get('tab') === 'enemy' && !isPlayer ? 'enemy' : 'playable';
   const [tab, setTab] = useState<TabKey>(initialTab);
   const [search, setSearch] = useState('');
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const allCharacters = activeCampaign?.characters ?? [];
 
@@ -48,10 +66,12 @@ export function CharacterSelectorPage() {
     const query = search.trim().toLowerCase();
     return allCharacters.filter((c) => {
       if (c.kind !== tab) return false;
+      // Player only sees their assigned character.
+      if (isPlayer && c.id !== playerCharacterId) return false;
       if (!query) return true;
       return c.name.toLowerCase().includes(query);
     });
-  }, [allCharacters, tab, search]);
+  }, [allCharacters, tab, search, isPlayer, playerCharacterId]);
 
   const apiSuggestions = useMemo(() => {
     if (tab !== 'enemy') return [];
@@ -146,43 +166,62 @@ export function CharacterSelectorPage() {
         >
           {t('characterSelector.playable')}
         </button>
-        <button
-          type="button"
-          role="tab"
-          aria-selected={tab === 'enemy'}
-          className={
-            tab === 'enemy'
-              ? 'chapter-page__tab chapter-page__tab--active'
-              : 'chapter-page__tab'
-          }
-          onClick={() => {
-            setTab('enemy');
-            setSearch('');
-          }}
-        >
-          {t('characterSelector.enemies')}
-        </button>
+        {!isPlayer && (
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === 'enemy'}
+            className={
+              tab === 'enemy'
+                ? 'chapter-page__tab chapter-page__tab--active'
+                : 'chapter-page__tab'
+            }
+            onClick={() => {
+              setTab('enemy');
+              setSearch('');
+            }}
+          >
+            {t('characterSelector.enemies')}
+          </button>
+        )}
       </div>
 
       <div className="chapter-page__folder character-selector__folder" role="tabpanel">
         <div className="chapter-page__canvas character-selector__canvas">
           <div className="character-selector__grid">
-            <CreateCampaignCard onCreate={handleCreate} />
+            {canEdit && <CreateCampaignCard onCreate={handleCreate} />}
             {filtered.map((character, index) => {
               const images =
                 FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
               return (
-                <CampaignCard
-                  key={character.id}
-                  name={character.name || t('common.untitled')}
-                  image={character.image ?? images.image}
-                  hoverImage={character.image ?? images.hoverImage}
-                  onSelect={() => handleOpen(character)}
-                />
+                <div className="character-selector__card-wrapper" key={character.id}>
+                  <CampaignCard
+                    name={character.name || t('common.untitled')}
+                    image={character.image ?? images.image}
+                    hoverImage={character.image ?? images.hoverImage}
+                    onSelect={() => handleOpen(character)}
+                  />
+                  {canEdit && (
+                    <button
+                      type="button"
+                      className="character-selector__delete"
+                      aria-label={t('common.delete')}
+                      title={t('common.delete')}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        setPendingDeleteId(character.id);
+                      }}
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               );
             })}
           </div>
 
+          {canEdit && (
           <div className="character-selector__search">
             <label htmlFor="character-search" className="character-selector__search-label">
               {t('characterSelector.searchCharacter')}
@@ -247,8 +286,32 @@ export function CharacterSelectorPage() {
               </ul>
             )}
           </div>
+          )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingDeleteId !== null}
+        title={t('common.delete')}
+        description={
+          pendingDeleteId
+            ? t('characterSelector.confirmDeleteDescription', {
+                name:
+                  allCharacters.find((c) => c.id === pendingDeleteId)?.name ||
+                  t('common.untitled'),
+              })
+            : ''
+        }
+        confirmLabel={t('common.delete')}
+        cancelLabel={t('common.cancel')}
+        onConfirm={() => {
+          if (pendingDeleteId && activeCampaign) {
+            deleteCharacter(activeCampaign.id, pendingDeleteId);
+          }
+          setPendingDeleteId(null);
+        }}
+        onClose={() => setPendingDeleteId(null)}
+      />
     </section>
   );
 }

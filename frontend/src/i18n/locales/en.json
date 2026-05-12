@@ -151,7 +151,8 @@
   "characterSelector": {
     "playable": "Playable",
     "enemies": "Enemies",
-    "searchCharacter": "Or search for a character…"
+    "searchCharacter": "Or search for a character…",
+    "confirmDeleteDescription": "This cannot be undone. \"{{name}}\" will be deleted."
   },
   "characterSheet": {
     "character": "Character",

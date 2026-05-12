@@ -490,7 +490,7 @@ export function ProfilePage() {
           </div>
         </div>
 
-        <div className="profile-page__grid">
+        <div className="profile-page__row" role="list">
           {visibleCampaigns.length === 0 ? (
             <p className="profile-page__empty">—</p>
           ) : (
