@@ -1,7 +1,8 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../Button';
 import { useAuth } from '../../../context/AuthContext';
+import { authApi } from '../../../api/auth';
 
 type AuthMode = 'login' | 'register';
 
@@ -37,6 +38,9 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [usernameAvailable, setUsernameAvailable] = useState<boolean | null>(null);
+  const [emailAvailable, setEmailAvailable] = useState<boolean | null>(null);
+  const checkTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -48,8 +52,35 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
       setConfirmPassword('');
       setError(null);
       setSubmitting(false);
+      setUsernameAvailable(null);
+      setEmailAvailable(null);
     }
   }, [open, initialMode]);
+
+  // Debounced availability check for username and email in register mode
+  useEffect(() => {
+    if (mode !== 'register') return;
+    if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
+    const trimUser = username.trim();
+    const trimEmail = email.trim();
+    if (!trimUser && !trimEmail) return;
+
+    checkTimerRef.current = setTimeout(() => {
+      const params: { username?: string; email?: string } = {};
+      if (trimUser.length >= 3) params.username = trimUser;
+      if (trimEmail.includes('@')) params.email = trimEmail;
+      if (!params.username && !params.email) return;
+
+      void authApi.checkAvailability(params).then((result) => {
+        if (result.username !== undefined) setUsernameAvailable(result.username);
+        if (result.email !== undefined) setEmailAvailable(result.email);
+      }).catch(() => {});
+    }, 500);
+
+    return () => {
+      if (checkTimerRef.current) clearTimeout(checkTimerRef.current);
+    };
+  }, [mode, username, email]);
 
   useEffect(() => {
     if (!open) return;
@@ -69,6 +100,14 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
     if (mode === 'register') {
       if (password !== confirmPassword) {
         setError(t('auth.passwordsDontMatch'));
+        return;
+      }
+      if (usernameAvailable === false) {
+        setError(t('auth.usernameTaken'));
+        return;
+      }
+      if (emailAvailable === false) {
+        setError(t('auth.emailTaken'));
         return;
       }
     }
@@ -139,32 +178,60 @@ export function AuthModal({ open, initialMode = 'login', onClose }: AuthModalPro
             />
           ) : (
             <>
-              <input
-                className="auth-modal__field"
-                type="text"
-                placeholder={t('auth.username')}
-                aria-label={t('auth.username')}
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                required
-                autoComplete="username"
-                minLength={3}
-                maxLength={30}
-                pattern="[a-zA-Z0-9_]+"
-                title={t('auth.usernameRules') ?? undefined}
-                disabled={submitting}
-              />
-              <input
-                className="auth-modal__field"
-                type="email"
-                placeholder={t('auth.email')}
-                aria-label={t('auth.email')}
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                autoComplete="email"
-                disabled={submitting}
-              />
+              <div className="auth-modal__field-wrap">
+                <input
+                  className={
+                    'auth-modal__field' +
+                    (usernameAvailable === false ? ' auth-modal__field--error' : '') +
+                    (usernameAvailable === true ? ' auth-modal__field--ok' : '')
+                  }
+                  type="text"
+                  placeholder={t('auth.username')}
+                  aria-label={t('auth.username')}
+                  value={username}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    setUsernameAvailable(null);
+                  }}
+                  required
+                  autoComplete="username"
+                  minLength={3}
+                  maxLength={30}
+                  pattern="[a-zA-Z0-9_]+"
+                  title={t('auth.usernameRules') ?? undefined}
+                  disabled={submitting}
+                />
+                {usernameAvailable === false && (
+                  <span className="auth-modal__field-hint auth-modal__field-hint--error">
+                    {t('auth.usernameTaken')}
+                  </span>
+                )}
+              </div>
+              <div className="auth-modal__field-wrap">
+                <input
+                  className={
+                    'auth-modal__field' +
+                    (emailAvailable === false ? ' auth-modal__field--error' : '') +
+                    (emailAvailable === true ? ' auth-modal__field--ok' : '')
+                  }
+                  type="email"
+                  placeholder={t('auth.email')}
+                  aria-label={t('auth.email')}
+                  value={email}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    setEmailAvailable(null);
+                  }}
+                  required
+                  autoComplete="email"
+                  disabled={submitting}
+                />
+                {emailAvailable === false && (
+                  <span className="auth-modal__field-hint auth-modal__field-hint--error">
+                    {t('auth.emailTaken')}
+                  </span>
+                )}
+              </div>
             </>
           )}
 

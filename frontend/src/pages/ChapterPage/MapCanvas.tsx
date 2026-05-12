@@ -650,22 +650,23 @@ export function MapCanvas() {
           )}
         </div>
 
-        {statsPopup && (
-          <StatsPopup
-            label={statsPopup.entity.label}
-            image={statsPopup.entity.image}
-            stats={statsPopup.stats}
-            onChange={(patch) =>
-              setStatsPopup((prev) =>
-                prev
-                  ? { ...prev, stats: { ...prev.stats, ...patch } }
-                  : prev
-              )
-            }
-            onClose={() => setStatsPopup(null)}
-          />
-        )}
       </div>
+
+      {statsPopup && (
+        <StatsPopup
+          label={statsPopup.entity.label}
+          image={statsPopup.entity.image}
+          stats={statsPopup.stats}
+          onChange={(patch) =>
+            setStatsPopup((prev) =>
+              prev
+                ? { ...prev, stats: { ...prev.stats, ...patch } }
+                : prev
+            )
+          }
+          onClose={() => setStatsPopup(null)}
+        />
+      )}
 
       {showPicker && (
         <div className="map-canvas__picker" role="dialog" aria-label="Pick entity">
@@ -707,6 +708,23 @@ export function MapCanvas() {
               ))
             )}
           </ul>
+          {tool !== 'terrain' && (
+            <button
+              type="button"
+              className="map-canvas__picker-create"
+              onClick={() =>
+                navigate(
+                  tool === 'enemy'
+                    ? '/characterSelector?tab=enemy'
+                    : '/characterSelector'
+                )
+              }
+            >
+              {tool === 'enemy'
+                ? t('chapter.createNewEnemy')
+                : t('chapter.createNewCharacter')}
+            </button>
+          )}
         </div>
       )}
 

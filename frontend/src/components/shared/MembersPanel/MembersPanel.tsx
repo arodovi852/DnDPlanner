@@ -63,39 +63,19 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
     }
   }, [open]);
 
-  if (!open || !campaign) return null;
-
-  const isOwner = user?.id === campaign.ownerId;
-  const currentMemberRole =
-    user && campaign.members.find((m) => m.userId === user.id)?.role;
-  const canManage = isOwner || currentMemberRole === 'co-dm';
-
+  // These hooks MUST be called before any conditional return to satisfy
+  // the Rules of Hooks. campaign may be null here; guard inside each hook.
   const memberIds = useMemo(
-    () => new Set(campaign.members.map((m) => m.userId)),
-    [campaign.members]
+    () => new Set((campaign?.members ?? []).map((m) => m.userId)),
+    [campaign?.members]
   );
-  // El DM ya gestiona la campaña, así que ya tiene acceso a sus jugadores
-  // (incluso a los privados): los privados solo se ocultan de búsquedas
-  // generales, no de "añadir miembro" cuando ya forman parte de OTRA
-  // campaña del mismo DM. Para invitar a un privado totalmente externo,
-  // habría que conocer su nombre exacto: lo respetamos.
-  const isAlreadyMyPlayer = (u: PublicUser): boolean => {
-    if (!user) return false;
-    return campaigns.some(
-      (c) =>
-        c.members.some(
-          (m) => m.userId === user.id && (m.role === 'dm' || m.role === 'co-dm')
-        ) &&
-        c.members.some((m) => m.userId === u.id && m.role === 'player')
-    );
-  };
 
-  // searchUsers ahora pega al backend; lo lanzamos cuando cambia query
-  // (debounced con un pequeño retardo para no saturar la API mientras se
-  // escribe). El array final filtra los que ya son miembros y los privados
-  // que no son nuestros jugadores.
   const [suggestions, setSuggestions] = useState<PublicUser[]>([]);
   useEffect(() => {
+    if (!open || !campaign) {
+      setSuggestions([]);
+      return;
+    }
     let cancelled = false;
     if (!query.trim()) {
       setSuggestions([]);
@@ -107,7 +87,17 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
         setSuggestions(
           results
             .filter((u) => !memberIds.has(u.id))
-            .filter((u) => !u.isPrivate || isAlreadyMyPlayer(u))
+            .filter((u) => {
+              if (!u.isPrivate) return true;
+              if (!user) return false;
+              return campaigns.some(
+                (c) =>
+                  c.members.some(
+                    (m) => m.userId === user.id && (m.role === 'dm' || m.role === 'co-dm')
+                  ) &&
+                  c.members.some((m) => m.userId === u.id && m.role === 'player')
+              );
+            })
             .slice(0, 5)
         );
       });
@@ -116,8 +106,25 @@ export function MembersPanel({ open, campaignId, onClose }: MembersPanelProps) {
       cancelled = true;
       clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [query, memberIds, campaigns, user?.id]);
+  }, [open, query, memberIds, campaign, campaigns, user, searchUsers]);
+
+  if (!open || !campaign) return null;
+
+  const isOwner = user?.id === campaign.ownerId;
+  const currentMemberRole =
+    user && campaign.members.find((m) => m.userId === user.id)?.role;
+  const canManage = isOwner || currentMemberRole === 'co-dm';
+
+  const isAlreadyMyPlayer = (u: PublicUser): boolean => {
+    if (!user) return false;
+    return campaigns.some(
+      (c) =>
+        c.members.some(
+          (m) => m.userId === user.id && (m.role === 'dm' || m.role === 'co-dm')
+        ) &&
+        c.members.some((m) => m.userId === u.id && m.role === 'player')
+    );
+  };
 
   const handleAddByUsername = (username: string) => {
     const found = findByUsername(username);

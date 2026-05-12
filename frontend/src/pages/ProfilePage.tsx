@@ -8,6 +8,8 @@ import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useCampaigns, type Campaign } from '../context/CampaignContext';
 
+type SecuritySection = 'none' | 'email' | 'password';
+
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
 import destinosCruzadosHover from '../assets/campaigns/destinos-cruzados-hover.png';
 import campollano from '../assets/campaigns/campollano.png';
@@ -62,7 +64,7 @@ function imagesForCampaign(campaign: Campaign): CampaignImages {
  */
 export function ProfilePage() {
   const { t } = useTranslation();
-  const { user, updateUser, logout } = useAuth();
+  const { user, updateUser, changePassword, logout } = useAuth();
   const {
     campaigns,
     setActiveCampaign,
@@ -76,6 +78,12 @@ export function ProfilePage() {
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState<CampaignTab>('all');
   const [confirmingId, setConfirmingId] = useState<string | null>(null);
+  const [securitySection, setSecuritySection] = useState<SecuritySection>('none');
+  const [newEmail, setNewEmail] = useState('');
+  const [currentPwd, setCurrentPwd] = useState('');
+  const [newPwd, setNewPwd] = useState('');
+  const [confirmPwd, setConfirmPwd] = useState('');
+  const [securityMsg, setSecurityMsg] = useState<{ ok: boolean; text: string } | null>(null);
   /** Cuando no es null, hay una confirmación abierta para alternar
    *  visibilidad público↔privado de la campaña con ese id. */
   const [togglingVisibilityId, setTogglingVisibilityId] = useState<string | null>(null);
@@ -167,6 +175,44 @@ export function ProfilePage() {
   const handleLogout = () => {
     logout();
     navigate('/main');
+  };
+
+  const resetSecurity = () => {
+    setSecuritySection('none');
+    setNewEmail('');
+    setCurrentPwd('');
+    setNewPwd('');
+    setConfirmPwd('');
+    setSecurityMsg(null);
+  };
+
+  const handleChangeEmail = async () => {
+    if (!newEmail.trim()) return;
+    setSecurityMsg(null);
+    try {
+      await updateUser({ email: newEmail.trim() });
+      setSecurityMsg({ ok: true, text: t('profile.emailChanged') });
+      resetSecurity();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t('common.error');
+      setSecurityMsg({ ok: false, text: msg });
+    }
+  };
+
+  const handleChangePassword = async () => {
+    if (newPwd !== confirmPwd) {
+      setSecurityMsg({ ok: false, text: t('profile.passwordsMismatch') });
+      return;
+    }
+    setSecurityMsg(null);
+    try {
+      await changePassword({ currentPassword: currentPwd, newPassword: newPwd });
+      setSecurityMsg({ ok: true, text: t('profile.passwordChanged') });
+      resetSecurity();
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : t('common.error');
+      setSecurityMsg({ ok: false, text: msg });
+    }
   };
 
   const toggleVisibility = (campaign: Campaign) => {
@@ -292,6 +338,106 @@ export function ProfilePage() {
                 {t('profile.privateAccountHint')}
               </span>
             </label>
+          )}
+
+          {editing && (
+            <div className="profile-page__security">
+              <div className="profile-page__security-buttons">
+                <button
+                  type="button"
+                  className={
+                    'profile-page__security-btn' +
+                    (securitySection === 'email' ? ' profile-page__security-btn--active' : '')
+                  }
+                  onClick={() =>
+                    setSecuritySection(securitySection === 'email' ? 'none' : 'email')
+                  }
+                >
+                  {t('profile.changeEmail')}
+                </button>
+                <button
+                  type="button"
+                  className={
+                    'profile-page__security-btn' +
+                    (securitySection === 'password' ? ' profile-page__security-btn--active' : '')
+                  }
+                  onClick={() =>
+                    setSecuritySection(securitySection === 'password' ? 'none' : 'password')
+                  }
+                >
+                  {t('profile.changePassword')}
+                </button>
+              </div>
+
+              {securityMsg && (
+                <p
+                  className={
+                    'profile-page__security-msg' +
+                    (securityMsg.ok ? ' profile-page__security-msg--ok' : '')
+                  }
+                >
+                  {securityMsg.text}
+                </p>
+              )}
+
+              {securitySection === 'email' && (
+                <div className="profile-page__security-form">
+                  <input
+                    type="email"
+                    className="profile-page__security-input"
+                    placeholder={t('profile.newEmail')}
+                    value={newEmail}
+                    onChange={(e) => setNewEmail(e.target.value)}
+                    aria-label={t('profile.newEmail')}
+                  />
+                  <button
+                    type="button"
+                    className="profile-page__security-submit"
+                    onClick={() => void handleChangeEmail()}
+                    disabled={!newEmail.trim()}
+                  >
+                    {t('common.save')}
+                  </button>
+                </div>
+              )}
+
+              {securitySection === 'password' && (
+                <div className="profile-page__security-form">
+                  <input
+                    type="password"
+                    className="profile-page__security-input"
+                    placeholder={t('profile.currentPassword')}
+                    value={currentPwd}
+                    onChange={(e) => setCurrentPwd(e.target.value)}
+                    aria-label={t('profile.currentPassword')}
+                  />
+                  <input
+                    type="password"
+                    className="profile-page__security-input"
+                    placeholder={t('profile.newPassword')}
+                    value={newPwd}
+                    onChange={(e) => setNewPwd(e.target.value)}
+                    aria-label={t('profile.newPassword')}
+                  />
+                  <input
+                    type="password"
+                    className="profile-page__security-input"
+                    placeholder={t('profile.confirmPassword')}
+                    value={confirmPwd}
+                    onChange={(e) => setConfirmPwd(e.target.value)}
+                    aria-label={t('profile.confirmPassword')}
+                  />
+                  <button
+                    type="button"
+                    className="profile-page__security-submit"
+                    onClick={() => void handleChangePassword()}
+                    disabled={!currentPwd || !newPwd || !confirmPwd}
+                  >
+                    {t('common.save')}
+                  </button>
+                </div>
+              )}
+            </div>
           )}
         </div>
 

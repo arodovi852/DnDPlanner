@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MembersPanel } from '../components/shared/MembersPanel';
@@ -17,9 +17,11 @@ export function ChapterOrCharacterPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
-  const { activeCampaign, getRole } = useCampaigns();
+  const { activeCampaign, getRole, updateCampaign } = useCampaigns();
 
   const [membersOpen, setMembersOpen] = useState(false);
+  const [renamingCampaign, setRenamingCampaign] = useState(false);
+  const renameInputRef = useRef<HTMLInputElement>(null);
 
   const role = activeCampaign && user ? getRole(activeCampaign.id, user.id) : null;
   const canSeeMembers = role === 'dm' || role === 'co-dm' || role === 'player';
@@ -30,15 +32,56 @@ export function ChapterOrCharacterPage() {
         {t('chapterOrCharacter.heading')}
       </h1>
 
-      {activeCampaign && canSeeMembers && (
+      {activeCampaign && (
         <div className="chapter-or-character__toolbar">
-          <button
-            type="button"
-            className="chapter-or-character__members-button"
-            onClick={() => setMembersOpen(true)}
-          >
-            {t('members.title')} · {activeCampaign.members.length}
-          </button>
+          <div className="chapter-or-character__campaign-title">
+            {renamingCampaign && (role === 'dm' || role === 'co-dm') ? (
+              <input
+                ref={renameInputRef}
+                className="chapter-or-character__rename-input"
+                defaultValue={activeCampaign.name}
+                aria-label={t('profile.renameCampaign')}
+                autoFocus
+                onBlur={(e) => {
+                  const name = e.target.value.trim();
+                  if (name) updateCampaign(activeCampaign.id, { name });
+                  setRenamingCampaign(false);
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') e.currentTarget.blur();
+                  if (e.key === 'Escape') {
+                    setRenamingCampaign(false);
+                  }
+                }}
+              />
+            ) : (
+              <span
+                className="chapter-or-character__campaign-name"
+                title={
+                  role === 'dm' || role === 'co-dm'
+                    ? t('profile.renameCampaign')
+                    : undefined
+                }
+                onClick={() => {
+                  if (role === 'dm' || role === 'co-dm') setRenamingCampaign(true);
+                }}
+              >
+                {activeCampaign.name}
+                {(role === 'dm' || role === 'co-dm') && (
+                  <span className="chapter-or-character__rename-icon" aria-hidden="true">✎</span>
+                )}
+              </span>
+            )}
+          </div>
+          {canSeeMembers && (
+            <button
+              type="button"
+              className="chapter-or-character__members-button"
+              onClick={() => setMembersOpen(true)}
+            >
+              {t('members.title')} · {activeCampaign.members.length}
+            </button>
+          )}
         </div>
       )}
 

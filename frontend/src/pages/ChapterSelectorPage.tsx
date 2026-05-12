@@ -187,6 +187,32 @@ export function ChapterSelectorPage() {
         {t('chapter.events')}
       </h1>
 
+      <nav className="chapter-page__campaign-nav" aria-label={t('chapter.campaignNav')}>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn"
+          onClick={() => navigate('/chapterOrCharacter')}
+        >
+          {activeCampaign?.name ?? t('chapter.campaignHub')}
+        </button>
+        <span className="chapter-page__campaign-nav-sep" aria-hidden="true">/</span>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn chapter-page__campaign-nav-btn--active"
+          onClick={() => navigate('/chapterSelector')}
+        >
+          {t('chapterOrCharacter.chapters')}
+        </button>
+        <span className="chapter-page__campaign-nav-sep" aria-hidden="true">/</span>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn"
+          onClick={() => navigate('/characterSelector')}
+        >
+          {t('chapterOrCharacter.characters')}
+        </button>
+      </nav>
+
       <div className="chapter-selector__add">
         <Button
           aria-label={t('chapterSelector.addChapter')}

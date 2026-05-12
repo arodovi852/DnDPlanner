@@ -70,6 +70,13 @@ const updateProfileValidation = [
     .optional()
     .isBoolean()
     .withMessage('isPrivate must be a boolean'),
+  body('email')
+    .optional()
+    .trim()
+    .isEmail()
+    .withMessage('Email must be a valid email address')
+    .isLength({ max: 254 })
+    .withMessage('Email is too long'),
 ];
 
 const changePasswordValidation = [

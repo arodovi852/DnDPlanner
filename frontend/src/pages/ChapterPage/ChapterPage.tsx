@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { EventsCanvas } from './EventsCanvas';
 import { MapCanvas } from './MapCanvas';
@@ -23,6 +23,7 @@ type TabKey = 'events' | 'map';
  */
 export function ChapterPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { chapterId } = useParams<{ chapterId: string }>();
   const { user } = useAuth();
   const { activeCampaign, getRole } = useCampaigns();
@@ -55,6 +56,32 @@ export function ChapterPage() {
       <h1 id="chapter-page-heading" className="visually-hidden">
         Chapter {chapterId}
       </h1>
+
+      <nav className="chapter-page__campaign-nav" aria-label={t('chapter.campaignNav')}>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn"
+          onClick={() => navigate('/chapterOrCharacter')}
+        >
+          {activeCampaign?.name ?? t('chapter.campaignHub')}
+        </button>
+        <span className="chapter-page__campaign-nav-sep" aria-hidden="true">/</span>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn chapter-page__campaign-nav-btn--active"
+          onClick={() => navigate('/chapterSelector')}
+        >
+          {t('chapterOrCharacter.chapters')}
+        </button>
+        <span className="chapter-page__campaign-nav-sep" aria-hidden="true">/</span>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn"
+          onClick={() => navigate('/characterSelector')}
+        >
+          {t('chapterOrCharacter.characters')}
+        </button>
+      </nav>
 
       <div className="chapter-page__tabs" role="tablist" aria-label="Chapter views">
         <button

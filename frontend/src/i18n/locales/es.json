@@ -1,6 +1,7 @@
 {
   "common": {
     "save": "Guardar",
+    "error": "Ha ocurrido un error inesperado.",
     "saveChanges": "Guardar cambios",
     "cancel": "Cancelar",
     "delete": "Eliminar",
@@ -54,6 +55,8 @@
     "newHere": "¿Eres nuevo? ¡Crea una cuenta!",
     "alreadyHave": "¿Ya tienes cuenta? Inicia sesión",
     "passwordsDontMatch": "Las contraseñas no coinciden",
+    "usernameTaken": "Este nombre de usuario ya está en uso.",
+    "emailTaken": "Este correo electrónico ya está registrado.",
     "submitting": "Cargando…",
     "unexpectedError": "Error inesperado. Por favor, inténtalo de nuevo.",
     "usernameRules": "Solo letras, números y guiones bajos (3-30 caracteres)."
@@ -89,6 +92,15 @@
     "confirmMakePrivateDescription": "\"{{name}}\" dejará de aparecer en /templates. Los miembros actuales seguirán teniendo acceso. ¿Continuar?",
     "privateAccount": "Cuenta privada",
     "privateAccountHint": "No aparecerás en búsquedas de usuarios. Los DMs de campañas en las que ya juegas seguirán pudiendo verte.",
+    "changeEmail": "Cambiar correo",
+    "newEmail": "Nuevo correo electrónico",
+    "emailChanged": "Correo actualizado correctamente.",
+    "changePassword": "Cambiar contraseña",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Nueva contraseña",
+    "confirmPassword": "Confirmar contraseña",
+    "passwordChanged": "Contraseña actualizada correctamente.",
+    "passwordsMismatch": "Las contraseñas no coinciden.",
     "tab": {
       "all": "Todas",
       "dm": "Como DM",
@@ -186,6 +198,10 @@
     "finalChapter": "Fin de la campaña",
     "currentChapter": "Capítulo",
     "statsPopupNote": "Solo afecta a esta instancia del mapa.",
+    "createNewCharacter": "+ Crear nuevo personaje",
+    "createNewEnemy": "+ Crear nuevo enemigo",
+    "campaignNav": "Navegación de campaña",
+    "campaignHub": "Campaña",
     "tools": {
       "select": "Seleccionar / Mover",
       "pan": "Mover todo",

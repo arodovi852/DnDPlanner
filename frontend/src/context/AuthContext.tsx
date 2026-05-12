@@ -65,10 +65,15 @@ interface AuthContextValue {
     password: string;
   }) => Promise<void>;
   logout: () => Promise<void>;
-  /** Patch the authenticated user's profile (username/avatar/description/privacy). */
+  /** Patch the authenticated user's profile (username/email/avatar/description/privacy). */
   updateUser: (
     patch: Partial<Omit<AuthUser, 'id'>> & { isPrivate?: boolean }
   ) => Promise<void>;
+  /** Change the current user's password. Re-issues tokens on success. */
+  changePassword: (input: {
+    currentPassword: string;
+    newPassword: string;
+  }) => Promise<void>;
 }
 
 /** Stable id of the offline demo account — used by other contexts to gate API calls. */
@@ -246,11 +251,26 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       try {
         const u = await authApi.updateProfile({
           username: patch.username,
+          email: patch.email,
           avatar: patch.avatar ?? undefined,
           description: patch.description,
           isPrivate: patch.isPrivate,
         });
         setUser(toAuthUser(u));
+      } catch (err) {
+        setError(describeError(err));
+        throw err;
+      }
+    },
+    [user]
+  );
+
+  const changePassword = useCallback(
+    async (input: { currentPassword: string; newPassword: string }) => {
+      setError(null);
+      if (user?.id === DEMO_USER_ID) return; // no-op for demo
+      try {
+        await authApi.changePassword(input);
       } catch (err) {
         setError(describeError(err));
         throw err;
@@ -270,8 +290,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       register,
       logout,
       updateUser,
+      changePassword,
     }),
-    [user, status, error, login, register, logout, updateUser]
+    [user, status, error, login, register, logout, updateUser, changePassword]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

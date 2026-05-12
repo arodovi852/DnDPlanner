@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useCampaigns, type Character } from '../context/CampaignContext';
 import { CampaignCard, CreateCampaignCard } from '../components/shared/CampaignCard';
@@ -35,8 +35,11 @@ export function CharacterSelectorPage() {
   const navigate = useNavigate();
   const { activeCampaign, addCharacter, updateCharacter } = useCampaigns();
   const { monsters, fetchMonsterDetail } = useDndMonsters();
+  const [searchParams] = useSearchParams();
 
-  const [tab, setTab] = useState<TabKey>('playable');
+  const initialTab: TabKey =
+    searchParams.get('tab') === 'enemy' ? 'enemy' : 'playable';
+  const [tab, setTab] = useState<TabKey>(initialTab);
   const [search, setSearch] = useState('');
 
   const allCharacters = activeCampaign?.characters ?? [];
@@ -99,6 +102,32 @@ export function CharacterSelectorPage() {
       <h1 id="character-selector-heading" className="visually-hidden">
         {t('chapterOrCharacter.characters')}
       </h1>
+
+      <nav className="chapter-page__campaign-nav" aria-label={t('chapter.campaignNav')}>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn"
+          onClick={() => navigate('/chapterOrCharacter')}
+        >
+          {activeCampaign?.name ?? t('chapter.campaignHub')}
+        </button>
+        <span className="chapter-page__campaign-nav-sep" aria-hidden="true">/</span>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn"
+          onClick={() => navigate('/chapterSelector')}
+        >
+          {t('chapterOrCharacter.chapters')}
+        </button>
+        <span className="chapter-page__campaign-nav-sep" aria-hidden="true">/</span>
+        <button
+          type="button"
+          className="chapter-page__campaign-nav-btn chapter-page__campaign-nav-btn--active"
+          onClick={() => navigate('/characterSelector')}
+        >
+          {t('chapterOrCharacter.characters')}
+        </button>
+      </nav>
 
       <div className="chapter-page__tabs" role="tablist" aria-label={t('chapterOrCharacter.characters')}>
         <button

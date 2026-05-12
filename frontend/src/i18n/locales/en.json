@@ -1,6 +1,7 @@
 {
   "common": {
     "save": "Save",
+    "error": "An unexpected error occurred.",
     "saveChanges": "Save changes",
     "cancel": "Cancel",
     "delete": "Delete",
@@ -54,6 +55,8 @@
     "newHere": "New here? Create an account!",
     "alreadyHave": "Already have an account? Log in",
     "passwordsDontMatch": "Passwords don't match",
+    "usernameTaken": "This username is already taken.",
+    "emailTaken": "This email address is already registered.",
     "submitting": "Loading…",
     "unexpectedError": "Unexpected error. Please try again.",
     "usernameRules": "Letters, numbers and underscores only (3-30 characters)."
@@ -89,6 +92,15 @@
     "confirmMakePrivateDescription": "\"{{name}}\" will no longer appear in /templates. Current members keep access. Continue?",
     "privateAccount": "Private account",
     "privateAccountHint": "You won't show up in user searches. DMs of campaigns where you already play will still see you.",
+    "changeEmail": "Change email",
+    "newEmail": "New email address",
+    "emailChanged": "Email updated successfully.",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmPassword": "Confirm password",
+    "passwordChanged": "Password updated successfully.",
+    "passwordsMismatch": "Passwords do not match.",
     "tab": {
       "all": "All",
       "dm": "As DM",
@@ -186,6 +198,10 @@
     "finalChapter": "End of campaign",
     "currentChapter": "Chapter",
     "statsPopupNote": "Only affects this map instance.",
+    "createNewCharacter": "+ Create new character",
+    "createNewEnemy": "+ Create new enemy",
+    "campaignNav": "Campaign navigation",
+    "campaignHub": "Campaign",
     "tools": {
       "select": "Select / Move",
       "pan": "Pan all",

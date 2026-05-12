@@ -19,9 +19,56 @@
     position: absolute;
     top: 1rem;
     right: 1.5rem;
+    left: 1.5rem;
     display: flex;
+    align-items: center;
+    justify-content: space-between;
     gap: 0.5rem;
     z-index: 2;
+  }
+
+  &__campaign-title {
+    flex: 1;
+    min-width: 0;
+  }
+
+  &__campaign-name {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    color: var(--color-text-inverse);
+    cursor: pointer;
+    padding: 0.2rem 0.4rem;
+    border-radius: var(--radius-sm);
+    transition: background-color var(--transition-fast);
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    &:hover {
+      background-color: rgba(255 255 255 / 0.1);
+    }
+  }
+
+  &__rename-icon {
+    font-size: 0.9em;
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  &__rename-input {
+    font-family: var(--font-family-heading);
+    font-size: var(--font-size-lg);
+    padding: 0.2rem 0.4rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background-color: var(--color-surface-cream);
+    color: var(--color-text);
+    width: 100%;
+    max-width: 22rem;
   }
 
   &__members-button {

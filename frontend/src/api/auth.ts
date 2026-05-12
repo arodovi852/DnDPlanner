@@ -75,6 +75,7 @@ export const authApi = {
 
   async updateProfile(patch: {
     username?: string;
+    email?: string;
     avatar?: string | null;
     description?: string;
     isPrivate?: boolean;

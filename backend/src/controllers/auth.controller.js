@@ -141,7 +141,7 @@ const getMe = async (req, res, next) => {
 
 const updateProfile = async (req, res, next) => {
   try {
-    const { username, avatar, description, isPrivate } = req.body;
+    const { username, avatar, description, isPrivate, email } = req.body;
     const user = await User.findById(req.user.id);
     if (!user) throw new ApiError(404, 'User not found');
 
@@ -149,6 +149,11 @@ const updateProfile = async (req, res, next) => {
       const existingUser = await User.findOne({ username });
       if (existingUser) throw new ApiError(400, 'Username already taken');
       user.username = username;
+    }
+    if (email && email.toLowerCase() !== user.email) {
+      const existingUser = await User.findOne({ email: email.toLowerCase() });
+      if (existingUser) throw new ApiError(400, 'Email already taken');
+      user.email = email.toLowerCase();
     }
     if (avatar !== undefined) user.avatar = avatar;
     if (description !== undefined) user.description = description;

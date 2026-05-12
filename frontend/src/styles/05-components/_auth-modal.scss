@@ -56,6 +56,29 @@
       outline: 3px solid var(--color-focus-ring);
       outline-offset: 2px;
     }
+
+    &--error {
+      border-color: var(--color-error, #c0392b);
+    }
+
+    &--ok {
+      border-color: var(--color-success, #27ae60);
+    }
+  }
+
+  &__field-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  &__field-hint {
+    font-size: var(--font-size-xs);
+    text-align: center;
+
+    &--error {
+      color: var(--color-error, #c0392b);
+    }
   }
 
   &__actions {
