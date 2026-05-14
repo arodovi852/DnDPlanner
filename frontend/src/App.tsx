@@ -47,15 +47,16 @@ function App() {
         <CampaignProvider>
           <BrowserRouter>
             <div
+              className="app-shell"
               style={{
                 display: 'flex',
                 flexDirection: 'column',
-                minHeight: '100vh',
+                minHeight: '100dvh',
               }}
             >
               <GlobalHeader />
 
-              <main style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
+              <main style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
                 <Routes>
                   <Route path="/" element={<Navigate to="/main" replace />} />
                   <Route path="/main" element={<MainPage />} />

@@ -894,11 +894,25 @@ interface ImageCropModalProps {
   onConfirm: (dataUrl: string) => void;
 }
 
-const CROP_SIZE = 320;
+// Display size of the crop viewport. Adapts to narrow screens so the modal
+// stays inside the viewport (320px phones cannot fit a fixed 320px square
+// plus the panel chrome). The output PNG always exports at the larger
+// `EXPORT_SIZE` for quality regardless of how small the on-screen square is.
+const EXPORT_SIZE = 320;
+
+function pickCropSize(): number {
+  if (typeof window === 'undefined') return EXPORT_SIZE;
+  // Reserve ~3rem for the panel padding + border so the square never
+  // touches the modal edges.
+  return Math.min(EXPORT_SIZE, Math.max(180, window.innerWidth - 64));
+}
 
 function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
   const { t } = useTranslation();
   const imgRef = useRef<HTMLImageElement>(null);
+  // The crop viewport is sized once on mount based on the available viewport
+  // so a 320px phone gets ~256px, while a desktop still gets the full 320px.
+  const [cropSize] = useState<number>(() => pickCropSize());
 
   const [naturalSize, setNaturalSize] = useState<{ w: number; h: number } | null>(null);
   const [scale, setScale] = useState(1);
@@ -917,16 +931,16 @@ function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
     const w = el.naturalWidth;
     const h = el.naturalHeight;
     setNaturalSize({ w, h });
-    const minScale = CROP_SIZE / Math.min(w, h);
+    const minScale = cropSize / Math.min(w, h);
     setScale(minScale);
     setOffset({
-      x: (CROP_SIZE - w * minScale) / 2,
-      y: (CROP_SIZE - h * minScale) / 2,
+      x: (cropSize - w * minScale) / 2,
+      y: (cropSize - h * minScale) / 2,
     });
   };
 
   const minScale = naturalSize
-    ? CROP_SIZE / Math.min(naturalSize.w, naturalSize.h)
+    ? cropSize / Math.min(naturalSize.w, naturalSize.h)
     : 0.1;
   const maxScale = minScale * 6;
 
@@ -934,8 +948,8 @@ function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
     if (!naturalSize) return { x, y };
     const w = naturalSize.w * s;
     const h = naturalSize.h * s;
-    const minX = CROP_SIZE - w;
-    const minY = CROP_SIZE - h;
+    const minX = cropSize - w;
+    const minY = cropSize - h;
     return {
       x: Math.min(0, Math.max(minX, x)),
       y: Math.min(0, Math.max(minY, y)),
@@ -969,7 +983,7 @@ function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
     if (!naturalSize) return;
     event.preventDefault();
     const factor = event.deltaY < 0 ? 1.1 : 1 / 1.1;
-    applyZoomAt(scale * factor, CROP_SIZE / 2, CROP_SIZE / 2);
+    applyZoomAt(scale * factor, cropSize / 2, cropSize / 2);
   };
 
   const applyZoomAt = (nextScale: number, anchorX: number, anchorY: number) => {
@@ -986,8 +1000,8 @@ function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
   const handleConfirm = () => {
     if (!naturalSize) return;
     const canvas = document.createElement('canvas');
-    canvas.width = CROP_SIZE;
-    canvas.height = CROP_SIZE;
+    canvas.width = cropSize;
+    canvas.height = cropSize;
     const ctx = canvas.getContext('2d');
     if (!ctx) return;
     const img = imgRef.current;
@@ -1022,7 +1036,7 @@ function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
 
         <div
           className="image-crop-modal__viewport"
-          style={{ width: CROP_SIZE, height: CROP_SIZE }}
+          style={{ width: cropSize, height: cropSize }}
           onPointerDown={handlePointerDown}
           onPointerMove={handlePointerMove}
           onPointerUp={handlePointerUp}
@@ -1055,7 +1069,7 @@ function ImageCropModal({ src, onCancel, onConfirm }: ImageCropModalProps) {
             step={(maxScale - minScale) / 100 || 0.01}
             value={scale}
             onChange={(e) =>
-              applyZoomAt(parseFloat(e.target.value), CROP_SIZE / 2, CROP_SIZE / 2)
+              applyZoomAt(parseFloat(e.target.value), cropSize / 2, cropSize / 2)
             }
             aria-label={t('characterSheet.cropZoom')}
           />

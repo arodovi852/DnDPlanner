@@ -2,6 +2,13 @@
 // Elements / Base
 // ============================================================================
 
+html,
+body {
+  // Evita el "rubber-band" en iOS y el scroll fantasma debajo del footer
+  // cuando la página entera entra dentro del viewport.
+  overscroll-behavior: none;
+}
+
 body {
   font-family: var(--font-family-base);
   font-size: var(--font-size-base);
@@ -9,6 +16,17 @@ body {
   color: var(--color-text-on-chrome);
   background-color: var(--color-background);
   -webkit-font-smoothing: antialiased;
+  margin: 0;
+}
+
+// Layout shell: garantiza que el footer es siempre el último elemento
+// visible. `min-height: 100dvh` (con fallback a 100vh) hace que cuando la
+// barra de direcciones del móvil cambia de tamaño no aparezca espacio
+// vacío debajo del footer. La regla vive aquí (no en App.tsx) para tener
+// el fallback `100vh` en navegadores antiguos.
+.app-shell {
+  min-height: 100vh;       // fallback
+  min-height: 100dvh;      // navegadores modernos
 }
 
 h1,
