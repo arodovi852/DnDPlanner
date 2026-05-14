@@ -31,7 +31,7 @@ type MapTool =
   | 'terrain'
   | 'enemy'
   | 'zoom'
-  | 'simplify';
+  | 'erase';
 
 type EntityCategory = 'character' | 'terrain' | 'enemy';
 
@@ -464,7 +464,9 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
     x: number,
     y: number
   ) => {
-    if (event.button === 2) {
+    if (event.button === 2 || (event.button === 0 && tool === 'erase')) {
+      // Right-click (desktop) o tool === 'erase' (móvil con tap izquierdo).
+      // En ambos casos arrancamos el gesto de borrado por arrastre.
       event.preventDefault();
       erasingRef.current = true;
       removeAt(x, y);
@@ -760,8 +762,8 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
           <ZoomIcon />
         </MapToolButton>
         {!readOnly && (
-          <MapToolButton current={tool} value="simplify" label={t('chapter.tools.simplify')} onSelect={handleToolChange}>
-            <NotesIcon />
+          <MapToolButton current={tool} value="erase" label={t('chapter.tools.erase')} onSelect={handleToolChange}>
+            <TrashIcon />
           </MapToolButton>
         )}
       </div>
@@ -1070,10 +1072,10 @@ function MoveIcon() {
   );
 }
 
-function NotesIcon() {
+function TrashIcon() {
   return (
     <svg viewBox="0 0 24 24" width="1.25rem" height="1.25rem" fill="currentColor" aria-hidden="true">
-      <path d="M6 2h9l5 5v15H6zm8 1v5h5zM8 12h8v2H8zm0 4h8v2H8z" />
+      <path d="M9 3h6l1 2h4v2H4V5h4zm-3 6h12l-1 12H7zm3 2v8h2v-8zm4 0v8h2v-8z" />
     </svg>
   );
 }

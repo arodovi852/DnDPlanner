@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Default enemy">
+  <defs>
+    <linearGradient id="eBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a1c1c"/>
+      <stop offset="100%" stop-color="#7a2a2a"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="12" fill="url(#eBg)"/>
+  <!-- Skull -->
+  <path d="M70 90 C 70 55, 170 55, 170 90 L 170 140 C 170 152, 158 158, 150 158 L 150 175 C 150 182, 144 188, 137 188 L 103 188 C 96 188, 90 182, 90 175 L 90 158 C 82 158, 70 152, 70 140 Z" fill="#ebe5d8"/>
+  <!-- Eye sockets -->
+  <ellipse cx="100" cy="120" rx="13" ry="16" fill="#1a0606"/>
+  <ellipse cx="140" cy="120" rx="13" ry="16" fill="#1a0606"/>
+  <!-- Glowing pupils -->
+  <circle cx="100" cy="124" r="4" fill="#ff6a3d"/>
+  <circle cx="140" cy="124" r="4" fill="#ff6a3d"/>
+  <!-- Nose -->
+  <path d="M120 130 L 113 150 L 127 150 Z" fill="#1a0606"/>
+  <!-- Teeth -->
+  <rect x="100" y="160" width="4" height="14" fill="#1a0606"/>
+  <rect x="110" y="160" width="4" height="14" fill="#1a0606"/>
+  <rect x="120" y="160" width="4" height="14" fill="#1a0606"/>
+  <rect x="130" y="160" width="4" height="14" fill="#1a0606"/>
+  <rect x="140" y="160" width="4" height="14" fill="#1a0606"/>
+</svg>

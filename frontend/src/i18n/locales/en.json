@@ -215,7 +215,7 @@
       "character": "Add character",
       "terrain": "Add terrain / object",
       "enemy": "Add enemy",
-      "simplify": "Simplify view"
+      "erase": "Erase (tap to delete)"
     },
     "eventTypes": {
       "Mission": "Mission",

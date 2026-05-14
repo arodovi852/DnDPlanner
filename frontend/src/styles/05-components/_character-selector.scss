@@ -43,26 +43,28 @@
 // al final, y que las tarjetas siempre tengan el mismo tamaño.
 .character-selector__grid {
   display: grid;
-  // `auto-fit` colapsa columnas vacías, así que las tarjetas siempre se
-  // estiran para llenar el ancho disponible sin huecos a la derecha.
-  // `minmax(14rem, 1fr)` casa con el tamaño nativo del CampaignCard.
-  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  // `auto-fill` reserva tracks vacíos manteniendo el tamaño de cada
+  // tarjeta fijo (no se estiran cuando hay pocos elementos). Esto
+  // garantiza que las primeras tarjetas queden alineadas a la
+  // izquierda sin estirarse al ocupar toda la fila.
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 14rem));
   gap: var(--space-xl);
   padding: var(--space-xl);
   overflow-y: auto;
   flex: 1;
   min-height: 0;
   align-content: start;
-  justify-items: center;
+  justify-content: start;
+  justify-items: start;
 }
 
 // Wrapper para que la tarjeta y el botón de borrado mantengan
 // posición relativa común. El botón flota en la esquina superior.
 .character-selector__card-wrapper {
   position: relative;
-  width: 100%;
+  width: 14rem;
   display: flex;
-  justify-content: center;
+  justify-content: flex-start;
 }
 
 .character-selector__delete {

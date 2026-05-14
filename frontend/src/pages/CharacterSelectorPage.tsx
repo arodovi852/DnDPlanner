@@ -9,18 +9,16 @@ import { useDndMonsters } from '../hooks/useDndMonsters';
 
 type TabKey = 'playable' | 'enemy';
 
-import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
-import destinosCruzadosHover from '../assets/campaigns/destinos-cruzados-hover.png';
-import campollano from '../assets/campaigns/campollano.png';
-import campollanoHover from '../assets/campaigns/campollano-hover.png';
-import guerra from '../assets/campaigns/guerra.png';
-import guerraHover from '../assets/campaigns/guerra-hover.png';
+import defaultPlayer from '../assets/characters/default-player.svg';
+import defaultEnemy from '../assets/characters/default-enemy.svg';
 
-const FALLBACK_IMAGES = [
-  { image: destinosCruzados, hoverImage: destinosCruzadosHover },
-  { image: campollano, hoverImage: campollanoHover },
-  { image: guerra, hoverImage: guerraHover },
-];
+// Imágenes por defecto según el tipo de personaje. Antes se reutilizaban
+// las imágenes de campañas como fallback, lo que era visualmente confuso
+// (un jugador podía aparecer con la portada de "Campollano").
+const DEFAULT_IMAGE: Record<'playable' | 'enemy', { image: string; hoverImage: string }> = {
+  playable: { image: defaultPlayer, hoverImage: defaultPlayer },
+  enemy: { image: defaultEnemy, hoverImage: defaultEnemy },
+};
 
 const ASSET_BASE = 'https://www.dnd5eapi.co';
 
@@ -190,9 +188,8 @@ export function CharacterSelectorPage() {
         <div className="chapter-page__canvas character-selector__canvas">
           <div className="character-selector__grid">
             {canEdit && <CreateCampaignCard onCreate={handleCreate} />}
-            {filtered.map((character, index) => {
-              const images =
-                FALLBACK_IMAGES[index % FALLBACK_IMAGES.length];
+            {filtered.map((character) => {
+              const images = DEFAULT_IMAGE[character.kind];
               return (
                 <div className="character-selector__card-wrapper" key={character.id}>
                   <CampaignCard

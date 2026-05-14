@@ -215,7 +215,7 @@
       "character": "Añadir personaje",
       "terrain": "Añadir relieve / objeto",
       "enemy": "Añadir enemigo",
-      "simplify": "Simplificar vista"
+      "erase": "Borrar (clic para eliminar)"
     },
     "eventTypes": {
       "Mission": "Misión",

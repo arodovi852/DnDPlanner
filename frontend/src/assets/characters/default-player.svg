@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 240" role="img" aria-label="Default player">
+  <defs>
+    <linearGradient id="pBg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#f4d4c1"/>
+      <stop offset="100%" stop-color="#d99a85"/>
+    </linearGradient>
+  </defs>
+  <rect width="240" height="240" rx="12" fill="url(#pBg)"/>
+  <!-- Hero silhouette: head + shoulders -->
+  <circle cx="120" cy="92" r="38" fill="#3b2820"/>
+  <path d="M50 220 C 50 165, 90 140, 120 140 C 150 140, 190 165, 190 220 Z" fill="#3b2820"/>
+  <!-- Sword across the back hint -->
+  <path d="M70 70 L 170 30 L 178 40 L 78 80 Z" fill="#bcbcbc" opacity="0.55"/>
+  <rect x="65" y="68" width="14" height="4" fill="#8b5a2b" opacity="0.75"/>
+</svg>
