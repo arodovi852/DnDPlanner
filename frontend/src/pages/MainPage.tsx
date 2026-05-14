@@ -86,7 +86,7 @@ export function MainPage() {
 
 function LoggedOutView({ onLogin }: { onLogin: () => void }) {
   const { t } = useTranslation();
-  const previewTemplates = TEMPLATES.slice(0, 3);
+  const previewTemplates = TEMPLATES.slice(0, 4);
 
   return (
     <div className="main-page">

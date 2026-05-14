@@ -141,10 +141,12 @@ export function CharacterSheetPage() {
   // ------------------------------------------------------------------
 
   const patch = (fields: Partial<Character>) => {
+    if (!canEdit) return;
     setDraft((prev) => (prev ? { ...prev, ...fields } : prev));
   };
 
   const patchStat = (key: keyof CharacterStats, value: number) => {
+    if (!canEdit) return;
     setDraft((prev) =>
       prev ? { ...prev, stats: { ...prev.stats, [key]: value } } : prev
     );
@@ -245,10 +247,20 @@ export function CharacterSheetPage() {
       : (classes.find((c) => c.name === draft.className)?.index ?? '');
 
   return (
-    <section className="character-sheet" aria-labelledby="character-sheet-heading">
+    <section
+      className={'character-sheet' + (canEdit ? '' : ' character-sheet--readonly')}
+      aria-labelledby="character-sheet-heading"
+      data-readonly={!canEdit ? 'true' : undefined}
+    >
       <h1 id="character-sheet-heading" className="visually-hidden">
         {t('characterSheet.character')}
       </h1>
+
+      {!canEdit && (
+        <p className="character-sheet__readonly-banner" role="note">
+          {t('characterSheet.readOnlyNotice')}
+        </p>
+      )}
 
       <div className="character-sheet__top">
         {/* Retrato: imagen + nombre + ✏︎ */}

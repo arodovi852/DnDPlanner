@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../shared/Button';
 import { Profile } from '../../shared/Profile';
@@ -18,17 +18,32 @@ export interface HeaderProps {
 /**
  * Cabecera principal.
  *
- * Muestra el logo a la izquierda (salvo que `hideLogo` sea true) y a
- * la derecha el botón Log In (o el componente Profile si el usuario
- * ya está autenticado) más el enlace a Templates.
+ * Layout:
+ *   · Desktop / tablet  → logo a la izquierda, nav inline a la derecha.
+ *   · Móvil (≤ 480px)   → logo a la izquierda, icono hamburguesa a la
+ *                         derecha que abre un panel desplegable con
+ *                         People / Templates / Profile / Log in.
+ *
+ * El panel se cierra automáticamente al navegar (cambio de ruta) para
+ * evitar que se quede abierto encima del contenido.
  */
 export function Header({ hideLogo = false, transparent = false }: HeaderProps) {
   const { t } = useTranslation();
   const { isAuthenticated, user } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
-  const className = transparent ? 'header header--transparent' : 'header';
+  // Cerrar el menú al cambiar de ruta.
+  useEffect(() => {
+    setMenuOpen(false);
+  }, [location.pathname]);
+
+  const className =
+    'header' +
+    (transparent ? ' header--transparent' : '') +
+    (menuOpen ? ' header--menu-open' : '');
 
   return (
     <>
@@ -41,16 +56,42 @@ export function Header({ hideLogo = false, transparent = false }: HeaderProps) {
           </Link>
         )}
 
-        <nav className="header__nav" aria-label={t('header.profile')}>
+        <button
+          type="button"
+          className="header__menu-toggle"
+          aria-label={t('header.menu')}
+          aria-expanded={menuOpen}
+          aria-controls="header-nav"
+          onClick={() => setMenuOpen((v) => !v)}
+        >
+          <span className="header__menu-toggle-bar" aria-hidden="true" />
+          <span className="header__menu-toggle-bar" aria-hidden="true" />
+          <span className="header__menu-toggle-bar" aria-hidden="true" />
+        </button>
+
+        <nav
+          id="header-nav"
+          className="header__nav"
+          aria-label={t('header.profile')}
+        >
           {isAuthenticated ? (
             <Profile
               name={user?.username ?? t('header.profile')}
               image={user?.avatar}
               active
-              onSelect={() => navigate('/profile')}
+              onSelect={() => {
+                setMenuOpen(false);
+                navigate('/profile');
+              }}
             />
           ) : (
-            <Button size="small" onClick={() => setModalOpen(true)}>
+            <Button
+              size="small"
+              onClick={() => {
+                setMenuOpen(false);
+                setModalOpen(true);
+              }}
+            >
               {t('header.logIn')}
             </Button>
           )}

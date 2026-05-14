@@ -225,15 +225,11 @@
 // MOBILE (≤ 480px) — punto intermedio
 // ----------------------------------------------------------------------------
 @media (max-width: 480px) {
-  // Header: el spacer se oculta, todo en una fila ajustada.
+  // Header: el spacer se oculta. La nav inline desaparece y el componente
+  // Header.tsx la sustituye por un panel desplegable controlado por el
+  // botón hamburguesa (ver _header.scss).
   .header__spacer {
     display: none;
-  }
-
-  .header__nav {
-    width: 100%;
-    justify-content: space-between;
-    gap: var(--space-sm);
   }
 
   .header__link {
@@ -382,5 +378,277 @@
     &-abilities {
       grid-template-columns: 1fr 1fr;
     }
+  }
+
+  // --------------------------------------------------------------------------
+  // 320–360px: ajustes específicos para pantallas muy estrechas (móviles
+  // pequeños). Aquí se centra prácticamente todo, se cambian las filas
+  // horizontales por scroll vertical y se reduce el tamaño de fuente para
+  // que el contenido quepa sin recortarse.
+  // --------------------------------------------------------------------------
+
+  // ----- MainPage --------------------------------------------------------
+  .main-page {
+    &__taglines {
+      font-size: var(--font-size-sm);
+    }
+
+    &__section-title {
+      font-size: var(--font-size-lg);
+    }
+
+    &__search-input {
+      max-width: 100%;
+      width: 100%;
+      font-size: var(--font-size-sm);
+      padding: var(--space-xs) var(--space-md);
+    }
+
+    // El "row" pasa a layout vertical en móvil pequeño para que el
+    // usuario pueda hacer scroll arriba/abajo en lugar de horizontal,
+    // que en 320px no funciona bien.
+    &__row {
+      flex-direction: column;
+      align-items: center;
+      overflow-x: visible;
+      overflow-y: auto;
+      max-height: 26rem;
+    }
+
+    &__section-header {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: var(--space-xs);
+    }
+  }
+
+  // ----- ProfilePage -----------------------------------------------------
+  // El layout `__top` deja de ser dos columnas y se apila vertical y
+  // centrado. La descripción aparece DEBAJO del avatar/nombre y ocupa
+  // el ancho disponible (~300px).
+  .profile-page {
+    text-align: center;
+
+    &__top {
+      grid-template-columns: 1fr;
+      justify-items: center;
+      gap: var(--space-md);
+    }
+
+    &__identity {
+      width: 100%;
+      align-items: center;
+      text-align: center;
+    }
+
+    &__name-row {
+      justify-content: center;
+    }
+
+    &__description {
+      width: 100%;
+      max-width: 100%;
+    }
+
+    // Sección de campañas: el header se apila (título arriba, controles
+    // debajo) y la fila se convierte en scroll vertical.
+    &__section-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-sm);
+    }
+
+    &__campaigns-controls {
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-sm);
+    }
+
+    &__campaigns-tabs {
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+
+    &__see-more {
+      align-self: center;
+      display: inline-block;
+    }
+
+    &__row {
+      flex-direction: column;
+      align-items: center;
+      overflow-x: visible;
+      overflow-y: auto;
+      max-height: 28rem;
+    }
+  }
+
+  // ----- ChapterOrCharacterPage (hub) -----------------------------------
+  // La toolbar pasa a estar arriba en flujo natural (no absoluto) para
+  // que no tape el contenido. Las tarjetas Chapters/Characters se apilan.
+  .chapter-or-character {
+    padding-top: var(--space-md);
+
+    &__toolbar {
+      position: static;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-xs);
+      padding: 0;
+      margin-bottom: var(--space-md);
+    }
+
+    &__toolbar-left,
+    &__toolbar-right {
+      width: 100%;
+      justify-content: center;
+    }
+
+    &__campaign-title {
+      text-align: center;
+    }
+
+    &__cards {
+      flex-direction: column;
+      gap: var(--space-md);
+    }
+
+    &__card {
+      flex: 1 1 auto;
+      width: 100%;
+      max-width: 100%;
+      aspect-ratio: 4 / 3;
+    }
+
+    &__delete-campaign {
+      // En móvil dejamos que el botón quede al final del flujo, debajo
+      // del último contenido, para no taparlo.
+      position: static;
+      align-self: center;
+      margin: var(--space-md) auto 0;
+    }
+  }
+
+  // ----- UsersPage -------------------------------------------------------
+  // El contenedor central nunca debe rebasar el viewport. Centramos y
+  // reducimos paddings horizontales para no recortar la columna interna.
+  .users-page {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: var(--space-sm) var(--space-xs);
+    text-align: center;
+
+    &__title {
+      font-size: var(--font-size-lg);
+    }
+
+    &__search {
+      width: 100%;
+      max-width: 100%;
+      font-size: var(--font-size-sm);
+    }
+
+    &__scroll {
+      max-width: 100%;
+    }
+
+    &__item {
+      max-width: 100%;
+      padding: 0.4rem 0.5rem;
+      gap: 0.5rem;
+    }
+
+    &__link {
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    &__name {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+  }
+
+  // ----- ChapterSelectorPage ---------------------------------------------
+  // Filas de capítulo más finas y con texto más pequeño.
+  .chapter-selector {
+    &__row {
+      gap: var(--space-xs);
+    }
+
+    // El TranslucidTextBox interno usa --font-size-lg; lo bajamos a -sm.
+    &__row-text > .translucid-text-box {
+      font-size: var(--font-size-sm);
+      line-height: 1.2;
+    }
+
+    &__delete {
+      width: 2rem;
+    }
+  }
+
+  // ----- CharacterSheetPage ---------------------------------------------
+  // Estrecha el panel y reduce el tamaño de las badges.
+  .character-sheet {
+    max-width: 100%;
+    padding: var(--space-sm) var(--space-xs);
+
+    &__top {
+      grid-template-columns: 1fr;
+    }
+
+    &__portrait {
+      max-width: 100%;
+      margin: 0 auto;
+    }
+
+    &__portrait-image {
+      max-width: 100%;
+    }
+
+    &__stats {
+      gap: 0.2rem;
+    }
+
+    &__combat {
+      gap: 0.2rem;
+    }
+
+    &__field-label,
+    &__field-input {
+      font-size: var(--font-size-sm);
+    }
+  }
+
+  // ----- CharacterSelectorPage ------------------------------------------
+  // Grid centrado + scroll vertical. La x se posiciona pegada al borde
+  // superior derecho del wrapper (que tiene el mismo ancho que la card).
+  .character-selector__grid {
+    grid-template-columns: minmax(0, 14rem);
+    justify-content: center;
+    justify-items: center;
+    padding: var(--space-md) var(--space-sm);
+  }
+
+  .character-selector__card-wrapper {
+    width: 100%;
+    max-width: 14rem;
+    justify-content: center;
+  }
+
+  .character-selector__delete {
+    // La papelera/× se alinea contra la esquina superior derecha de la
+    // tarjeta misma, no del wrapper completo.
+    top: -0.4rem;
+    right: -0.4rem;
+  }
+
+  // ----- ChapterPage (campaign nav) -------------------------------------
+  // El breadcrumb arriba puede romper en dos líneas si no cabe.
+  .chapter-page__campaign-nav {
+    flex-wrap: wrap;
+    font-size: var(--font-size-xs);
   }
 }

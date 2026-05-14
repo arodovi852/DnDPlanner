@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useRef, useState, type ChangeEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { MembersPanel } from '../components/shared/MembersPanel';
@@ -25,6 +25,20 @@ export function ChapterOrCharacterPage() {
   const [confirmingDelete, setConfirmingDelete] = useState(false);
   const [confirmingVisibility, setConfirmingVisibility] = useState(false);
   const renameInputRef = useRef<HTMLInputElement>(null);
+  const imageInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImagePick = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file || !activeCampaign) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result === 'string') {
+        updateCampaign(activeCampaign.id, { image: reader.result });
+      }
+    };
+    reader.readAsDataURL(file);
+  };
 
   const role = activeCampaign && user ? getRole(activeCampaign.id, user.id) : null;
   const isDm = role === 'dm' || role === 'co-dm';
@@ -115,15 +129,37 @@ export function ChapterOrCharacterPage() {
               )}
             </div>
           </div>
-          {canSeeMembers && (
-            <button
-              type="button"
-              className="chapter-or-character__members-button"
-              onClick={() => setMembersOpen(true)}
-            >
-              {t('members.title')} · {activeCampaign.members.length}
-            </button>
-          )}
+          <div className="chapter-or-character__toolbar-right">
+            {isDm && (
+              <>
+                <button
+                  type="button"
+                  className="chapter-or-character__image-button"
+                  onClick={() => imageInputRef.current?.click()}
+                  aria-label={t('profile.changeCampaignImage')}
+                  title={t('profile.changeCampaignImage')}
+                >
+                  🖼
+                </button>
+                <input
+                  ref={imageInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImagePick}
+                  style={{ display: 'none' }}
+                />
+              </>
+            )}
+            {canSeeMembers && (
+              <button
+                type="button"
+                className="chapter-or-character__members-button"
+                onClick={() => setMembersOpen(true)}
+              >
+                {t('members.title')} · {activeCampaign.members.length}
+              </button>
+            )}
+          </div>
         </div>
       )}
 

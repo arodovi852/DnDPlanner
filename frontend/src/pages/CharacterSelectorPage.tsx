@@ -42,34 +42,26 @@ export function CharacterSelectorPage() {
   const role =
     activeCampaign && user ? getRole(activeCampaign.id, user.id) : null;
   const canEdit = role === 'dm' || role === 'co-dm';
-  const isPlayer = role === 'player';
-
-  // Find the player's assigned character id (if any) — players can only see
-  // their own playable character and have no access to the enemy tab.
-  const playerCharacterId = useMemo(() => {
-    if (!isPlayer || !activeCampaign || !user) return null;
-    const me = activeCampaign.members.find((m) => m.userId === user.id);
-    return me?.characterId ?? null;
-  }, [isPlayer, activeCampaign, user]);
 
   const initialTab: TabKey =
-    searchParams.get('tab') === 'enemy' && !isPlayer ? 'enemy' : 'playable';
+    searchParams.get('tab') === 'enemy' ? 'enemy' : 'playable';
   const [tab, setTab] = useState<TabKey>(initialTab);
   const [search, setSearch] = useState('');
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
 
   const allCharacters = activeCampaign?.characters ?? [];
 
+  // Players see ALL characters and enemies (read-only); only DM/co-DM can
+  // create, delete or rename them, and only the assigned playable character
+  // is editable in CharacterSheetPage (gated there, not here).
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return allCharacters.filter((c) => {
       if (c.kind !== tab) return false;
-      // Player only sees their assigned character.
-      if (isPlayer && c.id !== playerCharacterId) return false;
       if (!query) return true;
       return c.name.toLowerCase().includes(query);
     });
-  }, [allCharacters, tab, search, isPlayer, playerCharacterId]);
+  }, [allCharacters, tab, search]);
 
   const apiSuggestions = useMemo(() => {
     if (tab !== 'enemy') return [];
@@ -164,24 +156,22 @@ export function CharacterSelectorPage() {
         >
           {t('characterSelector.playable')}
         </button>
-        {!isPlayer && (
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === 'enemy'}
-            className={
-              tab === 'enemy'
-                ? 'chapter-page__tab chapter-page__tab--active'
-                : 'chapter-page__tab'
-            }
-            onClick={() => {
-              setTab('enemy');
-              setSearch('');
-            }}
-          >
-            {t('characterSelector.enemies')}
-          </button>
-        )}
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === 'enemy'}
+          className={
+            tab === 'enemy'
+              ? 'chapter-page__tab chapter-page__tab--active'
+              : 'chapter-page__tab'
+          }
+          onClick={() => {
+            setTab('enemy');
+            setSearch('');
+          }}
+        >
+          {t('characterSelector.enemies')}
+        </button>
       </div>
 
       <div className="chapter-page__folder character-selector__folder" role="tabpanel">

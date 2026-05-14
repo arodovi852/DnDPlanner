@@ -21,6 +21,31 @@
   padding: var(--space-xl) clamp(1rem, 3vw, 2rem);
   color: var(--color-text-on-chrome);
 
+  // Vista de solo lectura para miembros que no son DM ni el jugador
+  // asignado a este personaje. Visualmente damos pistas (cursor, opacidad
+  // sobre inputs) además de bloquear los setters en TS.
+  &--readonly {
+    input,
+    select,
+    textarea {
+      pointer-events: none;
+      cursor: default;
+      opacity: 0.85;
+    }
+  }
+
+  &__readonly-banner {
+    margin: 0;
+    padding: var(--space-sm) var(--space-md);
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background-color: var(--color-textbox-dark);
+    color: var(--color-text-inverse);
+    font-family: var(--font-family-base);
+    font-size: var(--font-size-sm);
+    text-align: center;
+  }
+
   // Quitamos los botones nativos de incremento/decremento (spinners) que
   // los navegadores añaden a `<input type="number">`. Estos botones roban
   // ~16px de ancho horizontal y por eso los valores de stats parecían

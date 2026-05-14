@@ -22,7 +22,8 @@
     "logIn": "Log In",
     "templates": "Templates",
     "profile": "Profile",
-    "people": "People"
+    "people": "People",
+    "menu": "Menu"
   },
   "footer": {
     "about": "About",
@@ -79,6 +80,7 @@
     "changeImage": "Change image",
     "changeAvatar": "Change profile photo",
     "renameCampaign": "Campaign name",
+    "changeCampaignImage": "Change campaign image",
     "logout": "Log out",
     "makePublic": "Make public",
     "makePrivate": "Make private",
@@ -156,6 +158,7 @@
   },
   "characterSheet": {
     "character": "Character",
+    "readOnlyNotice": "Read-only. Only the DM or the assigned player can modify this character.",
     "changeImage": "Change image",
     "cropTitle": "Crop image",
     "cropHint": "Drag to reposition and use the wheel or the slider to zoom.",

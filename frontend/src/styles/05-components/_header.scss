@@ -1,5 +1,10 @@
 // ============================================================================
 // Components / Header
+// ----------------------------------------------------------------------------
+// Layout escala desde escritorio (todo inline) hasta móvil (logo + botón
+// hamburguesa que despliega un panel `__nav` debajo). El panel se
+// posiciona como un dropdown absoluto en móvil para no empujar el resto
+// del contenido al abrirse.
 // ============================================================================
 
 .header {
@@ -10,6 +15,7 @@
   background-color: var(--color-chrome);
   color: var(--color-text-on-chrome);
   border-radius: var(--radius-md);
+  position: relative;
 
   // Variante transparente: sin fondo propio, se funde con la página.
   &--transparent {
@@ -51,6 +57,96 @@
     &:hover,
     &:focus-visible {
       color: var(--color-primary);
+    }
+  }
+
+  // Botón hamburguesa: solo se muestra en móvil. Tres barras horizontales
+  // sin librerías. Cuando el menú está abierto las barras forman una X.
+  &__menu-toggle {
+    display: none;
+    width: 2.4rem;
+    height: 2.4rem;
+    padding: 0.5rem;
+    background: transparent;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: stretch;
+
+    &:hover,
+    &:focus-visible {
+      border-color: var(--color-primary);
+    }
+  }
+
+  &__menu-toggle-bar {
+    display: block;
+    height: 2px;
+    background-color: var(--color-text-on-chrome);
+    border-radius: 1px;
+    transition: transform 0.2s, opacity 0.2s;
+  }
+}
+
+// ----------------------------------------------------------------------------
+// Mobile: hamburger menu (≤ 480px). The nav becomes a dropdown panel
+// anchored to the right edge of the header.
+// ----------------------------------------------------------------------------
+@media (max-width: 480px) {
+  .header {
+    flex-wrap: nowrap;
+    padding: var(--space-sm) var(--space-md);
+
+    &__menu-toggle {
+      display: flex;
+    }
+
+    &__nav {
+      display: none;
+      position: absolute;
+      top: 100%;
+      right: 0.5rem;
+      margin-top: 0.4rem;
+      flex-direction: column;
+      align-items: stretch;
+      gap: var(--space-sm);
+      padding: var(--space-md);
+      background-color: var(--color-chrome);
+      border: 2px solid var(--color-border);
+      border-radius: var(--radius-md);
+      box-shadow: 0 8px 20px var(--color-shadow);
+      z-index: 50;
+      min-width: 11rem;
+    }
+  }
+
+  // Abierto: el nav se hace visible y las barras forman X.
+  .header--menu-open {
+    .header__nav {
+      display: flex;
+    }
+
+    .header__menu-toggle-bar:nth-child(1) {
+      transform: translateY(0.5rem) rotate(45deg);
+    }
+    .header__menu-toggle-bar:nth-child(2) {
+      opacity: 0;
+    }
+    .header__menu-toggle-bar:nth-child(3) {
+      transform: translateY(-0.5rem) rotate(-45deg);
+    }
+  }
+
+  // En el panel desplegado los links se alinean en columna.
+  .header__link {
+    padding: var(--space-xs) var(--space-sm);
+    border-radius: var(--radius-sm);
+
+    &:hover,
+    &:focus-visible {
+      background-color: var(--color-textbox-dark-hover);
     }
   }
 }

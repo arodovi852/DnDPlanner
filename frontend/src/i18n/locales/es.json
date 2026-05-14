@@ -22,7 +22,8 @@
     "logIn": "Iniciar sesión",
     "templates": "Plantillas",
     "profile": "Perfil",
-    "people": "Personas"
+    "people": "Personas",
+    "menu": "Menú"
   },
   "footer": {
     "about": "Sobre nosotros",
@@ -79,6 +80,7 @@
     "changeImage": "Cambiar imagen",
     "changeAvatar": "Cambiar foto de perfil",
     "renameCampaign": "Nombre de la campaña",
+    "changeCampaignImage": "Cambiar imagen de la campaña",
     "logout": "Cerrar sesión",
     "makePublic": "Hacer pública",
     "makePrivate": "Hacer privada",
@@ -156,6 +158,7 @@
   },
   "characterSheet": {
     "character": "Personaje",
+    "readOnlyNotice": "Solo lectura. Solo el DM o el jugador asignado pueden modificar este personaje.",
     "changeImage": "Cambiar imagen",
     "cropTitle": "Recortar imagen",
     "cropHint": "Arrastra para reposicionar y usa la rueda o el deslizador para hacer zoom.",
