@@ -1,0 +1,100 @@
+name: CI
+
+# Workflow de integración continua.
+#
+# Lanza dos jobs en paralelo:
+#   · backend  → instala dependencias, corre el linter y ejecuta los tests
+#                de Jest contra `mongodb-memory-server` (no necesita BBDD real).
+#   · frontend → instala dependencias y ejecuta `npm run build`, que también
+#                pasa el comprobador de tipos de TypeScript.
+#
+# Disparado en cada push a main y en cada Pull Request, para garantizar que
+# main siempre está en estado verde.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  backend:
+    name: Backend · lint + tests
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Run tests
+        run: npm test
+        env:
+          # Estos valores los toman los tests, no se usan en producción.
+          NODE_ENV: test
+          JWT_SECRET: ci-test-jwt-secret-not-for-production
+          JWT_REFRESH_SECRET: ci-test-jwt-refresh-secret-not-for-production
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          if-no-files-found: ignore
+
+  frontend:
+    name: Frontend · typecheck + tests + build
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: frontend
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests (Vitest + Testing Library)
+        run: npm run test:coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: frontend/coverage/
+          if-no-files-found: ignore
+
+      - name: Build (typecheck + bundle)
+        run: npm run build
+        env:
+          VITE_API_URL: https://example.invalid/api
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-dist
+          path: frontend/dist/
