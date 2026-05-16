@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type ChangeEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type ChangeEvent } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Profile } from '../components/shared/Profile';
@@ -95,6 +95,40 @@ export function ProfilePage() {
 
   const displayName = user?.username ?? 'User';
   const description = user?.description ?? DEFAULT_DESCRIPTION;
+
+  // Drafts locales para los campos de texto editables. Persisten al backend
+  // solo en `onBlur` (no en cada keystroke) para evitar:
+  //   1. Una petición HTTP por cada letra escrita.
+  //   2. Letras que "desaparecen" cuando la respuesta del servidor sobrescribe
+  //      el estado mientras el usuario aún está escribiendo.
+  // Se sincronizan con el valor del servidor cada vez que cambia (al entrar
+  // en modo edición o tras un guardado).
+  const [usernameDraft, setUsernameDraft] = useState(displayName);
+  const [descriptionDraft, setDescriptionDraft] = useState(description);
+
+  useEffect(() => {
+    setUsernameDraft(displayName);
+  }, [displayName]);
+
+  useEffect(() => {
+    setDescriptionDraft(description);
+  }, [description]);
+
+  const commitUsername = () => {
+    const trimmed = usernameDraft.trim();
+    if (!trimmed || trimmed === displayName) return;
+    updateUser({ username: trimmed }).catch(() => {
+      // Si falla, devolvemos el draft al valor del servidor.
+      setUsernameDraft(displayName);
+    });
+  };
+
+  const commitDescription = () => {
+    if (descriptionDraft === description) return;
+    updateUser({ description: descriptionDraft }).catch(() => {
+      setDescriptionDraft(description);
+    });
+  };
 
   // Solo las campañas donde el usuario es miembro (dueño o en members[]).
   const myCampaigns = useMemo(() => {
@@ -287,8 +321,9 @@ export function ProfilePage() {
             {editing ? (
               <input
                 className="profile-page__name-input"
-                value={displayName}
-                onChange={(e) => updateUser({ username: e.target.value })}
+                value={usernameDraft}
+                onChange={(e) => setUsernameDraft(e.target.value)}
+                onBlur={commitUsername}
                 aria-label={t('profile.namePlaceholder')}
               />
             ) : (
@@ -447,8 +482,9 @@ export function ProfilePage() {
           {editing ? (
             <textarea
               className="profile-page__description-input"
-              value={description}
-              onChange={(e) => updateUser({ description: e.target.value })}
+              value={descriptionDraft}
+              onChange={(e) => setDescriptionDraft(e.target.value)}
+              onBlur={commitDescription}
               rows={4}
               aria-label={t('profile.descriptionPlaceholder')}
             />

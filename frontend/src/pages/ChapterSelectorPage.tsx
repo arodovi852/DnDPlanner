@@ -12,7 +12,9 @@ import { TextBox } from '../components/shared/TextBox';
 import { TranslucidTextBox } from '../components/shared/TranslucidTextBox';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useCampaigns, type Chapter } from '../context/CampaignContext';
+import { useAuth } from '../context/AuthContext';
 import { useUndoableState } from '../hooks/useUndoableState';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 /**
  * Página /chapterSelector.
@@ -34,9 +36,18 @@ import { useUndoableState } from '../hooks/useUndoableState';
  * deshacer. Cualquier cambio de lista se propaga al contexto.
  */
 export function ChapterSelectorPage() {
+  usePageTitle('Capítulos');
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { activeCampaign, updateCampaign } = useCampaigns();
+  const { activeCampaign, updateCampaign, getRole } = useCampaigns();
+  const { user } = useAuth();
+
+  // Solo DM y Co-DM pueden crear, renombrar o eliminar capítulos.
+  // Los jugadores tienen el listado en solo lectura (siguen pudiendo abrir
+  // un capítulo para verlo). Sin sesión iniciada (modo Testing local) se
+  // permite editar — la app actúa como dueño implícito de la campaña.
+  const role = activeCampaign && user ? getRole(activeCampaign.id, user.id) : null;
+  const canEdit = !user || role === 'dm' || role === 'co-dm';
 
   const seedChapters: Chapter[] = activeCampaign?.chapters ?? [];
 
@@ -86,6 +97,7 @@ export function ChapterSelectorPage() {
   // ------------------------------------------------------------------
 
   const handleAdd = () => {
+    if (!canEdit) return;
     const newChapter: Chapter = {
       id: `chapter-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: '',
@@ -98,6 +110,7 @@ export function ChapterSelectorPage() {
   };
 
   const startEdit = (chapter: Chapter) => {
+    if (!canEdit) return;
     setEditingId(chapter.id);
     setEditingValue(chapter.title);
   };
@@ -144,6 +157,7 @@ export function ChapterSelectorPage() {
 
   const handleRequestDelete = (event: MouseEvent, id: string) => {
     event.stopPropagation();
+    if (!canEdit) return;
     setPendingDeleteId(id);
   };
 
@@ -213,15 +227,17 @@ export function ChapterSelectorPage() {
         </button>
       </nav>
 
-      <div className="chapter-selector__add">
-        <Button
-          aria-label={t('chapterSelector.addChapter')}
-          onClick={handleAdd}
-          className="chapter-selector__add-button"
-        >
-          +
-        </Button>
-      </div>
+      {canEdit && (
+        <div className="chapter-selector__add">
+          <Button
+            aria-label={t('chapterSelector.addChapter')}
+            onClick={handleAdd}
+            className="chapter-selector__add-button"
+          >
+            +
+          </Button>
+        </div>
+      )}
 
       <div className="chapter-selector__list-wrapper">
         <TextBox>
@@ -261,23 +277,27 @@ export function ChapterSelectorPage() {
                         )}
                       </div>
 
-                      <button
-                        type="button"
-                        className="chapter-selector__edit"
-                        aria-label={t('chapterSelector.editName')}
-                        onClick={(e) => handleEditIconClick(e, chapter)}
-                      >
-                        <PencilIcon />
-                      </button>
+                      {canEdit && (
+                        <>
+                          <button
+                            type="button"
+                            className="chapter-selector__edit"
+                            aria-label={t('chapterSelector.editName')}
+                            onClick={(e) => handleEditIconClick(e, chapter)}
+                          >
+                            <PencilIcon />
+                          </button>
 
-                      <button
-                        type="button"
-                        className="chapter-selector__delete"
-                        aria-label={`${t('common.delete')} ${chapter.title}`}
-                        onClick={(e) => handleRequestDelete(e, chapter.id)}
-                      >
-                        <TrashIcon />
-                      </button>
+                          <button
+                            type="button"
+                            className="chapter-selector__delete"
+                            aria-label={`${t('common.delete')} ${chapter.title}`}
+                            onClick={(e) => handleRequestDelete(e, chapter.id)}
+                          >
+                            <TrashIcon />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </li>
                 );

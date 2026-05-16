@@ -260,6 +260,34 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
   const [tool, setTool] = useState<MapTool>('select');
   const [selectedOption, setSelectedOption] = useState<string>('');
   const [query, setQuery] = useState('');
+  // Controla la visibilidad del picker independientemente de la herramienta.
+  // Se abre al cambiar a una herramienta de placement y se cierra al elegir
+  // una opción, dejando la herramienta activa con la opción ya seleccionada.
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Fondo decorativo del mapa (grass / stonefloor / none). Se guarda en
+  // localStorage por capítulo: es una preferencia visual del DM, no algo
+  // que deba compartirse con el resto de la campaña.
+  type MapBackground = 'none' | 'grass' | 'stonefloor';
+  const backgroundStorageKey = chapterId ? `mapBackground:${chapterId}` : null;
+  const [background, setBackground] = useState<MapBackground>(() => {
+    if (!backgroundStorageKey) return 'none';
+    const stored = localStorage.getItem(backgroundStorageKey);
+    return stored === 'grass' || stored === 'stonefloor' ? stored : 'none';
+  });
+  useEffect(() => {
+    if (!backgroundStorageKey) return;
+    const stored = localStorage.getItem(backgroundStorageKey);
+    setBackground(
+      stored === 'grass' || stored === 'stonefloor' ? stored : 'none'
+    );
+  }, [backgroundStorageKey]);
+  const changeBackground = (next: MapBackground) => {
+    setBackground(next);
+    if (backgroundStorageKey) {
+      localStorage.setItem(backgroundStorageKey, next);
+    }
+  };
 
   const [zoom, setZoom] = useState(1);
   const zoomRef = useRef(zoom);
@@ -350,16 +378,27 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
   };
 
   const handleToolChange = (nextTool: MapTool) => {
+    // Si el usuario vuelve a pulsar el botón de la herramienta activa con
+    // una opción ya elegida, reabrimos el picker para permitir cambiarla.
+    if (nextTool === tool && isPlacementTool(nextTool)) {
+      setPickerOpen(true);
+      return;
+    }
     setTool(nextTool);
     setQuery('');
     setStatsPopup(null);
     setSelectedCellKey(null);
     if (nextTool === 'character') {
       setSelectedOption(characterOptions[0]?.value ?? '');
+      setPickerOpen(true);
     } else if (nextTool === 'terrain') {
       setSelectedOption(TERRAIN_OPTIONS[0].value);
+      setPickerOpen(true);
     } else if (nextTool === 'enemy') {
       setSelectedOption(enemyOptions[0]?.value ?? '');
+      setPickerOpen(true);
+    } else {
+      setPickerOpen(false);
     }
   };
 
@@ -430,6 +469,27 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
     paintingRef.current = false;
     erasingRef.current = false;
   };
+
+  // Listener global de pointerup / pointercancel: garantiza que un gesto de
+  // pintado/borrado termine aunque el usuario suelte el botón fuera del
+  // viewport (sobre el menú flotante, fuera de la ventana, etc.). Sin esto,
+  // soltar fuera dejaba `paintingRef.current = true` y la app pintaba en cada
+  // celda que el cursor tocara después hasta el siguiente click.
+  useEffect(() => {
+    const stopPainting = () => {
+      paintingRef.current = false;
+      erasingRef.current = false;
+      viewportDragRef.current = null;
+    };
+    window.addEventListener('pointerup', stopPainting);
+    window.addEventListener('pointercancel', stopPainting);
+    window.addEventListener('blur', stopPainting);
+    return () => {
+      window.removeEventListener('pointerup', stopPainting);
+      window.removeEventListener('pointercancel', stopPainting);
+      window.removeEventListener('blur', stopPainting);
+    };
+  }, []);
 
   // Native non-passive wheel listener so preventDefault() actually works.
   // React's onWheel is passive in some environments and can't stop page scroll.
@@ -534,7 +594,7 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
   // ------------------------------------------------------------------
 
   const showPicker =
-    tool === 'character' || tool === 'terrain' || tool === 'enemy';
+    pickerOpen && (tool === 'character' || tool === 'terrain' || tool === 'enemy');
   const pickerList = showPicker
     ? pickOptions(tool as EntityCategory, {
         character: characterOptions,
@@ -598,6 +658,20 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
             }
           />
         </label>
+        {!readOnly && (
+          <label className="map-canvas__dim">
+            {t('chapter.mapBackground')}
+            <select
+              value={background}
+              onChange={(e) => changeBackground(e.target.value as MapBackground)}
+              aria-label={t('chapter.mapBackground')}
+            >
+              <option value="none">{t('chapter.mapBackgroundNone')}</option>
+              <option value="grass">{t('chapter.mapBackgroundGrass')}</option>
+              <option value="stonefloor">{t('chapter.mapBackgroundStone')}</option>
+            </select>
+          </label>
+        )}
         {selectedCellKey && tool === 'select' && (
           <button
             type="button"
@@ -619,7 +693,7 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
         onContextMenu={(e) => e.preventDefault()}
       >
         <div
-          className="map-canvas__grid"
+          className={`map-canvas__grid map-canvas__grid--bg-${background}`}
           style={{
             gridTemplateColumns: `repeat(${cols}, ${CELL_SIZE_PX}px)`,
             gridTemplateRows: `repeat(${rows}, ${CELL_SIZE_PX}px)`,
@@ -700,7 +774,10 @@ export function MapCanvas({ readOnly = false }: MapCanvasProps = {}) {
                         ? 'map-canvas__picker-item map-canvas__picker-item--active'
                         : 'map-canvas__picker-item'
                     }
-                    onClick={() => setSelectedOption(option.value)}
+                    onClick={() => {
+                      setSelectedOption(option.value);
+                      setPickerOpen(false);
+                    }}
                   >
                     <span className="map-canvas__picker-label">{option.label}</span>
                     {option.image ? (
@@ -837,13 +914,34 @@ function EntityGlyph({ entity }: { entity: ResolvedEntity }) {
     return <span className="map-canvas__glyph map-canvas__glyph--boundary" aria-hidden="true" />;
   }
   if (entity.subtype === 'wall') {
-    return <span className="map-canvas__glyph map-canvas__glyph--wall" aria-hidden="true" />;
+    return (
+      <img
+        src="/sprites/pillar.png"
+        alt=""
+        className="map-canvas__glyph map-canvas__glyph--sprite"
+        aria-hidden="true"
+      />
+    );
   }
   if (entity.subtype === 'object') {
-    return <span className="map-canvas__glyph map-canvas__glyph--object" aria-hidden="true">★</span>;
+    return (
+      <img
+        src="/sprites/bag.png"
+        alt=""
+        className="map-canvas__glyph map-canvas__glyph--sprite"
+        aria-hidden="true"
+      />
+    );
   }
   if (entity.subtype === 'trap') {
-    return <span className="map-canvas__glyph map-canvas__glyph--trap" aria-hidden="true">✕</span>;
+    return (
+      <img
+        src="/sprites/trap.png"
+        alt=""
+        className="map-canvas__glyph map-canvas__glyph--sprite"
+        aria-hidden="true"
+      />
+    );
   }
   return null;
 }

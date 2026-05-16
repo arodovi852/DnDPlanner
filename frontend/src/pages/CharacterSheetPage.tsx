@@ -209,7 +209,12 @@ export function CharacterSheetPage() {
   const handleSave = () => {
     if (!activeCampaign || !draft) return;
     updateCharacter(activeCampaign.id, draft.id, draft);
-    navigate(-1);
+    // Volvemos al selector con el tab correspondiente al tipo de personaje
+    // recién editado. Antes usábamos `navigate(-1)`, lo que devolvía al usuario
+    // a la pestaña que tuviera abierta el historial — típicamente "jugables"
+    // aunque acabara de guardar un enemigo, rompiendo el flujo.
+    const targetTab = draft.kind === 'enemy' ? '?tab=enemy' : '';
+    navigate(`/characterSelector${targetTab}`);
   };
 
   const handleImagePick = (event: ChangeEvent<HTMLInputElement>) => {

@@ -93,11 +93,15 @@
 
   // Single horizontal row of campaign cards with right-side scroll. Used for
   // the "Your campaigns" section on /main — the full list lives at /campaigns.
+  //
+  // Padding lateral generoso para que el `transform: scale(1.06)` del hover de
+  // las cards (especialmente la primera y la última) no quede recortado por
+  // el clipping que impone `overflow-x: auto`.
   &__row {
     display: flex;
     flex-wrap: nowrap;
     gap: clamp(1.5rem, 4vw, 3rem);
-    padding: var(--space-md) var(--space-xs);
+    padding: var(--space-lg) var(--space-xl);
     overflow-x: auto;
     overflow-y: visible;
     scroll-snap-type: x proximity;
@@ -112,6 +116,13 @@
     &:focus-visible {
       outline: 3px solid var(--color-focus-ring);
       outline-offset: 2px;
+    }
+
+    // Variante: cuando hay pocas tarjetas (≤4 incluyendo el botón +),
+    // todas caben sin scroll. En ese caso centramos visualmente la fila
+    // en lugar de pegarla a la izquierda, que se ve descompensada.
+    &--centered {
+      justify-content: center;
     }
   }
 

@@ -18,6 +18,12 @@
   box-shadow: 0 4px 10px var(--color-shadow);
   transition: background-color var(--transition-base);
 
+  // Preserva los saltos de línea que el usuario haya introducido en el texto
+  // (por ejemplo, en la descripción del perfil). `pre-wrap` mantiene `\n` y
+  // a la vez permite que las líneas largas hagan wrap natural.
+  white-space: pre-wrap;
+  word-break: break-word;
+
   // El texto siempre al 100% de opacidad — solo cambia el fondo.
   &__content {
     opacity: 1;

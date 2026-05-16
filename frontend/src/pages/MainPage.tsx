@@ -211,7 +211,13 @@ function LoggedInView() {
           )}
         </div>
 
-        <div className="main-page__row" role="list">
+        <div
+          className={
+            'main-page__row' +
+            (myCampaigns.length <= 4 ? ' main-page__row--centered' : '')
+          }
+          role="list"
+        >
           <CreateCampaignCard onCreate={handleCreateCampaign} />
           {myCampaigns.map((campaign) => {
             const role = user ? getRole(campaign.id, user.id) : null;

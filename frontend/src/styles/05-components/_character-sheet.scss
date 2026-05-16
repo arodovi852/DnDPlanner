@@ -307,6 +307,10 @@
     display: flex;
     flex-direction: column;
     gap: 0.2rem;
+    // `min-width: 0` evita que los hijos con tamaño intrínseco (como un
+    // <input>) fuercen al campo a crecer más allá de su celda del grid
+    // padre, lo que escondería el botón "cancel" del modo homebrew.
+    min-width: 0;
   }
 
   &__field-label {
@@ -319,6 +323,8 @@
   }
 
   &__field-input {
+    width: 100%;
+    min-width: 0;
     padding: 0.3rem 0.6rem;
     border: 2px solid var(--color-border);
     border-radius: var(--radius-md);
@@ -326,6 +332,9 @@
     color: var(--color-text);
     font-family: var(--font-family-base);
     font-size: var(--font-size-sm);
+    // Sin esto, los <input> heredan `box-sizing: content-box` y el padding
+    // se suma al 100% del ancho, sobresaliendo del contenedor.
+    box-sizing: border-box;
 
     &:focus-visible {
       outline: 2px solid var(--color-focus-ring);
@@ -335,8 +344,10 @@
 
   &__homebrew-row {
     display: grid;
-    grid-template-columns: 1fr auto;
+    grid-template-columns: minmax(0, 1fr) auto;
     gap: 0.3rem;
+    width: 100%;
+    min-width: 0;
   }
 
   &__homebrew-cancel {
