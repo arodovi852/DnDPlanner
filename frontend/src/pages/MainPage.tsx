@@ -9,6 +9,7 @@ import { CampaignCard, CreateCampaignCard } from '../components/shared/CampaignC
 import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useCampaigns, CAMPAIGN_TEMPLATES, type Campaign } from '../context/CampaignContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 // Campañas de ejemplo (templates oficiales).
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
@@ -66,6 +67,7 @@ const TEMPLATES: TemplatePreview[] = [
  * al seleccionarlas se clonen como campaña editable del usuario.
  */
 export function MainPage() {
+  usePageTitle('Inicio');
   const { isAuthenticated } = useAuth();
   const [modalOpen, setModalOpen] = useState(false);
 

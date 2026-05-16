@@ -1,5 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '../components/shared/Button';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 /**
  * Página /creatorSelector.
@@ -12,6 +13,7 @@ import { Button } from '../components/shared/Button';
  * En sprints futuros se añadirán también botones para NPCs, mapas, etc.
  */
 export function CreatorSelectorPage() {
+  usePageTitle('Crear');
   const navigate = useNavigate();
 
   return (

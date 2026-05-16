@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '../../components/shared/Button';
 import { InfoPage } from '../InfoPage';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 /**
  * /contact — además del bloque informativo común, incluye un formulario
@@ -9,6 +10,7 @@ import { InfoPage } from '../InfoPage';
  * y muestra un mensaje de confirmación al usuario.
  */
 export function ContactPage() {
+  usePageTitle('Contacto');
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');

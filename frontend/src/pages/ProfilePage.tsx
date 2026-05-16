@@ -7,6 +7,7 @@ import { CampaignCard } from '../components/shared/CampaignCard';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useCampaigns, type Campaign } from '../context/CampaignContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 type SecuritySection = 'none' | 'email' | 'password';
 
@@ -63,6 +64,7 @@ function imagesForCampaign(campaign: Campaign): CampaignImages {
  *     usuario en cada campaña.
  */
 export function ProfilePage() {
+  usePageTitle('Mi perfil');
   const { t } = useTranslation();
   const { user, updateUser, changePassword, logout } = useAuth();
   const {

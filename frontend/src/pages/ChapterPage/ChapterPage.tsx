@@ -6,6 +6,7 @@ import { MapCanvas } from './MapCanvas';
 import { AnnotationThread } from '../../components/shared/AnnotationThread';
 import { useCampaigns } from '../../context/CampaignContext';
 import { useAuth } from '../../context/AuthContext';
+import { usePageTitle } from '../../hooks/usePageTitle';
 
 type TabKey = 'events' | 'map';
 
@@ -22,6 +23,7 @@ type TabKey = 'events' | 'map';
  * negative margin para crear la ilusión de carpeta.
  */
 export function ChapterPage() {
+  usePageTitle('Capítulo');
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { chapterId } = useParams<{ chapterId: string }>();

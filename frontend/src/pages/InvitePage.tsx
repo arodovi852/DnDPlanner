@@ -5,6 +5,7 @@ import { Button } from '../components/shared/Button';
 import { AuthModal } from '../components/shared/AuthModal';
 import { useAuth } from '../context/AuthContext';
 import { useCampaigns } from '../context/CampaignContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 /**
  * /invite/:token — pantalla de aceptación de invitación a campaña.
@@ -18,6 +19,7 @@ import { useCampaigns } from '../context/CampaignContext';
  *     navega a /chapterOrCharacter.
  */
 export function InvitePage() {
+  usePageTitle('Invitación');
   const { t } = useTranslation();
   const { token = '' } = useParams<{ token: string }>();
   const navigate = useNavigate();

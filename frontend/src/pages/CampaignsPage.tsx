@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { CampaignCard } from '../components/shared/CampaignCard';
 import { useCampaigns } from '../context/CampaignContext';
 import { useAuth } from '../context/AuthContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
 import destinosCruzadosHover from '../assets/campaigns/destinos-cruzados-hover.png';
@@ -27,6 +28,7 @@ const TEMPLATE_IMAGES: Record<string, { image: string; hoverImage: string }> = {
  * tiene más de 8 campañas. Cada tarjeta es un `CampaignCard`.
  */
 export function CampaignsPage() {
+  usePageTitle('Mis campañas');
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /socket.io/
+Disallow: /invite/
+Disallow: /chapter/
+Disallow: /character/
+Disallow: /profile
+
+Sitemap: https://www.dndplanner.me/sitemap.xml

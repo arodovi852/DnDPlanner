@@ -33,10 +33,19 @@ i18n.use(initReactI18next).init({
   interpolation: { escapeValue: false },
 });
 
+function syncDocumentLang(lng: string): void {
+  if (typeof document !== 'undefined') {
+    document.documentElement.lang = lng;
+  }
+}
+
+syncDocumentLang(initialLang);
+
 i18n.on('languageChanged', (lng) => {
   if (typeof window !== 'undefined') {
     window.localStorage.setItem(STORAGE_KEY, lng);
   }
+  syncDocumentLang(lng);
 });
 
 export default i18n;

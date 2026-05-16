@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { CampaignCard, CreateCampaignCard } from '../components/shared/CampaignCard';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useDndMonsters } from '../hooks/useDndMonsters';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 type TabKey = 'playable' | 'enemy';
 
@@ -31,6 +32,7 @@ const ASSET_BASE = 'https://www.dnd5eapi.co';
  * sugerencia se crea un personaje pre-rellenado con sus datos.
  */
 export function CharacterSelectorPage() {
+  usePageTitle('Personajes');
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { activeCampaign, addCharacter, updateCharacter, deleteCharacter, getRole } =

@@ -11,6 +11,7 @@ import { useUsers } from '../context/UsersContext';
 import { campaignsApi } from '../api';
 import { CampaignCard } from '../components/shared/CampaignCard';
 import { Button } from '../components/shared/Button';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
 import destinosCruzadosHover from '../assets/campaigns/destinos-cruzados-hover.png';
@@ -54,6 +55,7 @@ function imagesForCampaign(campaign: Campaign) {
  *   · Unirse como `player`.
  */
 export function TemplatesPage() {
+  usePageTitle('Plantillas');
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();

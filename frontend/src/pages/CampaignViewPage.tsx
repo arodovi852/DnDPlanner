@@ -5,6 +5,7 @@ import { Button } from '../components/shared/Button';
 import { useAuth } from '../context/AuthContext';
 import { useCampaigns } from '../context/CampaignContext';
 import { useUsers } from '../context/UsersContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
 import campollano from '../assets/campaigns/campollano.png';
@@ -34,6 +35,7 @@ const ROLE_KEYS: Record<string, string> = {
  *   - CTA para unirse si la campaña tiene shareToken.
  */
 export function CampaignViewPage() {
+  usePageTitle('Campaña pública');
   const { t } = useTranslation();
   const { viewToken = '' } = useParams<{ viewToken: string }>();
   const navigate = useNavigate();

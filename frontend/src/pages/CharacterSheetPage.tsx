@@ -24,6 +24,7 @@ import { useAuth } from '../context/AuthContext';
 import { useUndoableState } from '../hooks/useUndoableState';
 import { useDndClasses } from '../hooks/useDndClasses';
 import { useDndMonsters } from '../hooks/useDndMonsters';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 const HOMEBREW_VALUE = '__homebrew__';
 
@@ -48,6 +49,7 @@ const HOMEBREW_VALUE = '__homebrew__';
  *     escribir a mano en vez de usar la lista.
  */
 export function CharacterSheetPage() {
+  usePageTitle('Ficha de personaje');
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { characterId } = useParams<{ characterId: string }>();

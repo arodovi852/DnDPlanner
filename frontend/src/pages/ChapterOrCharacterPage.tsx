@@ -5,6 +5,7 @@ import { MembersPanel } from '../components/shared/MembersPanel';
 import { ConfirmModal } from '../components/shared/ConfirmModal';
 import { useAuth } from '../context/AuthContext';
 import { useCampaigns } from '../context/CampaignContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 /**
  * Página /chapterOrCharacter — hub de la campaña activa.
@@ -15,6 +16,7 @@ import { useCampaigns } from '../context/CampaignContext';
  * (DM / Co-DM / Jugador), asignación de personaje y enlace de invitación.
  */
 export function ChapterOrCharacterPage() {
+  usePageTitle('Capítulos o personajes');
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();

@@ -8,6 +8,7 @@ import { FollowButton } from '../components/shared/FollowButton';
 import { useAuth } from '../context/AuthContext';
 import { useUsers } from '../context/UsersContext';
 import { useCampaigns, type Campaign } from '../context/CampaignContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 import destinosCruzados from '../assets/campaigns/destinos-cruzados.png';
 import destinosCruzadosHover from '../assets/campaigns/destinos-cruzados-hover.png';
@@ -49,6 +50,7 @@ function imagesForCampaign(campaign: Campaign): { image: string; hoverImage: str
  *     información sobre los miembros).
  */
 export function UserProfilePage() {
+  usePageTitle('Perfil de usuario');
   const { t } = useTranslation();
   const { userId = '' } = useParams<{ userId: string }>();
   const { user } = useAuth();

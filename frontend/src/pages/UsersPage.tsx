@@ -6,6 +6,7 @@ import { FollowButton } from '../components/shared/FollowButton';
 import { useAuth } from '../context/AuthContext';
 import { useUsers, type PublicUser } from '../context/UsersContext';
 import { useCampaigns } from '../context/CampaignContext';
+import { usePageTitle } from '../hooks/usePageTitle';
 
 /**
  * /users — directorio de usuarios con búsqueda + acciones sociales.
@@ -25,6 +26,7 @@ import { useCampaigns } from '../context/CampaignContext';
 type Tab = 'all' | 'following' | 'followers';
 
 export function UsersPage() {
+  usePageTitle('Usuarios');
   const { t } = useTranslation();
   const { user } = useAuth();
   const { users, searchUsers, getFollowing, getFollowers, isFollowing } = useUsers();
