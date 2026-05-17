@@ -1,0 +1,197 @@
+﻿[
+    {
+        "number":  3,
+        "title":  "Bootstrap del repositorio y estructura inicial",
+        "status":  "done"
+    },
+    {
+        "number":  4,
+        "title":  "Modelado de datos: User, Campaign embebida, Follow",
+        "status":  "done"
+    },
+    {
+        "number":  5,
+        "title":  "API de autenticacion: registro, login, JWT",
+        "status":  "done"
+    },
+    {
+        "number":  6,
+        "title":  "API de campanas: CRUD completo con roles",
+        "status":  "done"
+    },
+    {
+        "number":  7,
+        "title":  "Sistema de invitaciones y miembros de campana",
+        "status":  "done"
+    },
+    {
+        "number":  8,
+        "title":  "Subida de imagenes a Cloudinary",
+        "status":  "done"
+    },
+    {
+        "number":  9,
+        "title":  "Documentacion OpenAPI/Swagger del backend",
+        "status":  "done"
+    },
+    {
+        "number":  10,
+        "title":  "Setup de Vite + React + TypeScript + SCSS (ITCSS)",
+        "status":  "done"
+    },
+    {
+        "number":  11,
+        "title":  "Configuracion de rutas con React Router",
+        "status":  "done"
+    },
+    {
+        "number":  12,
+        "title":  "Componentes Header y Footer con i18n",
+        "status":  "done"
+    },
+    {
+        "number":  13,
+        "title":  "Paginas provisionales (landing y profile placeholders)",
+        "status":  "done"
+    },
+    {
+        "number":  14,
+        "title":  "Sistema de componentes BEM compartidos",
+        "status":  "done"
+    },
+    {
+        "number":  15,
+        "title":  "Autenticacion en cliente: modal y AuthContext",
+        "status":  "done"
+    },
+    {
+        "number":  16,
+        "title":  "Modo Testing offline (usuario sin backend)",
+        "status":  "done"
+    },
+    {
+        "number":  17,
+        "title":  "Pagina principal con mapa interactivo y seccion bienvenida",
+        "status":  "done"
+    },
+    {
+        "number":  18,
+        "title":  "Modulo de campanas: listado y creacion",
+        "status":  "done"
+    },
+    {
+        "number":  19,
+        "title":  "Selectores de creador, capitulo y personaje",
+        "status":  "done"
+    },
+    {
+        "number":  20,
+        "title":  "Ficha de personaje completa (CharacterSheetPage)",
+        "status":  "done"
+    },
+    {
+        "number":  21,
+        "title":  "Pagina de capitulo con MapCanvas y EventsCanvas",
+        "status":  "done"
+    },
+    {
+        "number":  22,
+        "title":  "Perfiles de usuario, listado y red social (seguir)",
+        "status":  "done"
+    },
+    {
+        "number":  23,
+        "title":  "Sistema de anotaciones y spoilers",
+        "status":  "done"
+    },
+    {
+        "number":  24,
+        "title":  "Sistema de invitaciones en cliente (InvitePage)",
+        "status":  "done"
+    },
+    {
+        "number":  25,
+        "title":  "Plantillas de campana predefinidas",
+        "status":  "done"
+    },
+    {
+        "number":  26,
+        "title":  "Pagina de vista publica de campana (CampaignViewPage)",
+        "status":  "done"
+    },
+    {
+        "number":  27,
+        "title":  "Paginas informativas (About, Contact, News, Terms, Privacy, API, Roadmap)",
+        "status":  "done"
+    },
+    {
+        "number":  28,
+        "title":  "Selector de capitulos y mejoras del editor",
+        "status":  "done"
+    },
+    {
+        "number":  29,
+        "title":  "Tiempo real con Socket.IO entre miembros",
+        "status":  "done"
+    },
+    {
+        "number":  30,
+        "title":  "Conexion frontend-backend: ajustes finales y CORS",
+        "status":  "done"
+    },
+    {
+        "number":  31,
+        "title":  "Refinamiento del diseno y arreglos visuales",
+        "status":  "done"
+    },
+    {
+        "number":  32,
+        "title":  "Responsive completo desde 320px hasta 4K",
+        "status":  "done"
+    },
+    {
+        "number":  33,
+        "title":  "Dockerizacion del frontend (multi-stage + nginx)",
+        "status":  "done"
+    },
+    {
+        "number":  34,
+        "title":  "Dockerizacion del backend y docker-compose",
+        "status":  "done"
+    },
+    {
+        "number":  35,
+        "title":  "Despliegue en DigitalOcean App Platform",
+        "status":  "done"
+    },
+    {
+        "number":  36,
+        "title":  "CI/CD: workflows de GitHub Actions",
+        "status":  "done"
+    },
+    {
+        "number":  37,
+        "title":  "Documentacion completa del PFG (docs/)",
+        "status":  "done"
+    },
+    {
+        "number":  38,
+        "title":  "Notificaciones push para invitaciones y menciones",
+        "status":  "todo"
+    },
+    {
+        "number":  39,
+        "title":  "Modo oscuro / claro conmutable",
+        "status":  "todo"
+    },
+    {
+        "number":  40,
+        "title":  "Exportar campana a PDF / JSON",
+        "status":  "todo"
+    },
+    {
+        "number":  41,
+        "title":  "Tests E2E con Playwright",
+        "status":  "todo"
+    }
+]
