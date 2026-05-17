@@ -269,6 +269,128 @@
     cursor: inherit;
     overflow: hidden;
 
+    // --------------------------------------------------------------------
+    // Color + patrón por tipo de evento.
+    //
+    // Cada tipo combina:
+    //   · un par de colores (oscuro=borde+header, claro=cuerpo)
+    //   · un patrón SVG en el cuerpo (triángulos, rombos, estrellas…)
+    //
+    // El patrón es para accesibilidad de personas con daltonismo: incluso
+    // sin distinguir colores, la forma identifica el tipo. El texto blanco
+    // mantiene contraste sobre el color claro del cuerpo gracias al
+    // `text-shadow` con el color oscuro de su mismo tipo.
+    // --------------------------------------------------------------------
+    @mixin event-type(
+      $border, $body, $pattern-color, $pattern-url
+    ) {
+      border-color: $border;
+      background-color: $body;
+
+      .events-canvas__block-header {
+        background-color: $border;
+        border-bottom-color: $border;
+      }
+
+      .events-canvas__block-body {
+        position: relative;
+        background-image: $pattern-url;
+        background-repeat: repeat;
+        // Tile cuadrado pequeño: el patrón se repite en una rejilla
+        // perfectamente alineada (cada figura ocupa un único tile y queda
+        // centrada). Sin offsets aleatorios → apariencia uniforme.
+        background-size: 28px 28px;
+      }
+
+      .events-canvas__block-text {
+        position: relative;
+        z-index: 1;
+        text-shadow:
+          0 0 4px $border,
+          0 1px 2px rgba(0, 0, 0, 0.6);
+      }
+    }
+
+    // Mission — rojo / triángulos centrados en grid 28×28.
+    &--type-Mission {
+      @include event-type(
+        #7d1f1f,
+        #d97f7f,
+        #b35353,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><polygon points='14,8 20,20 8,20' fill='%23b35353' opacity='0.6'/></svg>")
+      );
+    }
+
+    // Combat — naranja / rombos centrados en grid 28×28.
+    &--type-Combat {
+      @include event-type(
+        #7a3a14,
+        #e3a36f,
+        #b56a35,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><polygon points='14,7 20,14 14,21 8,14' fill='%23b56a35' opacity='0.6'/></svg>")
+      );
+    }
+
+    // MainStory — amarillo / estrellas centradas en grid 28×28.
+    &--type-MainStory {
+      @include event-type(
+        #6b6310,
+        #e6d96b,
+        #b8a834,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><polygon points='14,6 16,12 22,12 17,16 19,22 14,18 9,22 11,16 6,12 12,12' fill='%23b8a834' opacity='0.6'/></svg>")
+      );
+    }
+
+    // CharacterArc — verde / tréboles centrados en grid 28×28.
+    &--type-CharacterArc {
+      @include event-type(
+        #1f5f2b,
+        #6ec07a,
+        #3e8a4a,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><g fill='%233e8a4a' opacity='0.6'><circle cx='10' cy='14' r='3'/><circle cx='18' cy='14' r='3'/><circle cx='14' cy='10' r='3'/><circle cx='14' cy='18' r='3'/></g></svg>")
+      );
+    }
+
+    // Exploration — celeste / puntos centrados en grid 28×28.
+    &--type-Exploration {
+      @include event-type(
+        #20656b,
+        #6cb9c0,
+        #3a8b92,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><circle cx='14' cy='14' r='4.5' fill='%233a8b92' opacity='0.6'/></svg>")
+      );
+    }
+
+    // Social — azul / gotas centradas en grid 28×28.
+    &--type-Social {
+      @include event-type(
+        #1a2670,
+        #7a8ad6,
+        #3a4ea8,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M14 6 C 14 12, 20 14, 18 19 C 17 23, 11 23, 10 19 C 8 14, 14 12, 14 6 Z' fill='%233a4ea8' opacity='0.6'/></svg>")
+      );
+    }
+
+    // Rest — morado / espirales centradas en grid 28×28.
+    &--type-Rest {
+      @include event-type(
+        #3d1660,
+        #a87dd1,
+        #6a3a96,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M14 14 m -6 0 a 6 6 0 1 1 12 0 a 4 4 0 1 1 -8 0 a 2 2 0 1 1 4 0' fill='none' stroke='%236a3a96' stroke-width='2' opacity='0.65'/></svg>")
+      );
+    }
+
+    // Other — rosa / corazones centrados en grid 28×28.
+    &--type-Other {
+      @include event-type(
+        #6b1452,
+        #e08fc4,
+        #b0418a,
+        url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='28' height='28' viewBox='0 0 28 28'><path d='M14 22 C 6 16, 6 8, 11 8 C 13 8, 14 10, 14 12 C 14 10, 15 8, 17 8 C 22 8, 22 16, 14 22 Z' fill='%23b0418a' opacity='0.6'/></svg>")
+      );
+    }
+
     &--selected {
       box-shadow: 0 0 0 4px var(--color-primary), 0 4px 8px var(--color-shadow);
     }
