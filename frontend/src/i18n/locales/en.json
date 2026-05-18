@@ -233,6 +233,11 @@
     "emptyNotes": "No events to show. Switch back to canvas mode to create some.",
     "mapCols": "Cols",
     "mapRows": "Rows",
+    "resizeBlock": "Resize event",
+    "mapBackground": "Background",
+    "mapBackgroundNone": "None",
+    "mapBackgroundGrass": "Grass",
+    "mapBackgroundStone": "Stone",
     "removeSelection": "Remove selection",
     "mapCategories": {
       "character": "Character",

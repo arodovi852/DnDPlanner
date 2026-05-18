@@ -729,6 +729,11 @@
   // Grid posicionado en (0,0); el centrado inicial lo calcula el
   // componente en useLayoutEffect según el tamaño del viewport.
   // transform-origin: 0 0 → el zoom-at-cursor funciona correctamente.
+  //
+  // El fondo del grid es blanco fijo. Los modificadores `--bg-grass` y
+  // `--bg-stonefloor` añaden una tile pixel-art encima a 32×32px (mismo
+  // tamaño que la celda) con 50% de opacidad: el blanco "asoma" detrás
+  // para que el dibujo de fondo no compita con las entidades colocadas.
   &__grid {
     position: absolute;
     left: 0;
@@ -736,13 +741,41 @@
     display: grid;
     gap: 0;
     transform-origin: 0 0;
-    background-color: var(--color-surface);
+    background-color: #ffffff;
+    background-repeat: repeat;
+    background-size: 32px 32px;
+    background-position: 0 0;
+    image-rendering: pixelated;
     border: 3px solid var(--color-border);
     box-shadow: 0 4px 14px var(--color-shadow-strong);
+
+    // Capa de fondo translúcida: usamos un pseudo-elemento para que la
+    // opacidad del fondo no afecte a las celdas/glifos.
+    &--bg-grass::before,
+    &--bg-stonefloor::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-repeat: repeat;
+      background-size: 32px 32px;
+      opacity: 0.5;
+      image-rendering: pixelated;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    &--bg-grass::before {
+      background-image: url('/sprites/grass.png');
+    }
+
+    &--bg-stonefloor::before {
+      background-image: url('/sprites/stonefloor.png');
+    }
   }
 
   &__cell {
     position: relative;
+    z-index: 1; // por encima del pseudo-fondo translúcido del grid
     width: 2rem;
     height: 2rem;
     padding: 0;
@@ -827,22 +860,15 @@
       height: 100%;
     }
 
-    &--wall {
-      background-color: #7f7f7f;
+    // Sprite pixel-art que ocupa toda la celda (32×32px nativos).
+    // `image-rendering: pixelated` mantiene los bordes definidos al
+    // escalar con el zoom del viewport.
+    &--sprite {
       width: 100%;
       height: 100%;
-    }
-
-    &--object {
-      color: #f1c40f;
-      font-size: 1.25rem;
-      text-shadow: 0 0 2px #7d6608;
-    }
-
-    &--trap {
-      color: #c0392b;
-      font-size: 1.25rem;
-      font-weight: bold;
+      object-fit: contain;
+      image-rendering: pixelated;
+      // Sin antialiasing — el sprite debe verse nítido píxel a píxel.
     }
 
     &--portrait {

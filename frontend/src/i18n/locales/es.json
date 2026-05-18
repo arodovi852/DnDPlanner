@@ -233,6 +233,11 @@
     "emptyNotes": "No hay eventos que mostrar. Vuelve al modo canvas para crear alguno.",
     "mapCols": "Columnas",
     "mapRows": "Filas",
+    "resizeBlock": "Redimensionar evento",
+    "mapBackground": "Fondo",
+    "mapBackgroundNone": "Ninguno",
+    "mapBackgroundGrass": "Hierba",
+    "mapBackgroundStone": "Piedra",
     "removeSelection": "Eliminar selección",
     "mapCategories": {
       "character": "Personaje",
