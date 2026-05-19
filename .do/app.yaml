@@ -54,9 +54,13 @@ static_sites:
       repo: arodovi852/AROProyectoFinDeGrado2026
       branch: main
       deploy_on_push: true
-    # `npm ci && npm run build` includes devDependencies (vite, tsc) which
-    # are required for the build step. We can't use `--omit=dev` here.
-    build_command: npm ci && npm run build
+    # Usamos `npm install` (no `npm ci`) porque el lockfile se genera en
+    # Windows y npm marca binarios opcionales de otras plataformas
+    # (@esbuild/netbsd-arm64, @rollup/win32...) como requeridos, lo que
+    # rompe `npm ci` en el builder Linux de App Platform. Vite + tsc son
+    # devDependencies imprescindibles para el build, por eso NO usamos
+    # `--omit=dev`.
+    build_command: npm install --no-audit --no-fund && npm run build
     output_dir: dist
     # SPA: any unknown path falls back to index.html so React Router can
     # resolve client-side routes.
@@ -80,7 +84,10 @@ services:
       repo: arodovi852/AROProyectoFinDeGrado2026
       branch: main
       deploy_on_push: true
-    build_command: npm ci --omit=dev
+    # Mismo motivo que en el frontend: lockfile generado en Windows.
+    # `--omit=dev` es seguro aquí — el backend no necesita devDependencies
+    # (jest, eslint, supertest) en producción.
+    build_command: npm install --no-audit --no-fund --omit=dev
     run_command: node src/server.js
     instance_count: 1
     instance_size_slug: basic-xxs
