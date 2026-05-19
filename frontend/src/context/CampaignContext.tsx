@@ -56,6 +56,11 @@ export interface ChapterEventBlock {
   y: number;
   text: string;
   type: EventType;
+  // Tamaño personalizado del bloque. Ausentes → se usan BLOCK_WIDTH/HEIGHT
+  // por defecto. El usuario puede arrastrar el handle de la esquina
+  // inferior derecha para redimensionar y leer textos largos sin recortes.
+  width?: number;
+  height?: number;
 }
 
 export interface ChapterEventConnection {

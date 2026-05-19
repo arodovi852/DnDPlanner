@@ -446,15 +446,20 @@
     flex: 1;
     min-height: 0;
     padding: var(--space-sm) var(--space-md);
-    overflow: hidden;
+    // Permite que textos largos se vean enteros. Si el contenido excede
+    // el tamaño actual del bloque, aparece scroll vertical; redimensionando
+    // el bloque (handle inferior-derecho) se elimina la barra.
+    overflow-y: auto;
+    overflow-x: hidden;
+    overflow-wrap: anywhere;
   }
 
   &__block-text {
     margin: 0;
-    overflow: hidden;
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 4;
+    // Sin clamp: el texto se muestra completo. El usuario amplía el bloque
+    // a su gusto para leerlo o lo deja con scroll.
+    white-space: pre-wrap;
+    word-break: break-word;
   }
 
   &__block-edit {
@@ -473,6 +478,40 @@
     &:focus-visible {
       outline: none;
     }
+  }
+
+  // Handle de redimensionado en la esquina inferior-derecha del bloque.
+  // Triángulo CSS puro + cursor `nwse-resize`. Apenas visible hasta que se
+  // hace hover sobre el bloque, para no ensuciar el look del canvas.
+  &__block-resize {
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    width: 18px;
+    height: 18px;
+    cursor: nwse-resize;
+    background:
+      linear-gradient(
+        135deg,
+        transparent 0%,
+        transparent 50%,
+        rgba(255, 255, 255, 0.55) 50%,
+        rgba(255, 255, 255, 0.55) 62%,
+        transparent 62%,
+        transparent 72%,
+        rgba(255, 255, 255, 0.55) 72%,
+        rgba(255, 255, 255, 0.55) 84%,
+        transparent 84%
+      );
+    opacity: 0.5;
+    transition: opacity var(--transition-fast);
+    touch-action: none;
+    z-index: 2;
+  }
+
+  &__block:hover &__block-resize,
+  &__block--selected &__block-resize {
+    opacity: 1;
   }
 
   // Terminal "Ir al siguiente capítulo"

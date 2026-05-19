@@ -43,6 +43,13 @@ type Tool =
 
 const BLOCK_WIDTH = 220;
 const BLOCK_HEIGHT = 150;
+// Límites de redimensionado de bloque (en píxeles de mundo, no afectados
+// por el zoom). El mínimo asegura que la cabecera con el tipo siga siendo
+// legible; el máximo evita bloques absurdamente grandes que tapen el canvas.
+const BLOCK_MIN_WIDTH = 140;
+const BLOCK_MIN_HEIGHT = 80;
+const BLOCK_MAX_WIDTH = 900;
+const BLOCK_MAX_HEIGHT = 700;
 const DRAG_THRESHOLD = 5;
 
 // ---------------------------------------------------------------------------
@@ -138,6 +145,14 @@ export function EventsCanvas({ readOnly = false }: EventsCanvasProps = {}) {
         startClientX: number;
         startClientY: number;
         moved: boolean;
+      }
+    | {
+        kind: 'resize';
+        blockId: string;
+        startPointerX: number;
+        startPointerY: number;
+        startWidth: number;
+        startHeight: number;
       }
     | null
   >(null);
@@ -333,6 +348,13 @@ export function EventsCanvas({ readOnly = false }: EventsCanvasProps = {}) {
       updateBlock(drag.blockId, {
         x: drag.startBlockX + dx,
         y: drag.startBlockY + dy,
+      });
+    } else if (drag.kind === 'resize') {
+      const dx = (event.clientX - drag.startPointerX) / zoom;
+      const dy = (event.clientY - drag.startPointerY) / zoom;
+      updateBlock(drag.blockId, {
+        width: clamp(drag.startWidth + dx, BLOCK_MIN_WIDTH, BLOCK_MAX_WIDTH),
+        height: clamp(drag.startHeight + dy, BLOCK_MIN_HEIGHT, BLOCK_MAX_HEIGHT),
       });
     } else if (drag.kind === 'pan') {
       setPan({
@@ -598,21 +620,30 @@ export function EventsCanvas({ readOnly = false }: EventsCanvasProps = {}) {
                 const from = blockById.get(conn.from);
                 const to = blockById.get(conn.to);
                 if (!from || !to) return null;
-                const fx = from.x + BLOCK_WIDTH / 2;
-                const fy = from.y + BLOCK_HEIGHT / 2;
-                const tx = to.x + BLOCK_WIDTH / 2;
-                const ty = to.y + BLOCK_HEIGHT / 2;
-                const angle = Math.atan2(ty - fy, tx - fx);
-                const pad = Math.max(BLOCK_WIDTH, BLOCK_HEIGHT) / 2 + 4;
-                const endX = tx - Math.cos(angle) * pad;
-                const endY = ty - Math.sin(angle) * pad;
+                // Dimensiones reales del bloque (pueden estar custom por
+                // resize). Sin esto, las flechas se calculaban con
+                // BLOCK_WIDTH/HEIGHT fijos y entraban dentro del bloque
+                // agrandado, tapando el texto.
+                const fw = from.width ?? BLOCK_WIDTH;
+                const fh = from.height ?? BLOCK_HEIGHT;
+                const tw = to.width ?? BLOCK_WIDTH;
+                const th = to.height ?? BLOCK_HEIGHT;
+                const fx = from.x + fw / 2;
+                const fy = from.y + fh / 2;
+                const tx = to.x + tw / 2;
+                const ty = to.y + th / 2;
+                // Recortamos los extremos al borde de cada rectángulo para
+                // que la flecha empiece y acabe exactamente en el contorno
+                // del bloque, no en su centro (que quedaría tapado).
+                const start = clipLineToRect(fx, fy, tx, ty, fw, fh);
+                const end   = clipLineToRect(tx, ty, fx, fy, tw, th);
                 return (
                   <line
                     key={conn.id}
-                    x1={fx}
-                    y1={fy}
-                    x2={endX}
-                    y2={endY}
+                    x1={start.x}
+                    y1={start.y}
+                    x2={end.x}
+                    y2={end.y}
                     stroke="var(--color-border)"
                     strokeWidth={3}
                     markerEnd="url(#events-arrow)"
@@ -620,36 +651,47 @@ export function EventsCanvas({ readOnly = false }: EventsCanvasProps = {}) {
                 );
               })}
 
-              {dragCursor && connectFrom && blockById.has(connectFrom) && (
-                <line
-                  x1={blockById.get(connectFrom)!.x + BLOCK_WIDTH / 2}
-                  y1={blockById.get(connectFrom)!.y + BLOCK_HEIGHT / 2}
-                  x2={dragCursor.x}
-                  y2={dragCursor.y}
-                  stroke="var(--color-primary)"
-                  strokeWidth={3}
-                  strokeDasharray="4 6"
-                />
-              )}
+              {dragCursor && connectFrom && blockById.has(connectFrom) && (() => {
+                const src = blockById.get(connectFrom)!;
+                const sw = src.width ?? BLOCK_WIDTH;
+                const sh = src.height ?? BLOCK_HEIGHT;
+                const sx = src.x + sw / 2;
+                const sy = src.y + sh / 2;
+                const start = clipLineToRect(sx, sy, dragCursor.x, dragCursor.y, sw, sh);
+                return (
+                  <line
+                    x1={start.x}
+                    y1={start.y}
+                    x2={dragCursor.x}
+                    y2={dragCursor.y}
+                    stroke="var(--color-primary)"
+                    strokeWidth={3}
+                    strokeDasharray="4 6"
+                  />
+                );
+              })()}
             </svg>
 
             {blocks.map((block) => {
               const isEditing = editingBlockId === block.id;
               const isSelected = connectFrom === block.id;
+              const blockWidth = block.width ?? BLOCK_WIDTH;
+              const blockHeight = block.height ?? BLOCK_HEIGHT;
               return (
                 <div
                   key={block.id}
                   data-block-id={block.id}
                   className={
                     'events-canvas__block' +
+                    ` events-canvas__block--type-${block.type}` +
                     (isSelected ? ' events-canvas__block--selected' : '') +
                     (isEditing ? ' events-canvas__block--editing' : '')
                   }
                   style={{
                     left: block.x,
                     top: block.y,
-                    width: BLOCK_WIDTH,
-                    height: BLOCK_HEIGHT,
+                    width: blockWidth,
+                    height: blockHeight,
                   }}
                   onPointerDown={(event) => handleBlockPointerDown(event, block)}
                   onClick={(event) => handleBlockClick(event, block)}
@@ -698,6 +740,32 @@ export function EventsCanvas({ readOnly = false }: EventsCanvasProps = {}) {
                       </p>
                     )}
                   </div>
+                  {!readOnly && (
+                    <div
+                      className="events-canvas__block-resize"
+                      role="separator"
+                      aria-label={t('chapter.resizeBlock')}
+                      onPointerDown={(event) => {
+                        // Inicia el resize. No capturamos puntero aquí —
+                        // los listeners viven en el viewport y mientras el
+                        // cursor esté dentro de él reciben los moves. Si
+                        // el cursor sale, pointerup llega al viewport por
+                        // bubbling/capture nativo del navegador.
+                        event.stopPropagation();
+                        if (readOnly) return;
+                        bringToFront(block.id);
+                        dragRef.current = {
+                          kind: 'resize',
+                          blockId: block.id,
+                          startPointerX: event.clientX,
+                          startPointerY: event.clientY,
+                          startWidth: blockWidth,
+                          startHeight: blockHeight,
+                        };
+                      }}
+                      onClick={(event) => event.stopPropagation()}
+                    />
+                  )}
                 </div>
               );
             })}
@@ -846,6 +914,30 @@ function buildNotesOrder(blocks: Block[], connections: Connection[]): NoteEntry[
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
+}
+
+/**
+ * Recorta el segmento que va desde (cx, cy) (centro de un rectángulo de
+ * ancho `w` y alto `h`) hacia (tx, ty) al punto donde corta el contorno
+ * del rectángulo. Devuelve ese punto de corte. Permite que las flechas
+ * entre bloques empiecen/acaben exactamente en el borde, no en el centro.
+ */
+function clipLineToRect(
+  cx: number,
+  cy: number,
+  tx: number,
+  ty: number,
+  w: number,
+  h: number
+): { x: number; y: number } {
+  const dx = tx - cx;
+  const dy = ty - cy;
+  if (dx === 0 && dy === 0) return { x: cx, y: cy };
+  // Escala que lleva el vector al borde más cercano del rectángulo.
+  const sx = dx !== 0 ? w / 2 / Math.abs(dx) : Infinity;
+  const sy = dy !== 0 ? h / 2 / Math.abs(dy) : Infinity;
+  const s = Math.min(sx, sy);
+  return { x: cx + dx * s, y: cy + dy * s };
 }
 
 // ---------------------------------------------------------------------------

@@ -153,6 +153,10 @@ const eventBlockSchema = new mongoose.Schema(
       ],
       default: 'Other',
     },
+    // Tamaño persistido cuando el usuario redimensiona el bloque a mano.
+    // Si están ausentes el frontend usa BLOCK_WIDTH/BLOCK_HEIGHT por defecto.
+    width: { type: Number },
+    height: { type: Number },
   },
   { _id: false }
 );
