@@ -493,6 +493,12 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   const [activeCampaignId, setActiveCampaignIdState] = useState<string | null>(
     () => readActiveCampaignId()
   );
+  // Mientras el AuthProvider está hidratando los tokens (status==='authenticating')
+  // no queremos que el effect de "logged out" limpie activeCampaignId — eso
+  // borraría el localStorage justo después de un F5 y al volver a estar
+  // authenticated ya no habría nada que restaurar. Tampoco escribimos a
+  // localStorage hasta saber el estado final, para evitar la misma carrera.
+  const authResolved = status === 'authenticated' || status === 'unauthenticated';
   const [loading, setLoading] = useState(false);
   const [syncing, setSyncing] = useState(false);
   const [syncError, setSyncError] = useState<string | null>(null);
@@ -518,8 +524,16 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   // ------------------------------------------------------------------
   useEffect(() => {
     if (status !== 'authenticated' || !isAuthenticated) {
-      setCampaigns([]);
-      setActiveCampaignIdState(null);
+      // Solo limpiamos cuando el estado de auth ya se ha resuelto a
+      // "unauthenticated". Si aún estamos en 'authenticating' (caso típico
+      // tras un F5 con tokens válidos en cookie) NO tocamos campaigns ni
+      // activeCampaignId: la siguiente pasada del effect, con status ya
+      // 'authenticated', cargará los datos y respetará el activeCampaignId
+      // que viene de localStorage.
+      if (status === 'unauthenticated') {
+        setCampaigns([]);
+        setActiveCampaignIdState(null);
+      }
       return;
     }
     if (isDemo) {
@@ -557,14 +571,19 @@ export function CampaignProvider({ children }: { children: ReactNode }) {
   }, [campaigns, isDemo]);
 
   // Persist active campaign id locally so a refresh keeps the same workspace.
+  // Esperamos a que el estado de auth se haya resuelto: durante
+  // 'authenticating' el activeCampaignId puede estar momentáneamente vacío
+  // y borrar el localStorage aquí causaría perder la campaña activa entre
+  // refrescos.
   useEffect(() => {
     if (typeof window === 'undefined') return;
+    if (!authResolved) return;
     if (activeCampaignId) {
       window.localStorage.setItem(ACTIVE_KEY, activeCampaignId);
     } else {
       window.localStorage.removeItem(ACTIVE_KEY);
     }
-  }, [activeCampaignId]);
+  }, [activeCampaignId, authResolved]);
 
   // ------------------------------------------------------------------
   // Sync helpers
