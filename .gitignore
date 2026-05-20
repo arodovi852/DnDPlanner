@@ -35,6 +35,13 @@ mongo-data/
 # Documentación local SCRATCH (notas temporales, no la documentación oficial)
 docs/_scratch/
 
+# Guía de capturas — documento de uso interno para el autor,
+# no forma parte de la entrega.
+docs/GUIA_CAPTURAS.md
+
+# Herramientas de apoyo locales que no se publican.
+z-figma-plugin/
+
 # Briefings personales del PFG (no se publican: contienen rúbricas internas
 # del módulo y guías de tutor que no forman parte del producto entregable).
 SERVIDOR_requisitos.md

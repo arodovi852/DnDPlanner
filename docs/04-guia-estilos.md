@@ -418,7 +418,7 @@ La aplicación soporta **español** (por defecto) e **inglés** mediante `react-
 
 ## 4.11. Cumplimiento de los requisitos de diseño
 
-Esta sección mapea los requisitos del módulo de Diseño ([`DISEÑO_requisitos.md`](../DISEÑO_requisitos.md)) con los apartados del proyecto donde se cumplen.
+Esta sección mapea los requisitos del módulo de Diseño con los apartados del proyecto donde se cumplen.
 
 | Requisito | Cumplimiento | Evidencia |
 |---|---|---|

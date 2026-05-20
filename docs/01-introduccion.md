@@ -11,7 +11,7 @@
 
 ![Foto de una partida real de D&D con miniaturas y hojas de personaje desordenadas. Ilustra el problema que el proyecto pretende resolver](assets/capturas-documentacion/01-mesa-real.jpg)
 
-La idea de **DnDPlanner** nace de una experiencia personal repetida durante varios años jugando *Dungeons & Dragons* (D&D 5e) con grupos de amigos. Al asumir el papel de **Dungeon Master (DM)** en distintas campañas, surgía siempre el mismo problema: la cantidad de información que un DM debe gestionar —fichas de personaje, mapas, anotaciones de sesión, secretos, NPCs, eventos pasados y futuros— rápidamente supera lo que las herramientas tradicionales (papel, hojas de cálculo, documentos sueltos) pueden organizar de manera cómoda.
+La idea de **DnDPlanner** nace de una experiencia personal repetida durante varios años jugando juegos de rol, específicamente variantes *Dungeons & Dragons* (D&D 5e) con grupos de amigos. Al asumir el papel de **Dungeon Master (DM)** en distintas campañas, surgía siempre el mismo problema: la cantidad de información que un DM debe gestionar (fichas de personaje, mapas, anotaciones de sesión, secretos, NPCs, eventos pasados y futuros) rápidamente supera lo que las herramientas tradicionales (papel, hojas de cálculo, documentos sueltos) pueden organizar de manera cómoda.
 
 Las **plataformas digitales existentes** suelen ir a uno de dos extremos:
 
