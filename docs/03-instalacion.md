@@ -70,7 +70,7 @@ DnDPlanner/
 
 ---
 
-## 3.3. Vía A — Docker (recomendada)
+## 3.3. Vía A: Docker (recomendada)
 
 Esta es la forma más rápida de tener la aplicación entera (frontend + backend + base de datos) funcionando en local. No necesitas instalar Node ni MongoDB: Docker se encarga de todo.
 
@@ -82,8 +82,8 @@ Copy-Item .env.example .env
 
 El fichero `.env` contiene los secretos del stack. Hay que rellenar al menos:
 
-- `JWT_SECRET` — clave para firmar los access tokens. Mínimo 32 bytes aleatorios.
-- `JWT_REFRESH_SECRET` — clave para firmar los refresh tokens. Diferente a la anterior.
+- `JWT_SECRET`: clave para firmar los access tokens. Mínimo 32 bytes aleatorios.
+- `JWT_REFRESH_SECRET`: clave para firmar los refresh tokens. Diferente a la anterior.
 
 Para generar valores válidos en PowerShell 7+:
 
@@ -172,13 +172,13 @@ docker compose up -d --build
 # Detener el stack (conserva los datos de la BD)
 docker compose down
 
-# Detener Y borrar los datos (volumen incluido — IRREVERSIBLE)
+# Detener Y borrar los datos (volumen incluido, IRREVERSIBLE)
 docker compose down -v
 ```
 
 ---
 
-## 3.4. Vía B — Desarrollo local (sin Docker)
+## 3.4. Vía B: desarrollo local (sin Docker)
 
 Esta vía es la que se usa para **modificar el código**. El frontend con Vite ofrece hot-reload, y el backend con `nodemon` se reinicia solo al guardar.
 
@@ -212,7 +212,7 @@ Para tener una MongoDB local sin instalar nada, puedes lanzar **solo** el servic
 ```powershell
 docker compose up -d mongo
 # Luego en .env del backend: MONGO_URI=mongodb://localhost:27017/dndplanner
-# Necesita publicar el puerto — descomentar `ports: ["27017:27017"]` en docker-compose.yml
+# Necesita publicar el puerto: descomentar `ports: ["27017:27017"]` en docker-compose.yml
 ```
 
 Alternativa más limpia: usar MongoDB Atlas (M0 gratis). Crea un cluster, copia la URI con usuario/contraseña y úsala como `MONGO_URI`.
@@ -310,7 +310,7 @@ npm run lint         # ESLint
 | HTTP 502 al entrar a `localhost:8080/api/...` | nginx arrancó antes de que el backend estuviese listo. | `docker compose restart web`. Si pasa siempre: revisa los logs del backend con `docker compose logs api`. |
 | Errores de tipo en `npm run build` del frontend | Inconsistencia entre `node_modules` y el código. | `rm -r node_modules; npm ci`. |
 
-![Captura de la sección "Errores comunes" del (DEPLOYMENT.md)(../DEPLOYMENT.md) — referencia más exhaustiva](assets/capturas-documentacion/03-troubleshooting.png)
+![Captura de la sección "Errores comunes" del (DEPLOYMENT.md)(../DEPLOYMENT.md) como referencia más exhaustiva](assets/capturas-documentacion/03-troubleshooting.png)
 
 ---
 
@@ -345,10 +345,10 @@ npm run lint         # ESLint
 ```
 
 Si llegas hasta aquí con la app corriendo, ya puedes pasar a:
-- [04. Guía de estilos](04-guia-estilos.md) — para entender el sistema de diseño.
-- [05. Diseño](05-diseno.md) — para los diagramas ER, casos de uso y API.
-- [06. Desarrollo](06-desarrollo.md) — para las decisiones técnicas detrás del código.
-- [09. Manual de usuario](09-manual-usuario.md) — para usar la aplicación de extremo a extremo.
+- [04. Guía de estilos](04-guia-estilos.md): para entender el sistema de diseño.
+- [05. Diseño](05-diseno.md): para los diagramas ER, casos de uso y API.
+- [06. Desarrollo](06-desarrollo.md): para las decisiones técnicas detrás del código.
+- [09. Manual de usuario](09-manual-usuario.md): para usar la aplicación de extremo a extremo.
 
 ---
 

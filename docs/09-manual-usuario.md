@@ -48,8 +48,8 @@ Al pulsar "Crear cuenta" entrarás automáticamente. No hay correo de confirmaci
 
 Una vez con sesión iniciada, la portada cambia: arriba sigue el banner pero **debajo aparecen dos filas**:
 
-1. **Tus campañas** — las que has creado o en las que eres miembro.
-2. **Campañas destacadas** — campañas públicas de otros usuarios.
+1. **Tus campañas**: las que has creado o en las que eres miembro.
+2. **Campañas destacadas**: campañas públicas de otros usuarios.
 
 Cada fila es un carrusel horizontal: en móvil deslizas con el dedo; en escritorio aparecen flechas a izquierda y derecha.
 
@@ -132,8 +132,8 @@ Pulsa la que quieras, escribe el nombre y confirma. Llegarás al **hub de tu nue
 
 El hub es la pantalla principal de una campaña. Tiene **dos tarjetas grandes**:
 
-- **📖 Capítulos** — la línea narrativa de la campaña.
-- **👥 Personajes** — fichas de jugadores y enemigos.
+- **📖 Capítulos**: la línea narrativa de la campaña.
+- **👥 Personajes**: fichas de jugadores y enemigos.
 
 Y una **barra superior** con (solo visible si tienes permisos):
 
@@ -185,8 +185,8 @@ Para crear uno nuevo: **+ Nuevo capítulo** (solo DM/Co-DM). Para entrar en uno:
 
 Al entrar a un capítulo verás dos pestañas:
 
-- **📝 Eventos** — el timeline narrativo.
-- **🗺 Mapa** — el mapa táctico (sección 9.9).
+- **📝 Eventos**: el timeline narrativo.
+- **🗺 Mapa**: el mapa táctico (sección 9.9).
 
 ![Página de capítulo con la pestaña "Eventos" activa: timeline vertical con varios eventos cronológicos. Cada uno tiene el avatar del autor, fecha y replies anidados](assets/capturas-documentacion/09-capitulo-eventos.png)
 
@@ -373,7 +373,7 @@ Tu preferencia se guarda y se aplicará la próxima vez que abras la app.
 ### 9.15.1. "Quiero preparar una sesión nueva"
 
 1. Abre tu campaña.
-2. Entra en **Capítulos** → crea uno nuevo con el título de la sesión (p.ej. "Sesión 7 — La cueva de los goblins").
+2. Entra en **Capítulos** → crea uno nuevo con el título de la sesión (p.ej. "Sesión 7: La cueva de los goblins").
 3. En la pestaña **Eventos**, añade los eventos planificados.
 4. En la pestaña **Mapa**, prepara el escenario: pinta el terreno y coloca las fichas de los enemigos.
 5. Cuando empiece la sesión, comparte el link con tus jugadores y al jugarla los DM/Co-DM van anotando lo que pasa en eventos.

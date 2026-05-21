@@ -1,8 +1,8 @@
 # 1. Introducción, objetivos y antecedentes
 
-> **Proyecto:** DnDPlanner — Gestor integral de campañas para Dungeons & Dragons y otros juegos de rol de mesa.
+> **Proyecto:** DnDPlanner. Gestor integral de campañas para Dungeons & Dragons y otros juegos de rol de mesa.
 > **Autor:** Alberto Rodríguez Oviedo
-> **Curso:** 2º DAW — Proyecto Fin de Grado (2026)
+> **Curso:** 2º DAW (Proyecto Fin de Grado, 2026)
 > **Defensa:** principios de junio de 2026
 
 ---

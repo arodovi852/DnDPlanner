@@ -10,9 +10,9 @@ Para entender **qué hace** la aplicación, ver [02-descripcion.md](02-descripci
 
 ### 7.1.1. Estrategia general
 
-El proyecto sigue una metodología **pragmática** orientada a pruebas de integración del backend y verificación manual estructurada del frontend. **No es TDD estricto** — la mayoría de los tests se escribieron después de la primera implementación, una vez la API había estabilizado su contrato. Esta decisión es consciente:
+El proyecto sigue una metodología **pragmática** orientada a pruebas de integración del backend y verificación manual estructurada del frontend. **No es TDD estricto**: la mayoría de los tests se escribieron después de la primera implementación, una vez la API había estabilizado su contrato. Esta decisión es consciente:
 
-> **Por qué no TDD estricto:** la API cambió de forma a menudo durante los primeros 4 meses (campos añadidos, refactor de rutas). Escribir tests "primero" habría obligado a rehacerlos cada semana. Tras estabilizar el contrato (a partir del bloque 7 — anotaciones y spoilers), los tests pasaron a escribirse junto al código y a fallar antes de mergear cualquier cambio que rompa una expectativa documentada.
+> **Por qué no TDD estricto:** la API cambió de forma a menudo durante los primeros 4 meses (campos añadidos, refactor de rutas). Escribir tests "primero" habría obligado a rehacerlos cada semana. Tras estabilizar el contrato (a partir del bloque 7, anotaciones y spoilers), los tests pasaron a escribirse junto al código y a fallar antes de mergear cualquier cambio que rompa una expectativa documentada.
 
 ### 7.1.2. Pirámide de pruebas aplicada al proyecto
 
@@ -60,7 +60,7 @@ Reconocer los huecos abiertamente es parte de la metodología:
 | Herramienta | Versión | Para qué |
 |---|---|---|
 | **Jest** | 29.7 | Test runner y matchers (`expect`). |
-| **supertest** | 7.0 | HTTP testing — lanza la app de Express en memoria y simula peticiones. |
+| **supertest** | 7.0 | HTTP testing: lanza la app de Express en memoria y simula peticiones. |
 | **mongodb-memory-server** | 11.1 | Levanta una MongoDB efímera por suite. Los tests trabajan contra datos reales sin tocar BD persistente. |
 | **ESLint** | 9.18 | Análisis estático del código JavaScript del backend. |
 
@@ -157,7 +157,7 @@ Hay **7 ficheros de tests** con **47 tests en total** ubicados en [`frontend/src
 
 ![Captura de la salida de `npm test` en la terminal mostrando los 46 tests en verde con la cobertura abajo](assets/capturas-documentacion/07-jest-output2.png)
 
-### 7.3.1. Ejemplo — `auth.test.js`
+### 7.3.1. Ejemplo: `auth.test.js`
 
 ```javascript
 describe('POST /api/auth/register', () => {
@@ -190,7 +190,7 @@ Lo que estos 3 tests demuestran:
 - La password **no** se filtra en la respuesta.
 - El servidor rechaza duplicados y passwords inválidas.
 
-### 7.3.2. Ejemplo — `campaign.test.js` (RBAC)
+### 7.3.2. Ejemplo: `campaign.test.js` (RBAC)
 
 ```javascript
 it('forbids a non-member from editing a campaign', async () => {
@@ -209,7 +209,7 @@ it('forbids a non-member from editing a campaign', async () => {
 
 Lo que demuestra: el control de acceso del modelo (`campaign.canEdit(userId)`) funciona end-to-end vía la API REST.
 
-### 7.3.3. Ejemplo — `campaign-extra.test.js` (templates)
+### 7.3.3. Ejemplo: `campaign-extra.test.js` (templates)
 
 ```javascript
 it('clones a public template into a new campaign for the current user', async () => {
@@ -338,8 +338,8 @@ Tras cada deploy a producción, se ejecuta este subconjunto mínimo (~5 minutos)
 
 Jest se ejecuta con `--coverage` por defecto (configurado en `package.json`). Tras `npm test`, se genera `backend/coverage/` con:
 
-- `lcov-report/index.html` — navegable, muestra cobertura línea a línea.
-- `coverage-summary.json` — resumen para integración con herramientas.
+- `lcov-report/index.html`: navegable, muestra cobertura línea a línea.
+- `coverage-summary.json`: resumen para integración con herramientas.
 
 ### 7.5.1. Cifras de referencia
 
@@ -354,17 +354,17 @@ Métricas típicas obtenidas en la rama `main` actual:
 
 ### 7.5.2. Qué áreas tienen poca cobertura (y por qué)
 
-- **`socket/index.js`** — la autorización del socket reutiliza métodos del modelo que sí están cubiertos vía REST, pero los handlers de eventos en sí están probados manualmente, no automatizado. Mejora futura: tests con `socket.io-client` simulando dos clientes.
-- **`services/cloudinary.js`** — el wrapper de Cloudinary no se testea automáticamente para no consumir cuota del plan gratuito. Se prueba manualmente subiendo un retrato.
-- **`services/dnd-api.js`** — proxy a `dnd5eapi.co`. No se testea automáticamente para no depender de la API externa en CI.
+- **`socket/index.js`**: la autorización del socket reutiliza métodos del modelo que sí están cubiertos vía REST, pero los handlers de eventos en sí están probados manualmente, no automatizado. Mejora futura: tests con `socket.io-client` simulando dos clientes.
+- **`services/cloudinary.js`**: el wrapper de Cloudinary no se testea automáticamente para no consumir cuota del plan gratuito. Se prueba manualmente subiendo un retrato.
+- **`services/dnd-api.js`**: proxy a `dnd5eapi.co`. No se testea automáticamente para no depender de la API externa en CI.
 
 ### 7.5.3. Cobertura del frontend
 
 El frontend se verifica con:
 
-1. **Vitest + Testing Library** — 47 tests sobre componentes, hooks y contextos clave (§7.3.0.bis). Cobertura reportada por `npm run test:coverage` y publicada en CI como artifact `frontend-coverage`.
-2. **TypeScript strict mode** — `tsc -b` falla el build si hay errores de tipo. Equivalente a un "test sintáctico" gigante.
-3. **Checklist manual** (§7.4) — completa las áreas con coste/beneficio bajo para automatizar.
+1. **Vitest + Testing Library**: 47 tests sobre componentes, hooks y contextos clave (§7.3.0.bis). Cobertura reportada por `npm run test:coverage` y publicada en CI como artifact `frontend-coverage`.
+2. **TypeScript strict mode**: `tsc -b` falla el build si hay errores de tipo. Equivalente a un "test sintáctico" gigante.
+3. **Checklist manual** (§7.4): completa las áreas con coste/beneficio bajo para automatizar.
 
 ---
 

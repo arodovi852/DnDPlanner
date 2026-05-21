@@ -54,14 +54,14 @@ Documentación detallada de arquitectura, diagramas ER, casos de uso y diseño d
 
 ## Requisitos previos
 
-- **Node.js** ≥ 18 (recomendado 20 LTS) — para desarrollo local fuera de Docker.
-- **Docker** ≥ 24 con Docker Compose v2 — para el stack completo en una sola línea.
+- **Node.js** ≥ 18 (recomendado 20 LTS), necesario para desarrollo local fuera de Docker.
+- **Docker** ≥ 24 con Docker Compose v2, necesario para levantar el stack completo en una sola línea.
 - **Git** ≥ 2.40.
 - Opcional: cuentas en **MongoDB Atlas** y **Cloudinary** para reproducir el entorno de producción.
 
 ---
 
-## Quick start — Docker (recomendado)
+## Quick start con Docker (recomendado)
 
 ```bash
 # 1. Clonar el repositorio
@@ -104,7 +104,7 @@ docker compose down -v         # detiene Y borra el volumen Mongo (pierde datos)
 
 ---
 
-## Quick start — desarrollo local sin Docker
+## Quick start sin Docker (desarrollo local)
 
 ```bash
 # Backend
@@ -145,8 +145,8 @@ Documentación operativa adicional: [DEPLOYMENT.md](DEPLOYMENT.md).
 
 ## Integración y despliegue continuos
 
-- [`.github/workflows/ci.yml`](.github/workflows/ci.yml) — en cada push y PR a `main`: lint y tests del backend (Jest + supertest + `mongodb-memory-server`), tests del frontend (Vitest + Testing Library), typecheck y build. Sube artefactos de cobertura y bundle.
-- [`.github/workflows/cd.yml`](.github/workflows/cd.yml) — al pushear a `main`: build y publicación de las imágenes Docker en `ghcr.io/arodovi852/dndplanner-web` y `ghcr.io/arodovi852/dndplanner-api` con tags `:latest` y `:sha-<short>`.
+- [`.github/workflows/ci.yml`](.github/workflows/ci.yml): en cada push y PR a `main`, ejecuta lint y tests del backend (Jest + supertest + `mongodb-memory-server`), tests del frontend (Vitest + Testing Library), typecheck y build. Sube artefactos de cobertura y bundle.
+- [`.github/workflows/cd.yml`](.github/workflows/cd.yml): al pushear a `main`, hace build y publicación de las imágenes Docker en `ghcr.io/arodovi852/dndplanner-web` y `ghcr.io/arodovi852/dndplanner-api` con tags `:latest` y `:sha-<short>`.
 
 DigitalOcean App Platform consume el repositorio en `main` y reconstruye los componentes en cada push gracias a `deploy_on_push: true` en [`.do/app.yaml`](.do/app.yaml).
 

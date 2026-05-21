@@ -221,9 +221,9 @@ Cada campaña tiene un toggle **público / privado**:
 - **Privado** (por defecto): solo miembros pueden verla.
 - **Público**: aparece en el dashboard de "Campañas destacadas" del `/main`. Cualquier visitante (incluso sin login) puede acceder en modo lectura.
 
-Adicionalmente, el DM puede generar un **link de vista** (`/view/:viewToken`) que permite a alguien NO miembro ver la campaña sin necesidad de cuenta — útil para enseñarla a alguien sin que se cree usuario.
+Adicionalmente, el DM puede generar un **link de vista** (`/view/:viewToken`) que permite a alguien NO miembro ver la campaña sin necesidad de cuenta. Útil para enseñarla a alguien sin que se cree usuario.
 
-![(/view/:token)(frontend/src/pages/CampaignViewPage.tsx) — vista pública compactada con la información esencial de la campaña](assets/capturas-documentacion/02-view-page.png)
+![(/view/:token)(frontend/src/pages/CampaignViewPage.tsx) con la vista pública compactada de la campaña](assets/capturas-documentacion/02-view-page.png)
 
 ### 2.3.12. Usuarios y sistema de follow
 
@@ -237,13 +237,13 @@ Desde el perfil de otro usuario se puede **seguir / dejar de seguir**. Los usuar
 
 Las siguientes páginas son estáticas pero forman parte del producto:
 
-- [/about](frontend/src/pages/info/AboutPage.tsx) — quién hizo el proyecto y por qué.
-- [/contact](frontend/src/pages/info/ContactPage.tsx) — formulario de contacto.
-- [/news](frontend/src/pages/info/NewsPage.tsx) — registro de cambios visibles para el usuario.
-- [/terms](frontend/src/pages/info/TermsPage.tsx) — términos y condiciones.
-- [/privacy](frontend/src/pages/info/PrivacyPage.tsx) — política de privacidad.
-- [/api](frontend/src/pages/info/ApiPage.tsx) — referencia a la documentación OpenAPI pública (`/api/docs`).
-- [/roadmap](frontend/src/pages/info/RoadmapPage.tsx) — funcionalidades futuras planeadas.
+- [/about](frontend/src/pages/info/AboutPage.tsx): quién hizo el proyecto y por qué.
+- [/contact](frontend/src/pages/info/ContactPage.tsx): formulario de contacto.
+- [/news](frontend/src/pages/info/NewsPage.tsx): registro de cambios visibles para el usuario.
+- [/terms](frontend/src/pages/info/TermsPage.tsx): términos y condiciones.
+- [/privacy](frontend/src/pages/info/PrivacyPage.tsx): política de privacidad.
+- [/api](frontend/src/pages/info/ApiPage.tsx): referencia a la documentación OpenAPI pública (`/api/docs`).
+- [/roadmap](frontend/src/pages/info/RoadmapPage.tsx): funcionalidades futuras planeadas.
 
 ### 2.3.14. Sincronización en tiempo real
 
@@ -339,7 +339,7 @@ El header global (`Header.tsx`) tiene:
 2. El proyector muestra la app local en `localhost:5173`.
 3. Se hace login con `Testing` / `1234QWer`. Todo funciona contra `localStorage`.
 4. Se crea una campaña delante del tribunal, se invita un "jugador" virtual, se diseña un mapa, se mueve una ficha. La sincronización en tiempo real **no** se muestra (requiere backend), pero el resto sí.
-5. Tras la defensa, esos datos pueden borrarse limpiando el `localStorage` o quedarse — no contaminan ninguna base de datos.
+5. Tras la defensa, esos datos pueden borrarse limpiando el `localStorage` o quedarse, ya que no contaminan ninguna base de datos.
 
 ## 2.6. Lo que DnDPlanner NO hace
 

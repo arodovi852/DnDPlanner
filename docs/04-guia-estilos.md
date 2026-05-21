@@ -245,7 +245,7 @@ La capa de componentes vive en [`frontend/src/styles/05-components/`](../fronten
 03-elements    Estilos base de etiquetas HTML (body, h1, a, etc.).
 04-objects     Layouts genéricos sin cosmética (vacío).
 05-components  Componentes BEM con cosmética completa.
-06-utilities   Helpers (vacío — no se usaron en este proyecto).
+06-utilities   Helpers (vacío, no se usaron en este proyecto).
 ```
 
 Esta separación permite que un nuevo desarrollador entienda el orden de cascada simplemente leyendo [`main.scss`](../frontend/src/styles/main.scss).

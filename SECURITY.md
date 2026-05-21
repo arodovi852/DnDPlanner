@@ -79,14 +79,14 @@ Por evitar trabajo en falso, los siguientes informes se cerrarán como no aplica
 - **Auto-XSS** (necesario que el atacante engañe al usuario a pegar código en la consola del navegador).
 - **Falta de cabeceras "nice to have"** sin un vector de ataque concreto (`X-XSS-Protection`, `X-Content-Type-Options` en respuestas no-HTML, etc.).
 - **Inundación de email / DoS desde un único cliente sin amplificación.** Está cubierto por rate limiting.
-- **Información en headers HTTP** que el stack revela por defecto (`Server: nginx/...`) — es información pública.
+- **Información en headers HTTP** que el stack revela por defecto (`Server: nginx/...`). Es información pública.
 - **Reportes generados solo por escáneres automáticos** sin verificación manual ni reproducibilidad.
 
 ---
 
 ## Reconocimientos
 
-Si tu reporte resulta en una vulnerabilidad real corregida, te listaremos —**con tu permiso y nombre/handle a elegir**— en el aviso público asociado. Sin afán comercial, simplemente como agradecimiento por el reporte responsable.
+Si tu reporte resulta en una vulnerabilidad real corregida, te listaremos (**con tu permiso y nombre/handle a elegir**) en el aviso público asociado. Sin afán comercial, simplemente como agradecimiento por el reporte responsable.
 
 ---
 

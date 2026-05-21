@@ -13,7 +13,7 @@ Para cada criterio se aporta:
 4. **Evidencia** (comando + salida real + captura/gif).
 5. **Explicación** de por qué cumple y qué se ha adaptado.
 
-El proyecto verificado es **DnDPlanner** — gestor de campañas de rol con frontend React, backend Express y MongoDB, orquestado con Docker Compose y desplegable en DigitalOcean App Platform.
+El proyecto verificado es **DnDPlanner**, un gestor de campañas de rol con frontend React, backend Express y MongoDB, orquestado con Docker Compose y desplegable en DigitalOcean App Platform.
 
 ### Mapeo criterios → RAs → unidades
 
@@ -37,7 +37,7 @@ Para que el tribunal pueda comprobar visualmente lo que dice el texto, cada crit
 
 ---
 
-## Criterio 1 — Documentación del proyecto  · RA1 · U2, U3
+## Criterio 1. Documentación del proyecto  · RA1 · U2, U3
 
 > *"La documentación permite entender, ejecutar y mantener el proyecto sin ayuda externa. El README.md explica qué hace el proyecto, requisitos, cómo arrancarlo y enlaza a la documentación. La arquitectura está descrita con un esquema o diagrama simple. La API está documentada con endpoints principales, parámetros, códigos de respuesta y ejemplos reales de petición y respuesta (por ejemplo con curl). El deploy está explicado paso a paso (desde cero), incluyendo variables de entorno, verificación (comandos de comprobación) y un troubleshooting básico ('si falla X, revisa Y'). Se evidencia con ficheros en el repo y se comprueba que, siguiendo los pasos, el proyecto funciona."*
 
@@ -45,7 +45,7 @@ Para que el tribunal pueda comprobar visualmente lo que dice el texto, cada crit
 
 | Aspecto | Fichero | Notas |
 |---|---|---|
-| Qué hace el proyecto + quick start | [README.md](../README.md) | Sección "¿Qué hace?" + "Quick start — Docker" |
+| Qué hace el proyecto + quick start | [README.md](../README.md) | Sección "¿Qué hace?" + "Quick start con Docker" |
 | Arquitectura con diagrama ASCII | [README.md](../README.md) líneas 26–40 | Diagrama Navegador → nginx → Express → Mongo |
 | API documentada (OpenAPI 3.0) | [backend/src/config/swagger.js](../backend/src/config/swagger.js) | Servido en `http://localhost:8080/api/docs` |
 | Variables de entorno | [.env.example](../.env.example) | JWT_SECRET, JWT_REFRESH_SECRET, Cloudinary opcional |
@@ -53,8 +53,8 @@ Para que el tribunal pueda comprobar visualmente lo que dice el texto, cada crit
 | Troubleshooting | [DEPLOYMENT.md §7](../DEPLOYMENT.md) | Tabla "Errores comunes" con causa y solución |
 | Documentación PFG completa | [docs/01–10](.) | Introducción, descripción, instalación, diseño, desarrollo, pruebas, despliegue, manual de usuario, conclusiones |
 
-![Captura del README.md renderizado en GitHub, mostrando la sección "¿Qué hace?", el diagrama ASCII de arquitectura y el "Quick start — Docker"](assets/capturas-documentacion/c1-01-readme-renderizado2.png)
-### Evidencia 1 — La API es navegable con ejemplos reales
+![Captura del README.md renderizado en GitHub, mostrando la sección "¿Qué hace?", el diagrama ASCII de arquitectura y el "Quick start con Docker"](assets/capturas-documentacion/c1-01-readme-renderizado2.png)
+### Evidencia 1: La API es navegable con ejemplos reales
 
 ```powershell
 # Cuento endpoints documentados en Swagger:
@@ -107,7 +107,7 @@ Ejemplo concreto de fragmento de la spec OpenAPI para `POST /auth/login`:
 ```
 
 ![Captura de Swagger UI en `http://localhost:8080/api/docs` mostrando el listado de endpoints expandido (al menos el grupo "Auth" desplegado con `POST /auth/login` visible)](assets/capturas-documentacion/c1-02-swagger-ui.png)
-### Evidencia 2 — Ejemplos reales con `curl`
+### Evidencia 2: Ejemplos reales con `curl`
 
 El README incluye comandos de verificación que cualquier evaluador puede copiar:
 
@@ -130,7 +130,7 @@ Content-Type: text/html
 ```
 
 ![Captura de la terminal de PowerShell ejecutando los tres comandos curl con sus salidas visibles](assets/capturas-documentacion/c1-04-curl-terminal.png)
-### Evidencia 3 — Troubleshooting funcional
+### Evidencia 3: Troubleshooting funcional
 
 [DEPLOYMENT.md §7](../DEPLOYMENT.md) lista los 8 errores más probables con la solución concreta. Ejemplo:
 
@@ -154,7 +154,7 @@ La documentación es **autocontenida y reproducible**, que es exactamente lo que
 
 ---
 
-## Criterio 2 — Control de versiones + CI/CD  · RA1 · U2, U3
+## Criterio 2. Control de versiones + CI/CD  · RA1 · U2, U3
 
 > *"Se trabaja con Git de forma ordenada: ramas para features, main estable, commits descriptivos. Hay GitHub Actions con workflow claro que realiza CI (build y, si hay tests, test) y, si procede, CD (publicar imagen y/o desplegar). Se evidencia un run correcto (captura/enlace) y se usan secrets. Se evidencia con historial de commits/ramas + YAML del workflow + captura del run en verde + evidencia de artefacto (imagen/tag o despliegue)."*
 
@@ -170,7 +170,7 @@ La documentación es **autocontenida y reproducible**, que es exactamente lo que
 | Cancelación de jobs antiguos | `concurrency: cd-${{ github.ref }}` | Evita despliegues en cola si se acumulan pushes |
 | Cache de capas Docker | `cache-from: type=gha, cache-to: type=gha,mode=max` | Builds incrementales en CI |
 
-### Evidencia — Historial de commits y ramas
+### Evidencia: Historial de commits y ramas
 
 ```powershell
 git log --oneline --all --graph -15
@@ -190,7 +190,7 @@ Salida representativa:
 Cada commit tiene un mensaje descriptivo que explica el cambio funcional, no detalles de implementación.
 
 ![Captura del grafo de commits/ramas en GitHub (pestaña "Insights → Network") o en GitKraken/VSCode mostrando la línea de `main` y al menos una rama de feature mergeada](assets/capturas-documentacion/c2-01-git-graph.png)
-### Evidencia — YAML del workflow CI
+### Evidencia: YAML del workflow CI
 
 ```yaml
 on:
@@ -221,10 +221,10 @@ jobs:
 **Cobertura del CI**:
 
 - **Backend**: 4 test suites (`api.test.js`, `auth.test.js`, `campaign.test.js`, `campaign-extra.test.js`) corridos contra `mongodb-memory-server` (no necesita BD real). El lint usa ESLint con la config del proyecto.
-- **Frontend**: el comando `npm run build` ejecuta `tsc -b && vite build` — un fallo de tipos rompe el build, así que el typecheck es bloqueante.
+- **Frontend**: el comando `npm run build` ejecuta `tsc -b && vite build`. Un fallo de tipos rompe el build, así que el typecheck es bloqueante.
 - **Artefactos**: cobertura y bundle se suben como artifacts descargables desde la UI de Actions.
 
-### Evidencia — YAML del workflow CD
+### Evidencia: YAML del workflow CD
 
 ```yaml
 - name: Compute image metadata
@@ -246,7 +246,7 @@ jobs:
     cache-to: type=gha,scope=${{ matrix.image }},mode=max
 ```
 
-### Evidencia — Run del workflow en verde
+### Evidencia: Run del workflow en verde
 
 Tras un merge a `main`, ghcr.io recibe 4 tags inmutables:
 
@@ -272,7 +272,7 @@ Cualquier máquina con Docker puede levantar la versión exacta de un commit con
 
 ---
 
-## Criterio 3 — Arquitectura  · RA2 · U4
+## Criterio 3. Arquitectura  · RA2 · U4
 
 > *"La arquitectura está claramente definida y separada por servicios (web/front, app/back, BBDD y otros si aplica). Se explica qué hace cada servicio y cómo se comunican. Se evidencia con un diagrama simple o esquema en README/DEPLOY y con el compose mostrando esos servicios. Funciona al levantar el proyecto: se accede a la web, el backend responde y la BBDD está operativa."*
 
@@ -312,7 +312,7 @@ Cualquier máquina con Docker puede levantar la versión exacta de un commit con
 | `api` | `dndplanner-api:local` (node 20 alpine) | 3000 | ❌ No (solo red interna) | Express REST + Socket.IO + Mongoose |
 | `mongo` | `mongo:7` (oficial) | 27017 | ❌ No (solo red interna) | Base de datos + persistencia en volumen `mongo-data` |
 
-### Evidencia — Funciona al levantar el stack
+### Evidencia: Funciona al levantar el stack
 
 ```powershell
 docker compose up -d --build
@@ -339,7 +339,7 @@ Tres servicios bien separados, con responsabilidades claras, comunicación docum
 
 ---
 
-## Criterio 4 — Implementación Docker  · RA3 · U5
+## Criterio 4. Implementación Docker  · RA3 · U5
 
 > *"El proyecto está completamente 'dockerizado' y es reproducible. Hay Dockerfile(s) correctos y compose.yaml con instrucciones claras en DEPLOY. Se usan redes internas y puertos limpios (solo se expone lo necesario). Hay volúmenes para persistencia y variables de entorno bien gestionadas (incluye .env.example y no sube secretos). Si se publica imagen, se evidencia con enlace a registry y tag. Se evidencia con: docker compose up -d, docker compose ps, logs de arranque y prueba curl."*
 
@@ -360,7 +360,7 @@ Tres servicios bien separados, con responsabilidades claras, comunicación docum
 
 ### Adaptaciones técnicas en el Dockerfile
 
-**Backend** — uso de `dumb-init` como PID 1:
+**Backend**, uso de `dumb-init` como PID 1:
 
 ```dockerfile
 RUN apk add --no-cache dumb-init wget
@@ -371,7 +371,7 @@ CMD ["node", "src/server.js"]
 
 Sin `dumb-init`, Node corre como PID 1 y **no recibe `SIGTERM`** cuando Docker para el contenedor. El resultado es que `docker stop` espera 10 segundos y mata con SIGKILL (sin shutdown limpio). Con `dumb-init`, las señales se reenvían correctamente y el proceso cierra conexiones a Mongo y a Socket.IO antes de terminar.
 
-**Frontend** — multi-stage para imagen mínima:
+**Frontend**, multi-stage para imagen mínima:
 
 ```dockerfile
 # Stage 1: build (Node 20 con devDependencies)
@@ -392,7 +392,7 @@ COPY nginx.conf /etc/nginx/conf.d/default.conf
 
 Solo los estáticos compilados van al runtime: la imagen final pesa ~25 MB en lugar de ~400 MB si llevásemos también Node y `node_modules`.
 
-### Evidencia 1 — `docker compose up -d --build` desde cero
+### Evidencia 1: `docker compose up -d --build` desde cero
 
 ```powershell
 docker compose up -d --build
@@ -411,7 +411,7 @@ Resumen real:
  Container dndplanner-web  Started
 ```
 
-### Evidencia 2 — `docker compose ps` (solo el puerto necesario expuesto)
+### Evidencia 2: `docker compose ps` (solo el puerto necesario expuesto)
 
 ```powershell
 docker compose ps --format "{{.Service}}: {{.Publishers}}"
@@ -419,8 +419,8 @@ docker compose ps --format "{{.Service}}: {{.Publishers}}"
 
 ```
 web: 0.0.0.0:8080->80/tcp
-api: (vacío — no expone nada)
-mongo: (vacío — no expone nada)
+api: (vacío, no expone nada)
+mongo: (vacío, no expone nada)
 ```
 
 `api` y `mongo` viven exclusivamente en la red interna `dndplanner-net`. Si intentas alcanzarlas desde el host:
@@ -431,7 +431,7 @@ curl.exe http://localhost:3000/api/health
 ```
 
 ![Captura mostrando que `curl http://localhost:3000` falla (backend aislado) pero `curl http://localhost:8080/api/health` funciona (proxy nginx)](assets/capturas-documentacion/c4-02-puerto-aislado.png)
-### Evidencia 3 — Logs de arranque
+### Evidencia 3: Logs de arranque
 
 ```powershell
 docker compose logs --tail=20
@@ -442,14 +442,14 @@ Muestra el arranque secuenciado:
 2. `api` espera a `mongo` (depends_on), conecta y reporta "MongoDB Connected".
 3. `web` espera a `api` (depends_on con healthcheck) y arranca nginx.
 
-### Evidencia 4 — Prueba curl
+### Evidencia 4: Prueba curl
 
 ```powershell
 curl http://localhost:8080/api/health
 # → {"success":true,"message":"DnDPlanner API is running","timestamp":"..."}
 ```
 
-### Evidencia 5 — Volumen persistente
+### Evidencia 5: Volumen persistente
 
 ```powershell
 docker volume ls --filter name=dndplanner-mongo-data
@@ -480,7 +480,7 @@ docker volume ls --filter name=dndplanner-mongo-data
 
 ---
 
-## Criterio 5 — Servidor web / Reverse proxy  · RA6 · U1
+## Criterio 5. Servidor web / reverse proxy  · RA6 · U1
 
 > *"El servidor web actúa como front real: hace reverse proxy al backend y sirve estáticos si aplica. Si se usa HTTPS, está configurado correctamente (o se explica claramente por qué no se usa). Se definen contextos/rutas adecuadas (por ejemplo /api al backend). Se explican adaptaciones: configuración relevante, logs, y si procede parámetros como pool/conexiones (cuando aplique al proxy) o ajustes de rendimiento. Se evidencia con fichero de configuración del proxy, curl -I mostrando respuesta, y logs del proxy con peticiones reales."*
 
@@ -564,12 +564,12 @@ REST: 30 s suficiente para cualquier endpoint normal. WebSocket: 1 h porque las 
 
 **Producción** (DigitalOcean App Platform): **HTTPS automático** vía Let's Encrypt. App Platform termina TLS antes del ingress y reenvía HTTP plano al backend. El header `X-Forwarded-Proto: https` que nginx ya envía permite al backend saber el esquema original.
 
-### Evidencia — Fichero de configuración del proxy
+### Evidencia: Fichero de configuración del proxy
 
 Fichero versionado y comentado: [frontend/nginx.conf](../frontend/nginx.conf). Tiene ~100 líneas estructuradas en bloques claros (resolver, gzip, map WS, server con 4 `location`).
 
 ![Captura del fichero `frontend/nginx.conf` abierto en el editor, mostrando los 4 bloques `location` (`/api/`, `/socket.io/`, `/assets/`, `/`) con anotaciones visibles](assets/capturas-documentacion/c5-01-nginx-conf.png)
-### Evidencia — `curl -I` mostrando respuesta
+### Evidencia: `curl -I` mostrando respuesta
 
 ```powershell
 curl.exe -I http://localhost:8080
@@ -588,7 +588,7 @@ Accept-Ranges: bytes
 Cabeceras correctas: `nginx/1.27.5` confirma el servidor, `Cache-Control: no-cache` aplica solo al `index.html` (los `/assets/*` con hash sí se cachean).
 
 ![Captura de la salida de `curl.exe -I http://localhost:8080` en PowerShell mostrando los headers HTTP/1.1 200 OK + `Server: nginx/1.27.5`](assets/capturas-documentacion/c5-02-curl-headers.png)
-### Evidencia — Logs del proxy con peticiones reales
+### Evidencia: Logs del proxy con peticiones reales
 
 ```powershell
 docker compose logs web --tail=10
@@ -599,7 +599,7 @@ dndplanner-web | 172.18.0.1 - - [14/May/2026:18:14:20 +0000] "HEAD / HTTP/1.1" 2
 dndplanner-web | 172.18.0.1 - - [14/May/2026:18:14:23 +0000] "GET /api/health HTTP/1.1" 200 93 "-" "curl/8.5.0" "-"
 ```
 
-Se ve que nginx ha servido la portada (HTTP 200, 0 bytes en HEAD) y ha reenviado correctamente el `GET /api/health` al backend (HTTP 200, 93 bytes — el JSON de respuesta).
+Se ve que nginx ha servido la portada (HTTP 200, 0 bytes en HEAD) y ha reenviado correctamente el `GET /api/health` al backend (HTTP 200, 93 bytes, el JSON de respuesta).
 
 ### Por qué cumple (RA6 · U1)
 
@@ -612,7 +612,7 @@ Se ve que nginx ha servido la portada (HTTP 200, 0 bytes en HEAD) y ha reenviado
 
 ---
 
-## Criterio 6 — Servidor de aplicaciones  · RA6 · U1
+## Criterio 6. Servidor de aplicaciones  · RA6 · U1
 
 > *"El servidor de aplicaciones (backend) está configurado correctamente (contextos/rutas/puertos internos). Se explican adaptaciones relevantes (por ejemplo: configuración, logs, pool/conexiones si aplica). Se aportan pruebas de funcionamiento (curl a endpoints) y al menos una prueba simple de rendimiento o carga ligera (por ejemplo varias peticiones y explicación de resultados). Se evidencia con logs del backend, comandos de prueba y breve interpretación ('qué he probado y qué ha pasado')."*
 
@@ -674,7 +674,7 @@ Mongoose mantiene un pool por defecto (5 conexiones mínimo, 100 máximo). No se
 mongoose.connect(uri, { maxPoolSize: 50, minPoolSize: 5 });
 ```
 
-### Evidencia — Pruebas de funcionamiento (`curl` a endpoints)
+### Evidencia: Pruebas de funcionamiento (`curl` a endpoints)
 
 **1. Healthcheck (camino feliz):**
 
@@ -717,7 +717,7 @@ curl.exe -H "Authorization: Bearer $token" http://localhost:8080/api/auth/me
 
 **Qué he probado y qué ha pasado:** flujo completo de autenticación. Hago login con el usuario de testing, recibo `accessToken`, lo uso en el header `Authorization: Bearer` y consulto mi propio perfil. ✅ El JWT es válido, el middleware lo decodifica y el endpoint devuelve los datos del usuario autenticado.
 
-### Evidencia — Prueba de rendimiento / carga ligera
+### Evidencia: Prueba de rendimiento / carga ligera
 
 100 peticiones secuenciales al healthcheck:
 
@@ -748,12 +748,12 @@ Latencia máx:   38.7ms
 
 - He lanzado 100 peticiones HTTP secuenciales al endpoint `/api/health` desde el host hacia el stack completo (host → nginx → api → mongo → api → nginx → host).
 - **Tasa de éxito**: 100 / 100 (todas devolvieron HTTP 200).
-- **Latencia media**: 14.2 ms — perfectamente aceptable, está dominada por el round-trip TCP local y el handshake HTTP de curl, no por el procesamiento del backend.
-- **Latencia máxima**: 38.7 ms — pico aislado, probablemente el primer "frío" del bucle. Las siguientes 99 oscilan alrededor de la media.
+- **Latencia media**: 14.2 ms. Perfectamente aceptable, está dominada por el round-trip TCP local y el handshake HTTP de curl, no por el procesamiento del backend.
+- **Latencia máxima**: 38.7 ms. Pico aislado, probablemente el primer "frío" del bucle. Las siguientes 99 oscilan alrededor de la media.
 - **Conclusión**: el backend sostiene cómodamente la carga doméstica esperada (un grupo de rol son ≤10 conexiones simultáneas, no 100 req/s). El rate-limit configurado (100 req / 15 min) ni se acerca a tocarse en uso normal.
 
 ![Captura de la terminal con la salida completa del script de carga, mostrando "Total: ~1.6s", "Códigos: 200=100", "Latencia media: ~14ms"](assets/capturas-documentacion/c6-01-carga-100req.png)
-### Evidencia — Logs del backend al arrancar
+### Evidencia: Logs del backend al arrancar
 
 ```powershell
 docker compose logs api --tail=15
@@ -780,7 +780,7 @@ El backend arranca con configuración explícita, validada, y produce logs acces
 
 ---
 
-## Criterio 7 — Gestión de ficheros y artefactos  · RA4
+## Criterio 7. Gestión de ficheros y artefactos  · RA4
 
 > *"El proyecto deja claramente organizada y documentada la gestión de artefactos del despliegue. Se explica qué ficheros son necesarios, cuáles se generan, cuáles no deben subirse al repositorio, qué imagen se usa o se publica, qué datos deben persistir y cómo se conservarían. Además, se evidencia con enlaces a los ficheros del repo, imagen/tag si existe y una breve explicación del proceso."*
 
@@ -835,7 +835,7 @@ El backend arranca con configuración explícita, validada, y produce logs acces
 5. **Los datos no se tocan**: viven en Atlas (BD) y Cloudinary (imágenes), totalmente desacoplados del ciclo de despliegue.
 6. **Rollback** = redeploy de un tag `:sha-<anterior>` desde ghcr.io en App Platform. Instantáneo y sin pérdida de datos.
 
-### Evidencia — Volumen persistente y artefactos publicados
+### Evidencia: Volumen persistente y artefactos publicados
 
 ```powershell
 # Volumen sobrevive a un "down" sin -v
@@ -850,7 +850,7 @@ docker compose up -d
 ```
 
 ```yaml
-# .github/workflows/cd.yml — publica imágenes inmutables a ghcr.io
+# .github/workflows/cd.yml (publica imágenes inmutables a ghcr.io)
 tags: |
   type=raw,value=latest,enable={{is_default_branch}}
   type=sha,prefix=sha-,format=short
@@ -862,7 +862,7 @@ Cada artefacto tiene un propósito claro, está documentado, y los que contienen
 
 ---
 
-## Criterio 8 — Verificación básica de red  · RA5
+## Criterio 8. Verificación básica de red  · RA5
 
 > *"La verificación de red es clara y reproducible. Se documenta la URL o nombre usado, puertos publicados, rutas principales, servicio que responde, y comunicación servidor web/proxy/backend. Se evidencian pruebas con curl, salida de docker compose ps y, si procede, resolución de nombre mediante /etc/hosts, DNS local o configuración equivalente. El alumno explica qué ha comprobado y qué significa cada resultado."*
 
@@ -891,10 +891,10 @@ Cada artefacto tiene un propósito claro, está documentado, y los que contienen
 | Parámetro | Valor |
 |---|---|
 | URL principal | `http://localhost:8080` |
-| Puerto publicado | `8080` (host) → `80` (contenedor web) — **único expuesto al host** |
+| Puerto publicado | `8080` (host) → `80` (contenedor web). **Único expuesto al host** |
 | Resolución de nombres | DNS interno de Docker resuelve `web`, `api`, `mongo` a las IPs de los contenedores. No hace falta `/etc/hosts` |
 | Rutas principales | `/` (SPA), `/api/*` (REST), `/api/docs` (Swagger UI), `/api/health` (healthcheck), `/socket.io/*` (WebSocket) |
-| Comunicación front↔proxy↔backend | nginx hace `proxy_pass http://api:3000` — la resolución `api → 172.18.0.3` la hace Docker DNS |
+| Comunicación front↔proxy↔backend | nginx hace `proxy_pass http://api:3000`. La resolución `api → 172.18.0.3` la hace Docker DNS |
 
 ### Evidencias paso a paso
 
@@ -907,7 +907,7 @@ dndplanner-mongo   mongo:7                Up 22 seconds (healthy) 27017/tcp
 dndplanner-web     dndplanner-web:local   Up 10 seconds (healthy) 0.0.0.0:8080->80/tcp
 ```
 
-**Qué significa este resultado:** los 3 contenedores están corriendo y en estado `healthy` (han pasado sus healthchecks internos). Solo `web` publica un puerto al host (`0.0.0.0:8080->80/tcp`). `api` y `mongo` no son alcanzables desde el host directamente — lo cual es correcto: solo deben hablar entre ellos.
+**Qué significa este resultado:** los 3 contenedores están corriendo y en estado `healthy` (han pasado sus healthchecks internos). Solo `web` publica un puerto al host (`0.0.0.0:8080->80/tcp`). `api` y `mongo` no son alcanzables desde el host directamente, lo cual es correcto: solo deben hablar entre ellos.
 
 **2. El frontend responde:**
 
@@ -996,12 +996,12 @@ Vista cruzada para verificar que cada RA está cubierto por al menos un criterio
 
 | RA | Criterios que lo cubren | Estado |
 |----|--------------------------|--------|
-| **RA1** — Documentación + control de versiones | C1 (documentación) + C2 (Git, CI, CD) | ✅ Cubierto por dos criterios con evidencias independientes |
-| **RA2** — Arquitectura de la aplicación | C3 (diseño de servicios y comunicaciones) | ✅ Diagrama + compose + decisiones documentadas |
-| **RA3** — Implementación Docker | C4 (Dockerfiles, compose, redes, volúmenes, envs) | ✅ Build reproducible + imágenes publicadas en ghcr.io |
-| **RA4** — Gestión de artefactos | C7 (inventario completo + persistencia) | ✅ Versionado, generado, publicado, persistente — todo clasificado |
-| **RA5** — Verificación básica de red | C8 (topología, rutas, puertos, DNS interno) | ✅ Pruebas con `curl`, `docker compose ps`, `network inspect` |
-| **RA6** — Servidor web + servidor de aplicaciones | C5 (reverse proxy) + C6 (app server) | ✅ nginx y Express con adaptaciones técnicas + pruebas de carga |
+| **RA1**: documentación + control de versiones | C1 (documentación) + C2 (Git, CI, CD) | ✅ Cubierto por dos criterios con evidencias independientes |
+| **RA2**: arquitectura de la aplicación | C3 (diseño de servicios y comunicaciones) | ✅ Diagrama + compose + decisiones documentadas |
+| **RA3**: implementación Docker | C4 (Dockerfiles, compose, redes, volúmenes, envs) | ✅ Build reproducible + imágenes publicadas en ghcr.io |
+| **RA4**: gestión de artefactos | C7 (inventario completo + persistencia) | ✅ Versionado, generado, publicado, persistente (todo clasificado) |
+| **RA5**: verificación básica de red | C8 (topología, rutas, puertos, DNS interno) | ✅ Pruebas con `curl`, `docker compose ps`, `network inspect` |
+| **RA6**: servidor web + servidor de aplicaciones | C5 (reverse proxy) + C6 (app server) | ✅ nginx y Express con adaptaciones técnicas + pruebas de carga |
 
 ### Resumen de evidencias clave por RA
 

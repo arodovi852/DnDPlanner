@@ -46,7 +46,7 @@ DnDPlanner está pensado como herramienta para grupos que juegan **D&D y otros j
 
 Hay dos vías, según prefieras. Las dos están descritas con todo detalle en [`docs/03-instalacion.md`](docs/03-instalacion.md).
 
-### Opción 1 — Docker Compose (recomendado)
+### Opción 1: Docker Compose (recomendado)
 
 Levanta el stack completo (frontend + backend + Mongo) en un comando:
 
@@ -58,7 +58,7 @@ docker compose ps          # los 3 servicios en "healthy"
 
 App lista en `http://localhost:8080`.
 
-### Opción 2 — Sin Docker
+### Opción 2: sin Docker
 
 Si prefieres iterar más rápido en el frontend con HMR:
 

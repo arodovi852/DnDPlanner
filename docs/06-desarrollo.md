@@ -36,16 +36,16 @@ Datos obtenidos directamente del historial de Git del repositorio. Cada fase cor
 | **15. Cuentas y despliegue** | 12-may-2026 | Configuración final de cuentas para el despliegue, primera versión funcional en DigitalOcean. | `18cbaab` Arreglo de cuentas para el despliegue · `4746b09` Miembros de campaña y configuración de cuentas |
 | **16. Pulido visual y plantillas** | 13-may-2026 | Iteración de visibilidad pública/privada y refinamiento de las plantillas oficiales. | `046e6fe` Arreglos en visibilidad y diseño · `0d50022` Arreglos en visibilidad y templates |
 | **17. Diseño móvil y perfil** | 14-may-2026 | Adaptación responsive de 320 px en adelante y ajustes finales del perfil. | `fd814ff` Arreglos en diseño y cambios en perfil · `507b055` Arreglos en diseño móvil |
-| **18. Documentación, plugin Figma e issues retroactivos** | 17–19-may-2026 | Generación de los 11 documentos del PFG en `docs/`, plugin local de Figma para apoyar la creación de la guía de estilos, y poblado del GitHub Project con issues y milestones. | (sin commit en `main`, trabajo de cara a la entrega) |
+| **18. Documentación e issues retroactivos** | 17–19-may-2026 | Generación de los 11 documentos del PFG en `docs/` y poblado del GitHub Project con issues y milestones. | (sin commit en `main`, trabajo de cara a la entrega) |
 
 ### 6.1.2. Filosofía de iteración
 
 Tener solo 7 semanas obligó a una estrategia muy específica:
 
 - **Backend antes que cliente.** Subir la API completa en el primer commit grande (`e272a68`) permitió que cada commit posterior fuese estrictamente "frontend que consume X". Sin esto, cada feature habría requerido tocar dos capas a la vez y los plazos no habrían cabido.
-- **Verticalidad por commit.** Cada bloque se intentó terminar **vertical y completamente** antes de pasar al siguiente: al construir las campañas, se hicieron la página de listado, el modal de creación, la conexión al backend, la persistencia en localStorage (modo Testing) y la integración con el contexto en una misma sesión. Esto da commits grandes pero coherentes — cada uno representa un trozo de aplicación que funciona de extremo a extremo.
+- **Verticalidad por commit.** Cada bloque se intentó terminar **vertical y completamente** antes de pasar al siguiente: al construir las campañas, se hicieron la página de listado, el modal de creación, la conexión al backend, la persistencia en localStorage (modo Testing) y la integración con el contexto en una misma sesión. Esto da commits grandes pero coherentes: cada uno representa un trozo de aplicación que funciona de extremo a extremo.
 - **Cero ramas, todo en `main`.** Trabajando solo y con un calendario apretado, el coste organizativo de mantener feature branches no compensaba. Cada commit grande representa lo que en un equipo habría sido un PR mergeado.
-- **Refactor diferido.** Decisiones provisionales (componentes con literales de color, comentarios en inglés mezclados con español, ficheros largos) se aceptaron durante la fase de funcionalidad y se limpiaron en la fase 16 ("Pulido visual"). La alternativa — refactorizar a la vez que se construye — habría duplicado el tiempo por feature.
+- **Refactor diferido.** Decisiones provisionales (componentes con literales de color, comentarios en inglés mezclados con español, ficheros largos) se aceptaron durante la fase de funcionalidad y se limpiaron en la fase 16 ("Pulido visual"). La alternativa (refactorizar a la vez que se construye) habría duplicado el tiempo por feature.
 
 La alternativa más conservadora (avanzar en paralelo en muchas áreas inacabadas) se descartó por experiencia: en proyectos académicos lleva a tener "20 trozos al 60 %" y nada terminado para la defensa.
 
@@ -217,7 +217,7 @@ Y `jest --runInBand` (en CI) para forzar ejecución secuencial. Más detalle en 
 - **Único repositorio**: monorepo con `/frontend` y `/backend`. La separación lógica entre ambos basta y evita el coste de mantener dos repos sincronizados.
 - **Rama principal**: `main`. Siempre verde (CI obligatoria en cada push).
 - **Mensajes de commit**: en español, descriptivos del cambio funcional (ej.: *"Anotaciones, spoilers, invitaciones y documentación del proyecto"*) en lugar de implementación (*"Add AnnotationModel"*). Esto da una historia legible a alto nivel de qué se fue añadiendo al producto.
-- **Tamaño de commits**: deliberadamente grandes — cada uno representa un bloque vertical funcional (ver §6.1.2). 28 commits en 8 meses, no 200.
+- **Tamaño de commits**: deliberadamente grandes. Cada uno representa un bloque vertical funcional (ver §6.1.2). 28 commits en 8 meses, no 200.
 
 ### 6.4.2. GitHub
 
@@ -292,7 +292,7 @@ module.exports = async function authMiddleware(req, res, next) {
 };
 ```
 
-Por qué importa: los códigos de error (`NO_TOKEN`, `TOKEN_EXPIRED`, etc.) permiten al frontend reaccionar de forma específica — en concreto, ante `TOKEN_EXPIRED` el interceptor llama a `/auth/refresh` y reintenta la petición original.
+Por qué importa: los códigos de error (`NO_TOKEN`, `TOKEN_EXPIRED`, etc.) permiten al frontend reaccionar de forma específica; en concreto, ante `TOKEN_EXPIRED` el interceptor llama a `/auth/refresh` y reintenta la petición original.
 
 ### 6.5.3. Métodos sobre el documento Campaign para autorización
 

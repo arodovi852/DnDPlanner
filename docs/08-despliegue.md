@@ -71,7 +71,7 @@ Se evaluaron varias alternativas durante la fase de diseño:
 
 El proyecto tiene dos workflows en `.github/workflows/`:
 
-### 8.2.1. CI — `.github/workflows/ci.yml`
+### 8.2.1. CI: `.github/workflows/ci.yml`
 
 Se dispara en cada **push a `main`** y en cada **Pull Request a `main`**. Su misión: garantizar que `main` siempre está verde.
 
@@ -85,7 +85,7 @@ Cada job sube artefactos a Actions:
 - `frontend-dist`: bundle compilado.
 
 ![Captura de la pestaña Actions de GitHub con un run reciente de CI en verde (los dos jobs healthy)](assets/capturas-documentacion/08-ci-verde.png)
-### 8.2.2. CD — `.github/workflows/cd.yml`
+### 8.2.2. CD: `.github/workflows/cd.yml`
 
 Se dispara en cada **push a `main`** (también manualmente desde la UI con `workflow_dispatch`). Su misión: publicar imágenes Docker inmutables y trazables.
 
@@ -151,9 +151,9 @@ El orden importa: `/api` se evalúa antes que `/` para que las peticiones al bac
 
 Variables sensibles que se configuran **una vez** en la UI de App Platform (Settings → App-Level Variables) como `SECRET`:
 
-- `MONGO_URI` — cadena de conexión a Atlas (`mongodb+srv://user:pass@cluster.mongodb.net/dndplanner`).
-- `JWT_SECRET` — 32 bytes aleatorios en hex.
-- `JWT_REFRESH_SECRET` — otros 32 bytes distintos.
+- `MONGO_URI`: cadena de conexión a Atlas (`mongodb+srv://user:pass@cluster.mongodb.net/dndplanner`).
+- `JWT_SECRET`: 32 bytes aleatorios en hex.
+- `JWT_REFRESH_SECRET`: otros 32 bytes distintos.
 - `CLOUDINARY_CLOUD_NAME`, `CLOUDINARY_API_KEY`, `CLOUDINARY_API_SECRET` (opcionales).
 
 Variables no sensibles (`CORS_ORIGIN`, `NODE_ENV`, etc.) viven en el `app.yaml` versionado. `CORS_ORIGIN` se referencia dinámicamente:
@@ -177,9 +177,9 @@ Este es el procedimiento que se siguió la primera vez para poner la aplicación
 - Cuenta de DigitalOcean con créditos del Student Pack activados.
 - Cuenta de MongoDB Atlas (gratis).
 - Cuenta de Cloudinary (gratis, opcional pero recomendado).
-- Dominio en Name.com (gratis con Student Pack) — opcional, sirve sin dominio propio.
+- Dominio en Name.com (gratis con Student Pack). Opcional, sirve sin dominio propio.
 
-### 8.3.2. Paso 1 — Crear cluster MongoDB Atlas
+### 8.3.2. Paso 1: crear cluster MongoDB Atlas
 
 1. https://www.mongodb.com/cloud/atlas/register
 2. *Build a Cluster* → **M0 Free** → región **Frankfurt** (más cerca de la región `fra` de DO).
@@ -191,12 +191,12 @@ Este es el procedimiento que se siguió la primera vez para poner la aplicación
    ```
 
 ![Captura del dashboard de Atlas con el cluster M0 activo. Ocultar credenciales sensibles si aparecen](assets/capturas-documentacion/08-atlas-cluster.png)
-### 8.3.3. Paso 2 — Crear cuenta de Cloudinary (opcional)
+### 8.3.3. Paso 2: crear cuenta de Cloudinary (opcional)
 
 1. https://cloudinary.com/users/register/free
 2. Dashboard → anotar `Cloud Name`, `API Key`, `API Secret`.
 
-### 8.3.4. Paso 3 — Generar secrets JWT
+### 8.3.4. Paso 3: generar secrets JWT
 
 PowerShell 5.1:
 
@@ -208,7 +208,7 @@ $bytes = New-Object byte[] 32
 
 Ejecutar dos veces (una para `JWT_SECRET`, otra para `JWT_REFRESH_SECRET`).
 
-### 8.3.5. Paso 4 — Crear la app en App Platform
+### 8.3.5. Paso 4: crear la app en App Platform
 
 1. https://cloud.digitalocean.com/apps → *Create App*.
 2. *GitHub* → autorizar acceso al repositorio.
@@ -219,14 +219,14 @@ Ejecutar dos veces (una para `JWT_SECRET`, otra para `JWT_REFRESH_SECRET`).
    - `JWT_SECRET`
    - `JWT_REFRESH_SECRET`
    - `CLOUDINARY_*` (si se configuró)
-6. Confirmar la región (recomendado **`fra` — Frankfurt** por latencia desde España).
+6. Confirmar la región (recomendado **`fra`**, Frankfurt, por latencia desde España).
 7. *Create Resources*.
 
 El primer build tarda 4-6 minutos: instala dependencias, construye el frontend, despliega el backend y verifica el healthcheck.
 
 ![Captura de la pantalla de App Platform con el deploy en progreso, mostrando los dos componentes `dndplanner-web` y `dndplanner-api`](assets/capturas-documentacion/08-do-deploy.png)
 
-### 8.3.6. Paso 5 — Verificar que arranca
+### 8.3.6. Paso 5: verificar que arranca
 
 Una vez el deploy reporta "Live":
 
@@ -243,7 +243,7 @@ https://dndplanner-xxxxx.ondigitalocean.app/api/docs
 https://dndplanner-xxxxx.ondigitalocean.app
 ```
 
-### 8.3.7. Paso 6 — Conectar el dominio (opcional)
+### 8.3.7. Paso 6: conectar el dominio (opcional)
 
 1. App Platform → tu app → *Settings* → *Domains* → *Add Domain*.
 2. Escribe el dominio (`tudominio.me`) → DO te da los registros DNS a configurar.
@@ -256,7 +256,7 @@ https://dndplanner-xxxxx.ondigitalocean.app
 
 ![Captura de la pestaña "Domains" en App Platform con el dominio personalizado en estado "Active" y certificado HTTPS válido](assets/capturas-documentacion/08-domain-active.png)
 
-### 8.3.8. Paso 7 — Smoke test final
+### 8.3.8. Paso 7: smoke test final
 
 Checklist de verificación:
 
@@ -312,7 +312,7 @@ Para alertas más sofisticadas se podría conectar Datadog o New Relic, pero que
 
 ---
 
-## 8.6. Plan B — Solo frontend en GitHub Pages
+## 8.6. Plan B: solo frontend en GitHub Pages
 
 Si por cualquier motivo App Platform no fuese viable durante la defensa (sin tarjeta de crédito, créditos no aplicados aún, etc.), el frontend está preparado para funcionar **sin backend**:
 
@@ -342,8 +342,8 @@ Coste: 0 €. Sin tarjeta requerida.
 | Aspecto | Estado |
 |---|---|
 | Entorno productivo | DO App Platform + Atlas + Cloudinary |
-| CI | GitHub Actions — lint + tests + build en cada push/PR a main |
-| CD | GitHub Actions — push de imágenes a ghcr.io en cada main + deploy automático en App Platform |
+| CI | GitHub Actions: lint + tests + build en cada push/PR a main |
+| CD | GitHub Actions: push de imágenes a ghcr.io en cada main + deploy automático en App Platform |
 | HTTPS | Let's Encrypt automático |
 | Dominio | Name.com (gratis con Student Pack) |
 | Coste actual | 0 €/año durante los créditos del Student Pack |
