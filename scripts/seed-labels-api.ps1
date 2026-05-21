@@ -2,7 +2,7 @@
 
 $ErrorActionPreference = 'Stop'
 $token = (Get-Content "C:\Users\rodri\.gh_token" -Raw).Trim()
-$repo = "arodovi852/AROProyectoFinDeGrado2026"
+$repo = "arodovi852/DnDPlanner"
 
 $labels = @(
     @{ name = "tipo-feature";     color = "1f883d"; description = "Nueva funcionalidad" },

@@ -65,8 +65,8 @@ Documentación detallada de arquitectura, diagramas ER, casos de uso y diseño d
 
 ```bash
 # 1. Clonar el repositorio
-git clone https://github.com/arodovi852/AROProyectoFinDeGrado2026.git
-cd AROProyectoFinDeGrado2026
+git clone https://github.com/arodovi852/DnDPlanner.git
+cd DnDPlanner
 
 # 2. Copiar el fichero de variables de entorno y rellenar los secrets
 cp .env.example .env
@@ -155,7 +155,7 @@ DigitalOcean App Platform consume el repositorio en `main` y reconstruye los com
 ## Estructura del repositorio
 
 ```
-AROProyectoFinDeGrado2026/
+DnDPlanner/
 ├── .github/workflows/      # CI y CD
 ├── .do/app.yaml            # Spec de DigitalOcean App Platform
 ├── docs/                   # Documentación completa del proyecto

@@ -47,8 +47,8 @@ Si alguno falla con *"no se reconoce como cmdlet"*, instálalo desde su web ofic
 ## 3.2. Clonado del repositorio
 
 ```powershell
-git clone https://github.com/arodovi852/AROProyectoFinDeGrado2026.git
-cd AROProyectoFinDeGrado2026
+git clone https://github.com/arodovi852/DnDPlanner.git
+cd DnDPlanner
 ```
 
 ![Captura del listado de carpetas tras clonar, mostrando `backend/`, `frontend/`, `docs/`, `docker-compose.yml`, `.env.example`](assets/capturas-documentacion/03-repo-clonado.png)
@@ -56,7 +56,7 @@ cd AROProyectoFinDeGrado2026
 Estructura clave del repositorio:
 
 ```
-AROProyectoFinDeGrado2026/
+DnDPlanner/
 ├── frontend/              # React + TypeScript + Vite (SPA)
 ├── backend/               # Express + Socket.IO + Mongoose
 ├── docs/                  # Documentación del PFG (este archivo incluido)

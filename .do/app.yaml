@@ -51,7 +51,7 @@ static_sites:
   - name: dndplanner-web
     source_dir: /frontend
     github:
-      repo: arodovi852/AROProyectoFinDeGrado2026
+      repo: arodovi852/DnDPlanner
       branch: main
       deploy_on_push: true
     # Usamos `npm install` (no `npm ci`) porque el lockfile se genera en
@@ -81,7 +81,7 @@ services:
   - name: dndplanner-api
     source_dir: /backend
     github:
-      repo: arodovi852/AROProyectoFinDeGrado2026
+      repo: arodovi852/DnDPlanner
       branch: main
       deploy_on_push: true
     # Mismo motivo que en el frontend: lockfile generado en Windows.

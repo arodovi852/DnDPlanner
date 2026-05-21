@@ -2,7 +2,7 @@
 
 $ErrorActionPreference = 'Continue'
 $token = (Get-Content "C:\Users\rodri\.gh_token" -Raw).Trim()
-$repo = "arodovi852/AROProyectoFinDeGrado2026"
+$repo = "arodovi852/DnDPlanner"
 $headers = @{ Authorization = "token $token"; "User-Agent" = "ps-script"; Accept = "application/vnd.github+json" }
 
 . "$PSScriptRoot\seed-github-issues-data.ps1"

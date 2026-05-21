@@ -4,7 +4,7 @@ $ErrorActionPreference = 'Continue'
 $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
 $env:GH_TOKEN = (Get-Content "C:\Users\rodri\.gh_token" -Raw).Trim()
 $gh = "C:\Program Files\GitHub CLI\gh.exe"
-$repo = "arodovi852/AROProyectoFinDeGrado2026"
+$repo = "arodovi852/DnDPlanner"
 
 . "$PSScriptRoot\seed-github-issues-data.ps1"
 

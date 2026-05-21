@@ -434,7 +434,7 @@ Sí, en todos los navegadores modernos (Chrome, Edge, Firefox, Safari) en sus ú
 Aún no hay un botón de exportación en la UI, pero la API REST devuelve la campaña en JSON (`GET /api/campaigns/:id`). Está en el roadmap.
 
 **¿Y si quiero contribuir o reportar un bug?**
-El proyecto es open source. Repositorio: https://github.com/arodovi852/AROProyectoFinDeGrado2026. Issues bienvenidos.
+El proyecto es open source. Repositorio: https://github.com/arodovi852/DnDPlanner. Issues bienvenidos.
 
 ---
 

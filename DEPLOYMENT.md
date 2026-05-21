@@ -40,7 +40,7 @@ El archivo `.do/app.yaml` declara explícitamente los dos componentes. Cuando Ap
 1. Borra la app fallida que muestra "No components detected".
 2. Vuelve a *Create → Apps*.
 3. Conecta el repo. Cuando el wizard pregunte por la rama, debe detectar automáticamente el `.do/app.yaml` (si no, usa "Edit Spec" y pega su contenido).
-4. Sustituye `USUARIO/AROProyectoFinDeGrado2026` por tu usuario/repo real en el `.do/app.yaml` antes de hacer commit.
+4. Sustituye `USUARIO/DnDPlanner` por tu usuario/repo real en el `.do/app.yaml` antes de hacer commit.
 
 ### Opción B — Configurar fuente desde la UI
 
@@ -60,7 +60,7 @@ Si por ahora solo quieres ver la web online sin la API (el frontend ya funciona 
 
 1. **MongoDB Atlas no hace falta todavía**.
 2. **Edita `.do/app.yaml`**: deja solo el bloque `static_sites` (borra `services`).
-3. Cambia `repo: USUARIO/AROProyectoFinDeGrado2026` por tu repo real.
+3. Cambia `repo: USUARIO/DnDPlanner` por tu repo real.
 4. Commit + push:
    ```powershell
    git add .do/app.yaml
@@ -101,7 +101,7 @@ Si por ahora solo quieres ver la web online sin la API (el frontend ya funciona 
 
 ### 4.4 — Editar `.do/app.yaml`
 
-Cambia `USUARIO/AROProyectoFinDeGrado2026` por tu repo real (en los dos sitios donde aparece).
+Cambia `USUARIO/DnDPlanner` por tu repo real (en los dos sitios donde aparece).
 
 ### 4.5 — Crear la app en App Platform
 
@@ -230,7 +230,7 @@ https://dndplanner-web-xxxxx.ondigitalocean.app
 
 Si DigitalOcean te pide tarjeta y no quieres usar los créditos todavía:
 
-1. En `frontend/vite.config.ts` añade `base: '/AROProyectoFinDeGrado2026/'`.
+1. En `frontend/vite.config.ts` añade `base: '/DnDPlanner/'`.
 2. Instala `gh-pages`: `npm i -D gh-pages` en `/frontend`.
 3. Añade script: `"deploy": "vite build && gh-pages -d dist"`.
 4. `npm run deploy` desde `/frontend`.

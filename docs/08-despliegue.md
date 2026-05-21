@@ -212,7 +212,7 @@ Ejecutar dos veces (una para `JWT_SECRET`, otra para `JWT_REFRESH_SECRET`).
 
 1. https://cloud.digitalocean.com/apps → *Create App*.
 2. *GitHub* → autorizar acceso al repositorio.
-3. Seleccionar `arodovi852/AROProyectoFinDeGrado2026`, rama `main`.
+3. Seleccionar `arodovi852/DnDPlanner`, rama `main`.
 4. App Platform debe detectar automáticamente el `.do/app.yaml`. Si no, "Edit Spec" y pegar su contenido.
 5. En el paso *Environment Variables*, rellenar los secrets:
    - `MONGO_URI`
@@ -324,14 +324,14 @@ Si por cualquier motivo App Platform no fuese viable durante la defensa (sin tar
 
 ```powershell
 cd frontend
-# En vite.config.ts añadir: base: '/AROProyectoFinDeGrado2026/'
+# En vite.config.ts añadir: base: '/DnDPlanner/'
 npm i -D gh-pages
 # En package.json: "deploy": "vite build && gh-pages -d dist"
 npm run deploy
 # GitHub → repo → Settings → Pages → Source: branch gh-pages
 ```
 
-URL resultante: `https://arodovi852.github.io/AROProyectoFinDeGrado2026/`.
+URL resultante: `https://arodovi852.github.io/DnDPlanner/`.
 
 Coste: 0 €. Sin tarjeta requerida.
 

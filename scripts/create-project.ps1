@@ -15,7 +15,7 @@ $headers = @{
 }
 $ownerLogin = "arodovi852"
 $ownerId    = "U_kgDOCuBdzQ"
-$repo       = "arodovi852/AROProyectoFinDeGrado2026"
+$repo       = "arodovi852/DnDPlanner"
 $projectTitle = "DnDPlanner - Roadmap PFG"
 
 function Invoke-GraphQL {
@@ -106,7 +106,7 @@ while ($true) {
     $afterClause = if ($cursor) { ", after: `"$cursor`"" } else { "" }
     $data = Invoke-GraphQL -Query @"
 query {
-  repository(owner: "arodovi852", name: "AROProyectoFinDeGrado2026") {
+  repository(owner: "arodovi852", name: "DnDPlanner") {
     issues(first: 100, states: [OPEN, CLOSED]$afterClause) {
       pageInfo { hasNextPage endCursor }
       nodes { id number title state }
